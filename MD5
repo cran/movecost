@@ -1,0 +1,11 @@
+358e1a07992bfc28fc46e5dd6c9e4f10 *DESCRIPTION
+04d200556e7771988b34a66ac9eb5189 *NAMESPACE
+62e071c5bcd473a5edc2ebb6ad69ce31 *R/destin.loc.r
+1b66081184150c607cc2c59f3aa8c472 *R/movecost.R
+221eb371f3cc5271cc3bf178f57f64e8 *R/volc.loc.r
+8db254510ba8160c1a893adece853218 *README.md
+8272a5aadd2f5c29eadcdd12a2dc441b *data/destin.loc.rda
+53a39759f9674fcb550bf32b9b6f17e5 *data/volc.loc.rda
+c18a63deefa7239633ba53e7ae4371b5 *man/destin.loc.Rd
+c487a544a53c3ac68b4482a38c0a8e2a *man/movecost.Rd
+30d10994660c614e01a5521334e2578a *man/volc.loc.Rd
