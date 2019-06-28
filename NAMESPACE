@@ -2,5 +2,8 @@
 
 export(movecost)
 importFrom(grDevices,terrain.colors)
+importFrom(grDevices,topo.colors)
 importFrom(graphics,layout)
 importFrom(graphics,par)
+importFrom(raster,mask)
+importFrom(raster,ncell)

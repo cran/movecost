@@ -2,18 +2,16 @@
 % Please edit documentation in R/movecost.R
 \name{movecost}
 \alias{movecost}
-\title{R function for calculating accumulated cost of movement across the terrain and least-cost paths from an origin}
+\title{R function for calculating accumulated anisotropic cost of movement across the terrain and least-cost paths from an origin}
 \usage{
-movecost(dtm, slope = NULL, origin, destin = NULL, funct = "t",
-  time = "h", outp = "r", sl.crit = 10, W = 70, L = 0, N = 1,
-  V = 1.2, moves = 16, breaks = NULL, cont.lab = TRUE,
-  destin.lab = TRUE, cex.breaks = 0.6, cex.lcp.lab = 0.6,
-  oneplot = TRUE, export = FALSE)
+movecost(dtm, origin, destin = NULL, funct = "t", time = "h",
+  outp = "r", sl.crit = 10, W = 70, L = 0, N = 1, V = 1.2,
+  breaks = NULL, cont.lab = TRUE, destin.lab = TRUE,
+  cex.breaks = 0.6, cex.lcp.lab = 0.6, oneplot = TRUE,
+  export = FALSE)
 }
 \arguments{
 \item{dtm}{digital terrain model (RasterLayer class).}
-
-\item{slope}{slope dataset (RasterLayer class); if NULL (default), the slope (in degree) is internally calculated (see Details).}
 
 \item{origin}{location from which the walking time is computed (SpatialPointsDataFrame class).}
 
@@ -37,15 +35,13 @@ movecost(dtm, slope = NULL, origin, destin = NULL, funct = "t",
 
 \item{sl.crit}{critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see Details).}
 
-\item{W}{walker's body weight (in Kg; used by the Pandolf's and Van Leusen's cost function; see Details).}
+\item{W}{walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see Details).}
 
-\item{L}{carried load weight (in Kg; used by the Pandolf's and Van Leusen's cost function; see Details).}
+\item{L}{carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see Details).}
 
 \item{N}{coefficient representing ease of movement (1 by default) (used by the Pandolf's and Van Leusen's cost function; see Details).}
 
 \item{V}{speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; see Details).}
-
-\item{moves}{number of directions used when computing the accumulated cost-surface (16 by default).}
 
 \item{breaks}{isolines interval; if no value is supplied, the interval is set by default to 1/10 of the range of values of the accumulated cost surface.}
 
@@ -73,73 +69,67 @@ The function returns a list storing the following components \itemize{
 }
 }
 \description{
-The function provides the facility to calculate the accumulated cost of movement around a starting location and to optionally calculate least-cost path(s) toward
+The function provides the facility to calculate the anisotropic accumulated cost of movement around a starting location and to optionally calculate least-cost path(s) toward
 one or multiple destinations. It implements different cost estimations related to human movement across the landscape.
 The function takes as input a Digital Terrain Model ('RasterLayer' class) and a point feature ('SpatialPointsDataFrame' class), the latter representing
 the starting location, i.e. the location from which the accumulated cost is calculated. \cr
 }
 \details{
-If the parameter 'destin' is fed with a dataset representing destination location(s) ('SpatialPointsDataFrame' class), the function will also calculate
+If the parameter 'destin' is fed with a dataset representing destination location(s) ('SpatialPointsDataFrame' class), the function also calculate
 least-cost path(s) plotted on the input DTM; the length of each path will be saved under the variable 'length' stored in the 'LCPs' dataset ('SpatialLines' class) returned by the function.
 The red dot(s) representing the destination location(s) will be labelled with numeric values representing
 the cost value at the location(s). The cost value will be also appended to the updated destination dataset returned by the function and
 storing a new variable named 'cost'.\cr
 
-The function builds on functions out of Jacob van Etten's 'gdistance' package, and by default uses a 16-directions movement in calculating the accumulated cost-surface.
-The number of movements can be optionally set by the user via the 'moves' parameter.
+The function builds on functions out of Jacob van Etten's 'gdistance' package.
+Under the hood, movecost() calculates the slope as rise over run, following the procedure described
+by van Etten, "R Package gdistance: Distances and Routes on Geographical Grids" in Journal of Statistical Software 76(13), 2017, pp. 14-15.\cr
 
-The slope is internally calculated by the function using the 'terrain()' function out of the 'raster' package, using 8 neighbors.
-The slope is calculated in degrees and, for the sake of its use within the implemented cost functions, it is internally modified (i.e., turned into either gradient or percent)
-according to the user-selected cost function. The user can input a slope dataset (RasterLayer class) using the parameter 'slope'; this can prove usefull
-in cases when the slope has to be preliminarily modified, for instance to mask out areas that cannot be crossed or to weight the slope values according
-to a user-defined weighting scheme.\cr
-
-The following cost functions are implemented (\strong{x} stands for \strong{slope}):\cr
+The following cost functions are implemented (\strong{x[adj]} stands for slope as rise/run calculated for adjacent cells):\cr
 
 \strong{Tobler's hiking function (on-path) (speed in kmh)}:\cr
 
-\eqn{ 6 * exp(-3.5 * abs(tan(x*pi/180) + 0.05)) }\cr
+\eqn{ 6 * exp(-3.5 * abs(x[adj] + 0.05)) }\cr
 
 \strong{Tobler's hiking function (off-path) (speed in kmh)}:\cr
 
-\eqn{ (6 * exp(-3.5 * abs(tan(x*pi/180) + 0.05))) * 0.6 }\cr
+\eqn{ (6 * exp(-3.5 * abs(x[adj] + 0.05))) * 0.6 }\cr
 
 as per Tobler's indication, the off-path walking speed is reduced by 0.6.\cr
 
 \strong{Marquez-Perez et al.'s modified Tobler hiking function (speed in kmh)}:\cr
 
-\eqn{ 4.8 * exp(-5.3 * abs((tan(x*pi/180) * 0.7) + 0.03)) }\cr
+\eqn{ 4.8 * exp(-5.3 * abs((x[adj] * 0.7) + 0.03)) }\cr
 
 modified version of the Tobler's hiking function as proposed by Joaquin Marquez-Parez, Ismael Vallejo-Villalta & Jose I. Alvarez-Francoso (2017), "Estimated travel time for walking trails in natural areas",
 Geografisk Tidsskrift-Danish Journal of Geography, 117:1, 53-62, DOI: 10.1080/00167223.2017.1316212.\cr
 
 \strong{Irmischer-Clarke's modified Tobler hiking function (on-path)}:\cr
 
-\eqn{ (0.11 + exp(-(tan(x*pi/180)*100 + 5)^2 / (2 * 30)^2)) * 3.6 }\cr
+\eqn{ (0.11 + exp(-(abs(x[adj])*100 + 5)^2 / (2 * 30)^2)) * 3.6 }\cr
 
 modified version of the Tobler's function as proposed for (male) on-path hiking by Irmischer, I. J., & Clarke, K. C. (2018). Measuring and modeling the speed of human navigation.
 Cartography and Geographic Information Science, 45(2), 177-186. https://doi.org/10.1080/15230406.2017.1292150. \strong{Note}: the function originally expresses speed in m/s; it has been is reshaped (multiplied by 3.6)
-to turn it into kmh for consistency with the other Tobler-related cost functions; also, originally the slope is in percent; \eqn{tan(x*pi/180)*100} turns the slope from degrees to percent (=rise/run*100).\cr
+to turn it into kmh for consistency with the other Tobler-related cost functions.\cr
 
 \strong{Irmischer-Clarke's modified Tobler hiking function (off-path)}:\cr
 
-\eqn{ (0.11 + 0.67 * exp(-(tan(x*pi/180)*100 + 2)^2 / (2 * 30)^2)) * 3.6 }\cr
+\eqn{ (0.11 + 0.67 * exp(-(abs(x[adj])*100 + 2)^2 / (2 * 30)^2)) * 3.6 }\cr
 
 \strong{Uriarte Gonzalez's slope-dependant walking-time cost function}:\cr
 
-\eqn{ 1/ (0.0277 * (tan(x*pi/180)*100) + 0.6115) }\cr
+\eqn{ 1/ (0.0277 * (abs(x[adj])*100) + 0.6115) }\cr
 
 proposed by Uriarte Gonzalez;
 \strong{see}: Chapa Brunet, T., Garcia, J., Mayoral Herrera, V., & Uriarte Gonzalez, A. (2008). GIS landscape models for the study of preindustrial settlement patterns in Mediterranean areas.
 In Geoinformation Technologies for Geo-Cultural Landscapes (pp. 255-273). CRC Press. https://doi.org/10.1201/9780203881613.ch12.\cr
 The cost function is originally expressed in seconds; for the purpose of its implementation in this function, it is the reciprocal of time (1/T) that is used in order to eventually get
-T/1. Also, originally the slope is in percent: \eqn{tan(x*pi/180)*100} turns the slope from degrees to percent (=rise/run*100).
-Unlike the original cost function, here the pixel resolution is not taken into account since 'gdistance' takes care of the cells' dimension
+T/1. Unlike the original cost function, here the pixel resolution is not taken into account since 'gdistance' takes care of the cells' dimension
 when calculating accumulated costs.
 
 \strong{Relative energetic expenditure cost function}:\cr
 
-\eqn{ 1 / (tan(x*pi/180) / tan (1*pi/180)) }\cr
+\eqn{ 1 / (tan((atan(abs(x[adj]))*180/pi)*pi/180) / tan (1*pi/180)) }\cr
 
 slope-based cost function expressing change in potential energy expenditure;
 \strong{see} Conolly, J., & Lake, M. (2006). Geographic Information Systems in Archaeology. Cambridge: Cambridge University Press, p. 220;
@@ -149,20 +139,20 @@ Canada. Journal of Field Archaeology, 41(6), 684-698. https://doi.org/10.1080/00
 
 \strong{Herzog's metabolic cost function in J/(kg*m)}:\cr
 
-\eqn{ 1 / ((1337.8 * tan(x*pi/180)^6 + 278.19 * tan(x*pi/180)^5 - 517.39 * tan(x*pi/180)^4 - 78.199 * tan(x*pi/180)^3 + 93.419 * tan(x*pi/180)^2 + 19.825 * tan(x*pi/180) + 1.64)) }\cr
+\eqn{ 1 / ((1337.8 * abs(x[adj])^6) + (278.19 * abs(x[adj])^5) - (517.39 * abs(x[adj])^4) - (78.199 * abs(x[adj])^3) + (93.419 * abs(x[adj])^2) + (19.825 * abs(x[adj])) + 1.64) }\cr
 
 \strong{see} Herzog, I. (2016). Potential and Limits of Optimal Path Analysis. In A. Bevan & M. Lake (Eds.), Computational Approaches to Archaeological Spaces (pp. 179-211). New York: Routledge.\cr
 
 \strong{Wheeled-vehicle critical slope cost function}:\cr
 
-\eqn{ 1 / (1 + ((tan(x*pi/180)*100) / sl.crit)^2)  }\cr
+\eqn{ 1 / (1 + ((abs(x[adj])*100) / sl.crit)^2)  }\cr
 
 where \eqn{sl.crit} (=critical slope, in percent) is "the transition where switchbacks become more effective than direct uphill or downhill paths" and typically is in the range 8-16;
 \strong{see} Herzog, I. (2016). Potential and Limits of Optimal Path Analysis. In A. Bevan & M. Lake (Eds.), Computational Approaches to Archaeological Spaces (pp. 179-211). New York: Routledge. \cr
 
 \strong{Pandolf et al.'s metabolic energy expenditure cost function (in Watts)}:\cr
 
-\eqn{ 1 / (1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * V^2 + 0.35 * V * (tan(x*pi/180)*100))) }\cr
+\eqn{ 1 / (1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * V^2 + 0.35 * V * (abs(x[adj])*100))) }\cr
 
 where \eqn{W} is the walker's body weight (Kg), \eqn{L} is the carried load (in Kg), \eqn{V} is the velocity in m/s, \eqn{N} is a coefficient representing ease of movement on the terrain.\cr
 
@@ -178,7 +168,7 @@ For the use of this cost function in a case study, \strong{see} Rademaker, K., R
 
 \strong{Van Leusen's metabolic energy expenditure cost function (in Watts)}:\cr
 
-\eqn{ 1 / (1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * V^2 + 0.35 * V * (tan(x*pi/180)*100) + 10))  }\cr
+\eqn{ 1 / (1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * V^2 + 0.35 * V * abs(x[adj])*100) + 10))  }\cr
 
 which modifies the Pandolf et al.'s equation; \strong{see} Van Leusen, P. M. (2002). Pattern to process: methodological investigations into the formation and interpretation of spatial patterns in archaeological landscapes. University of Groningen.\cr
 \strong{Note} that, as per Herzog, I. (2013). Least-cost Paths - Some Methodological Issues, Internet Archaeology 36 (http://intarch.ac.uk/journal/issue36/index.html) and
@@ -195,7 +185,7 @@ This is done since "gdistance works with conductivity rather than the more usual
 When using the Tobler-related cost functions, the time unit can be selected by the user setting the 'time' parameter to 'h' (hour) or to 'm' (minutes).\cr
 
 In general, the user can also select which type of visualization the function has to produce; this is achieved setting the 'outp' parameter to either 'r' (=raster)
-or to 'c' (=contours). The former will produce a raster image with a colour scale and contour lines representing the accumulated cost surface; the latter parameter will only
+or to 'c' (=contours). The former will produce a raster with a colour scale and contour lines representing the accumulated cost surface; the latter parameter will only
 produce contour lines.\cr
 
 The contour lines' interval is set using the parameter 'breaks'; if no value is passed to the parameter, the interval will be set by default to
