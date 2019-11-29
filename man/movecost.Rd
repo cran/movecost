@@ -22,11 +22,13 @@ movecost(dtm, origin, destin = NULL, funct = "t", time = "h",
 \strong{ic} uses the Irmischer-Clarke's modified Tobler's hiking function (on-path);
 \strong{icofp} uses the Irmischer-Clarke's modified Tobler's hiking function (off-path);
 \strong{ug} uses the Uriarte Gonzalez's slope-dependant walking-time cost function;
+\strong{alb} uses the Alberti's Tobler hiking function modified for animal foraging excursions;
 \strong{ree} uses the relative energetic expenditure cost function;
 \strong{hrz} uses the Herzog's metabolic cost function;
 \strong{wcs} uses the wheeled-vehicle critical slope cost function;
 \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;
-\strong{vl} uses the Van Leusen's metabolic energy expenditure cost function (see Details).}
+\strong{vl} uses the Van Leusen's metabolic energy expenditure cost function.
+\strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function (see Details).}
 
 \item{time}{time-unit expressed by the accumulated raster and by the isolines if Tobler's and Tobler-related cost functions are used;
 'h' for hour, 'm' for minutes.}
@@ -127,6 +129,20 @@ The cost function is originally expressed in seconds; for the purpose of its imp
 T/1. Unlike the original cost function, here the pixel resolution is not taken into account since 'gdistance' takes care of the cells' dimension
 when calculating accumulated costs.
 
+\strong{Alberti's Tobler hiking function modified for animal foraging excursions}:\cr
+
+\eqn{ (6 * exp(-3.5 * abs(x[adj] + 0.05))) * 0.25 }\cr
+
+proposed by Gianmarco Alberti;
+\strong{see}: Locating potential pastoral foraging routes in Malta through the use of Geographic Information System (in press).\cr
+The Tobler’s function has been rescaled to fit animal walking speed during foraging excursions. The distribution of the latter, as empirical data show, turns out to be right-skewed
+and to vary along a continuum. It ranges from very low speed values (corresponding to slow grazing activities grazing while walking) to comparatively higher values
+(up to about 4.0 km/h) corresponding to travels without grazing directional travel toward feeding stations. In an attempt to find a balance between different published figures,
+the function consider 1.5 km/h as the average flock speed, which roughly corresponds to the average speed recorded in some studies.
+The figure is considered the typical speed of flocks during excursions in which grazing takes place while walking, which in most situations can be considered a typical form of grazing.
+Tobler’s hiking function has been rescaled by a factor of 0.25 to represent the walking pace of a flock instead of humans.
+The factor corresponds to the ratio between the flock average speed (1.5 km/h) and the maximum human walking speed (about 6.0 km/h) on a favourable slope.
+
 \strong{Relative energetic expenditure cost function}:\cr
 
 \eqn{ 1 / (tan((atan(abs(x[adj]))*180/pi)*pi/180) / tan (1*pi/180)) }\cr
@@ -175,6 +191,12 @@ which modifies the Pandolf et al.'s equation; \strong{see} Van Leusen, P. M. (20
 unlike Van Leusen (2002), in the above equation slope is expressed in percent and speed in m/s; also, in the last bit of the equantion, 10 replaces
 the value of 6 used by Van Leusen (as per Herzog 2013).\cr
 \strong{Note}: in the returned charts, the cost is transposed from Watts to Megawatts.\cr
+
+\strong{Llobera-Sluckin's metabolic energy expenditure cost function (in KJ/m)}:\cr
+
+\eqn{ 1 / (2.635 + (17.37 * abs(x[adj])) + (42.37 * abs(x[adj])^2) - (21.43 * abs(x[adj])^3) + (14.93 * abs(x[adj])^4))  }\cr
+
+for which \strong{see} Llobera M.-Sluckin T.J. (2007). Zigzagging: Theoretical insights on climbing strategies, Journal of Theoretical Biology 249, 206-217.\cr
 
 \strong{Note} that the walking-speed-related cost functions listed above are used as they are, while the other functions are reciprocated.
 This is done since "gdistance works with conductivity rather than the more usual approach using costs"; therefore

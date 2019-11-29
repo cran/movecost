@@ -1,7 +1,7 @@
 Package: movecost
 Title: Calculation of Accumulated Cost Surface and Least-Cost Paths
         Related to Human Movement Across the Landscape
-Version: 0.2
+Version: 0.3
 Authors@R: person("Gianmarco", "Alberti", email = "gianmarcoalberti@gmail.com", role = c("aut", "cre"))
 Description: Provides the facility to calculate non-isotropic accumulated cost surface and least-cost paths using a number of human-movement-related cost functions that can be selected by the user. It just requires a Digital Terrain Model, a start location and (optionally) destination locations.
 Depends: R (>= 3.4.0)
@@ -12,8 +12,8 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.1.1
 NeedsCompilation: no
-Packaged: 2019-06-28 13:51:23 UTC; gianmarcoalberti
+Packaged: 2019-11-28 16:18:58 UTC; gianmarcoalberti
 Author: Gianmarco Alberti [aut, cre]
 Maintainer: Gianmarco Alberti <gianmarcoalberti@gmail.com>
 Repository: CRAN
-Date/Publication: 2019-06-28 14:10:03 UTC
+Date/Publication: 2019-11-29 19:20:02 UTC

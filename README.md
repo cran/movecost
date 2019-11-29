@@ -1,5 +1,5 @@
 # movecost
-vers 0.2
+vers 0.3
 
 `movecost` provides the facility to calculate anisotropic accumulated cost surface and least-cost paths using a number of human-movement-related cost functions that can be selected by the user. It just requires a Digital Terrain model, a start location and (optionally) destination locations.
 
@@ -63,6 +63,13 @@ modified version of the Tobler's function as proposed for (male) on-path hiking 
 proposed by Uriarte González; **see**: Chapa Brunet, T., García, J., Mayoral Herrera, V., & Uriarte González, A. (2008). GIS landscape models for the study of preindustrial settlement patterns in Mediterranean areas. In Geoinformation Technologies for Geo-Cultural Landscapes (pp. 255–273). CRC Press. https://doi.org/10.1201/9780203881613.ch12. The cost function is originally expressed in seconds; for the purpose of its implementation in this function, it is the reciprocal of time (1/T) that is used in order to eventually get T/1. Slope is in percent. Unlike the original cost function, here the pixel resolution is not taken into account since `gdistance` takes care of the cells' dimension when calculating accumulated costs.
 
 
+* Alberti's Tobler hiking function modified for animal foraging excursions:
+
+`(6 * exp(-3.5 * abs(x[adj] + 0.05))) * 0.25`
+
+proposed by Gianmarco Alberti; **see**: Locating potential pastoral foraging routes in Malta through the use of Geographic Information System (in press). The Tobler’s function has been rescaled to fit animal walking speed during foraging excursions. The distribution of the latter, as empirical data show, turns out to be right-skewed and to vary along a continuum. It ranges from very low speed values (corresponding to slow grazing activities grazing while walking) to comparatively higher values (up to about 4.0 km/h) corresponding to travels without grazing directional travel toward feeding stations. In an attempt to find a balance between different published figures, the function consider 1.5 km/h as the average flock speed, which roughly corresponds to the average speed recorded in some studies. The figure is considered the typical speed of flocks during excursions in which grazing takes place while walking, which in most situations can be considered a typical form of grazing. Tobler’s hiking function has been rescaled by a factor of 0.25 to represent the walking pace of a flock instead of humans. The factor corresponds to the ratio between the flock average speed (1.5 km/h) and the maximum human walking speed (about 6.0 km/h) on a favourable slope.
+
+
 * Relative energetic expenditure cost function:
 
 `1 / (tan((atan(abs(x[adj]))*180/pi)*pi/180) / tan (1*pi/180)) `
@@ -101,6 +108,14 @@ For this cost function, **see** Pandolf, K. B., Givoni, B., & Goldman, R. F. (19
 
 which modifies the Pandolf et al.'s equation; **see** Van Leusen, P. M. (2002). Pattern to process: methodological investigations into the formation and interpretation of spatial patterns in archaeological landscapes. University of Groningen. **Note** that, as per Herzog, I. (2013). Least-cost Paths - Some Methodological Issues, Internet Archaeology 36 (http://intarch.ac.uk/journal/issue36/index.html) and unlike Van Leusen (2002), in the above equation slope is expressed in percent and speed in m/s; also, in the last bit of the equantion, 10 replaces the value of 6 used by Van Leusen (as per Herzog 2013). **Note**: in the returned charts, the cost is transposed from Watts to Megawatts.
 
+
+* Llobera-Sluckin's metabolic energy expenditure cost function (in KJ/m)}:
+
+`1 / (2.635 + (17.37 * abs(x[adj])) + (42.37 * abs(x[adj])^2) - (21.43 * abs(x[adj])^3) + (14.93 * abs(x[adj])^4))`
+
+for which **see** Llobera M.-Sluckin T.J. (2007). Zigzagging: Theoretical insights on climbing strategies, Journal of Theoretical Biology 249, 206-217.
+
+
 **Note** that the walking-speed-related cost functions listed above are used as they are, while the other functions are reciprocated.
 This is done since "gdistance works with conductivity rather than the more usual approach using costs"; therefore
 "we need inverse cost functions" (Nakoinz-Knitter (2016). "Modelling Human Behaviour in Landscapes". New York: Springer, p. 183).
@@ -123,6 +138,9 @@ The function returns a list storing:
 <br>
 
 ## History
+`version 0.3`:
+added cost functions: Llobera-Sluckin's metabolic energy expenditure; Alberti's Tobler hiking function modified for animal foraging excursions.
+
 `version 0.2`: 
 unlike the previous version, the cost calculation is not based on a slope raster (in degrees) derived from the input dtm; instead, the procedure described in van Etten, "R Package gdistance: Distances and Routes on Geographical Grids" in Journal of Statistical Software 76(13), 2017, pp. 14-15 is followed. The altitudinal difference between dtm cells is first calculated and then divided by cell centres distance, so obtaining slope values (expressed as rise over run) changing according to the direction of movement. This has the important implication that the implemented cost functions are now truly anisotropic. The color ramp of the output accumulated cost raster has been changed.
 
