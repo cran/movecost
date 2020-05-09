@@ -1,5 +1,5 @@
 # movecost
-vers 0.3
+vers 0.4
 
 `movecost` provides the facility to calculate anisotropic accumulated cost surface and least-cost paths using a number of human-movement-related cost functions that can be selected by the user. It just requires a Digital Terrain model, a start location and (optionally) destination locations.
 
@@ -138,6 +138,9 @@ The function returns a list storing:
 <br>
 
 ## History
+`version 0.4`:
+Parameter `move` added, which provides the option to set the number of directions in which cells are connected in the cost calculation.
+
 `version 0.3`:
 added cost functions: Llobera-Sluckin's metabolic energy expenditure; Alberti's Tobler hiking function modified for animal foraging excursions.
 

@@ -13,7 +13,11 @@
 #'
 #' The function builds on functions out of Jacob van Etten's 'gdistance' package.
 #' Under the hood, movecost() calculates the slope as rise over run, following the procedure described
-#' by van Etten, "R Package gdistance: Distances and Routes on Geographical Grids" in Journal of Statistical Software 76(13), 2017, pp. 14-15.\cr
+#' by van Etten, "R Package gdistance: Distances and Routes on Geographical Grids" in Journal of Statistical Software 76(13), 2017, pp. 14-15.
+#' The number of directions in which cells are connected in the cost calculation can be set to 4 (rook's case), 8 (queen's case), or
+#' 16 (knight and one-cell queen moves) using the 'move' parameter (see 'Arguments').\cr
+#'
+#' Besides citing this package, you may want to refer to: \strong{Alberti (2019) <doi:10.1016/j.softx.2019.100331>}.\cr
 #'
 #' The following cost functions are implemented (\strong{x[adj]} stands for slope as rise/run calculated for adjacent cells):\cr
 #'
@@ -71,9 +75,9 @@
 #' \strong{see}: Locating potential pastoral foraging routes in Malta through the use of Geographic Information System (in press).\cr
 #' The Tobler’s function has been rescaled to fit animal walking speed during foraging excursions. The distribution of the latter, as empirical data show, turns out to be right-skewed
 #' and to vary along a continuum. It ranges from very low speed values (corresponding to slow grazing activities grazing while walking) to comparatively higher values
-#' (up to about 4.0 km/h) corresponding to travels without grazing directional travel toward feeding stations. In an attempt to find a balance between different published figures,
-#' the function consider 1.5 km/h as the average flock speed, which roughly corresponds to the average speed recorded in some studies.
-#' The figure is considered the typical speed of flocks during excursions in which grazing takes place while walking, which in most situations can be considered a typical form of grazing.
+#' (up to about 4.0 km/h) corresponding to travels without grazing (directional travel toward feeding stations).
+#' The function consider 1.5 km/h as the average flock speed, which roughly corresponds to the average speed recorded in some studies, and
+#' can be considered the typical speed of flocks during excursions in which grazing takes place while walking  (typical form of grazing in most situations).
 #' Tobler’s hiking function has been rescaled by a factor of 0.25 to represent the walking pace of a flock instead of humans.
 #' The factor corresponds to the ratio between the flock average speed (1.5 km/h) and the maximum human walking speed (about 6.0 km/h) on a favourable slope.
 #'
@@ -171,6 +175,7 @@
 #' @param time time-unit expressed by the accumulated raster and by the isolines if Tobler's and Tobler-related cost functions are used;
 #' 'h' for hour, 'm' for minutes.
 #' @param outp type of output: 'raster' or 'contours' (see Details).
+#' @param move number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).
 #' @param sl.crit critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see Details).
 #' @param W walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see Details).
 #' @param L carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see Details).
@@ -211,10 +216,13 @@
 #' # setting the time unit to hours and the isochrones interval to 0.05 hour;
 #' # also, since destination locations are provided,
 #' # least-cost paths from the origin to the destination locations will be calculated
-#' # and plotted
-#' result <- movecost(dtm=volc,origin=volc.loc, destin=destin.loc, breaks=0.05)
+#' # and plotted; 8-directions move is used
+#' result <- movecost(dtm=volc,origin=volc.loc, destin=destin.loc, move=8, breaks=0.05)
 #'
-movecost <- function (dtm, origin, destin=NULL, funct="t", time="h", outp="r", sl.crit=10, W=70, L=0, N=1, V=1.2, breaks=NULL, cont.lab=TRUE, destin.lab=TRUE, cex.breaks=0.6, cex.lcp.lab=0.6, oneplot=TRUE, export=FALSE){
+#' #same as above, but using 16-directions move (which is the default value)
+#' result <- movecost(dtm=volc,origin=volc.loc, destin=destin.loc, move=16, breaks=0.05)
+#'
+movecost <- function (dtm, origin, destin=NULL, funct="t", time="h", outp="r", move=16, sl.crit=10, W=70, L=0, N=1, V=1.2, breaks=NULL, cont.lab=TRUE, destin.lab=TRUE, cex.breaks=0.6, cex.lcp.lab=0.6, oneplot=TRUE, export=FALSE){
 
   #deactivate the warning messages because a warning that can be safely ignored will be produced by the procedure
   #used to get slope as rise over run
@@ -222,7 +230,7 @@ movecost <- function (dtm, origin, destin=NULL, funct="t", time="h", outp="r", s
 
   #calculate the altitudinal difference between adjacent cells
   altDiff <- function(x){x[2] - x[1]}
-  hd <- gdistance::transition(dtm, altDiff, 8, symm=FALSE)
+  hd <- gdistance::transition(dtm, altDiff, directions=move, symm=FALSE)
 
   #use the geoCorrection function to divide the altitudinal difference by the distance between cells
   #so getting slope as rise over run
@@ -376,7 +384,7 @@ movecost <- function (dtm, origin, destin=NULL, funct="t", time="h", outp="r", s
   }
 
   if(funct=="alb") {
-    #ALberti's modified Tobler hiking function, adapted for anomal foraging excursions
+    #Alberti's modified Tobler hiking function, adapted for anomal foraging excursions
     cost_function <- function(x){(6 * exp(-3.5 * abs(x[adj] + 0.05))) * 0.25}
 
     #set the labels to be used within the returned plot
@@ -390,7 +398,7 @@ movecost <- function (dtm, origin, destin=NULL, funct="t", time="h", outp="r", s
   if (funct=="t" | funct=="tofp" | funct=="mt" | funct=="ic" | funct=="icofp" | funct=="alb") {
 
     #restrict the speed calculation to adjacent cells by creating an index for adjacent cells (adj) with the function 'adjacent'
-    adj <- raster::adjacent(dtm, cells=1:ncell(dtm), pairs=TRUE, directions=8)
+    adj <- raster::adjacent(dtm, cells=1:ncell(dtm), pairs=TRUE, directions=move)
 
     speed <- slope
 
@@ -410,7 +418,7 @@ movecost <- function (dtm, origin, destin=NULL, funct="t", time="h", outp="r", s
   if (funct=="ree" | funct=="hrz" | funct=="wcs" | funct=="vl" | funct=="p" | funct=="ug" | funct=="ls") {
 
     #restrict the cost calculation to adjacent cells by creating an index for adjacent cells (adj) with the function 'adjacent'
-    adj <- raster::adjacent(dtm, cells=1:ncell(dtm), pairs=TRUE, directions=8)
+    adj <- raster::adjacent(dtm, cells=1:ncell(dtm), pairs=TRUE, directions=move)
 
     cost <- slope
 

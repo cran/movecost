@@ -1,3 +1,7 @@
+# movecost 0.4:
+
+* Parameter `move` added, which provides the option to set the number of directions in which cells are connected in the cost calculation.
+
 # movecost 0.3:
 
 * Added cost functions: Llobera-Sluckin's metabolic energy expenditure; Alberti's Tobler hiking function modified for animal foraging excursions.

@@ -4,7 +4,9 @@
 \name{volc.loc}
 \alias{volc.loc}
 \title{Dataset: location on the volcano Maunga Whau (Auckland, New Zealand)}
-\format{SpatialPointsDataFrame}
+\format{
+SpatialPointsDataFrame
+}
 \usage{
 data(volc.loc)
 }

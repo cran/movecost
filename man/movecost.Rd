@@ -4,11 +4,27 @@
 \alias{movecost}
 \title{R function for calculating accumulated anisotropic cost of movement across the terrain and least-cost paths from an origin}
 \usage{
-movecost(dtm, origin, destin = NULL, funct = "t", time = "h",
-  outp = "r", sl.crit = 10, W = 70, L = 0, N = 1, V = 1.2,
-  breaks = NULL, cont.lab = TRUE, destin.lab = TRUE,
-  cex.breaks = 0.6, cex.lcp.lab = 0.6, oneplot = TRUE,
-  export = FALSE)
+movecost(
+  dtm,
+  origin,
+  destin = NULL,
+  funct = "t",
+  time = "h",
+  outp = "r",
+  move = 16,
+  sl.crit = 10,
+  W = 70,
+  L = 0,
+  N = 1,
+  V = 1.2,
+  breaks = NULL,
+  cont.lab = TRUE,
+  destin.lab = TRUE,
+  cex.breaks = 0.6,
+  cex.lcp.lab = 0.6,
+  oneplot = TRUE,
+  export = FALSE
+)
 }
 \arguments{
 \item{dtm}{digital terrain model (RasterLayer class).}
@@ -34,6 +50,8 @@ movecost(dtm, origin, destin = NULL, funct = "t", time = "h",
 'h' for hour, 'm' for minutes.}
 
 \item{outp}{type of output: 'raster' or 'contours' (see Details).}
+
+\item{move}{number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).}
 
 \item{sl.crit}{critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see Details).}
 
@@ -85,7 +103,11 @@ storing a new variable named 'cost'.\cr
 
 The function builds on functions out of Jacob van Etten's 'gdistance' package.
 Under the hood, movecost() calculates the slope as rise over run, following the procedure described
-by van Etten, "R Package gdistance: Distances and Routes on Geographical Grids" in Journal of Statistical Software 76(13), 2017, pp. 14-15.\cr
+by van Etten, "R Package gdistance: Distances and Routes on Geographical Grids" in Journal of Statistical Software 76(13), 2017, pp. 14-15.
+The number of directions in which cells are connected in the cost calculation can be set to 4 (rook's case), 8 (queen's case), or
+16 (knight and one-cell queen moves) using the 'move' parameter (see 'Arguments').\cr
+
+Besides citing this package, you may want to refer to: \strong{Alberti (2019) <doi:10.1016/j.softx.2019.100331>}.\cr
 
 The following cost functions are implemented (\strong{x[adj]} stands for slope as rise/run calculated for adjacent cells):\cr
 
@@ -93,11 +115,13 @@ The following cost functions are implemented (\strong{x[adj]} stands for slope a
 
 \eqn{ 6 * exp(-3.5 * abs(x[adj] + 0.05)) }\cr
 
+
 \strong{Tobler's hiking function (off-path) (speed in kmh)}:\cr
 
 \eqn{ (6 * exp(-3.5 * abs(x[adj] + 0.05))) * 0.6 }\cr
 
 as per Tobler's indication, the off-path walking speed is reduced by 0.6.\cr
+
 
 \strong{Marquez-Perez et al.'s modified Tobler hiking function (speed in kmh)}:\cr
 
@@ -105,6 +129,7 @@ as per Tobler's indication, the off-path walking speed is reduced by 0.6.\cr
 
 modified version of the Tobler's hiking function as proposed by Joaquin Marquez-Parez, Ismael Vallejo-Villalta & Jose I. Alvarez-Francoso (2017), "Estimated travel time for walking trails in natural areas",
 Geografisk Tidsskrift-Danish Journal of Geography, 117:1, 53-62, DOI: 10.1080/00167223.2017.1316212.\cr
+
 
 \strong{Irmischer-Clarke's modified Tobler hiking function (on-path)}:\cr
 
@@ -114,9 +139,11 @@ modified version of the Tobler's function as proposed for (male) on-path hiking 
 Cartography and Geographic Information Science, 45(2), 177-186. https://doi.org/10.1080/15230406.2017.1292150. \strong{Note}: the function originally expresses speed in m/s; it has been is reshaped (multiplied by 3.6)
 to turn it into kmh for consistency with the other Tobler-related cost functions.\cr
 
+
 \strong{Irmischer-Clarke's modified Tobler hiking function (off-path)}:\cr
 
 \eqn{ (0.11 + 0.67 * exp(-(abs(x[adj])*100 + 2)^2 / (2 * 30)^2)) * 3.6 }\cr
+
 
 \strong{Uriarte Gonzalez's slope-dependant walking-time cost function}:\cr
 
@@ -129,6 +156,7 @@ The cost function is originally expressed in seconds; for the purpose of its imp
 T/1. Unlike the original cost function, here the pixel resolution is not taken into account since 'gdistance' takes care of the cells' dimension
 when calculating accumulated costs.
 
+
 \strong{Alberti's Tobler hiking function modified for animal foraging excursions}:\cr
 
 \eqn{ (6 * exp(-3.5 * abs(x[adj] + 0.05))) * 0.25 }\cr
@@ -137,11 +165,12 @@ proposed by Gianmarco Alberti;
 \strong{see}: Locating potential pastoral foraging routes in Malta through the use of Geographic Information System (in press).\cr
 The Tobler’s function has been rescaled to fit animal walking speed during foraging excursions. The distribution of the latter, as empirical data show, turns out to be right-skewed
 and to vary along a continuum. It ranges from very low speed values (corresponding to slow grazing activities grazing while walking) to comparatively higher values
-(up to about 4.0 km/h) corresponding to travels without grazing directional travel toward feeding stations. In an attempt to find a balance between different published figures,
-the function consider 1.5 km/h as the average flock speed, which roughly corresponds to the average speed recorded in some studies.
-The figure is considered the typical speed of flocks during excursions in which grazing takes place while walking, which in most situations can be considered a typical form of grazing.
+(up to about 4.0 km/h) corresponding to travels without grazing (directional travel toward feeding stations).
+The function consider 1.5 km/h as the average flock speed, which roughly corresponds to the average speed recorded in some studies, and
+can be considered the typical speed of flocks during excursions in which grazing takes place while walking  (typical form of grazing in most situations).
 Tobler’s hiking function has been rescaled by a factor of 0.25 to represent the walking pace of a flock instead of humans.
 The factor corresponds to the ratio between the flock average speed (1.5 km/h) and the maximum human walking speed (about 6.0 km/h) on a favourable slope.
+
 
 \strong{Relative energetic expenditure cost function}:\cr
 
@@ -153,11 +182,13 @@ slope-based cost function expressing change in potential energy expenditure;
 function; \strong{see also} ten Bruggencate, R. E., Stup, J. P., Milne, S. B., Stenton, D. R., Park, R. W., & Fayek, M. (2016). A human-centered GIS approach to modeling mobility on southern Baffin Island, Nunavut,
 Canada. Journal of Field Archaeology, 41(6), 684-698. https://doi.org/10.1080/00934690.2016.1234897.\cr
 
+
 \strong{Herzog's metabolic cost function in J/(kg*m)}:\cr
 
 \eqn{ 1 / ((1337.8 * abs(x[adj])^6) + (278.19 * abs(x[adj])^5) - (517.39 * abs(x[adj])^4) - (78.199 * abs(x[adj])^3) + (93.419 * abs(x[adj])^2) + (19.825 * abs(x[adj])) + 1.64) }\cr
 
 \strong{see} Herzog, I. (2016). Potential and Limits of Optimal Path Analysis. In A. Bevan & M. Lake (Eds.), Computational Approaches to Archaeological Spaces (pp. 179-211). New York: Routledge.\cr
+
 
 \strong{Wheeled-vehicle critical slope cost function}:\cr
 
@@ -165,6 +196,7 @@ Canada. Journal of Field Archaeology, 41(6), 684-698. https://doi.org/10.1080/00
 
 where \eqn{sl.crit} (=critical slope, in percent) is "the transition where switchbacks become more effective than direct uphill or downhill paths" and typically is in the range 8-16;
 \strong{see} Herzog, I. (2016). Potential and Limits of Optimal Path Analysis. In A. Bevan & M. Lake (Eds.), Computational Approaches to Archaeological Spaces (pp. 179-211). New York: Routledge. \cr
+
 
 \strong{Pandolf et al.'s metabolic energy expenditure cost function (in Watts)}:\cr
 
@@ -182,6 +214,7 @@ For the use of this cost function in a case study, \strong{see} Rademaker, K., R
 
 \strong{Note}: in the returned charts, the cost is transposed from Watts to Megawatts (see, e.g., Rademaker et al 2012 cited above).\cr
 
+
 \strong{Van Leusen's metabolic energy expenditure cost function (in Watts)}:\cr
 
 \eqn{ 1 / (1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * V^2 + 0.35 * V * abs(x[adj])*100) + 10))  }\cr
@@ -197,6 +230,7 @@ the value of 6 used by Van Leusen (as per Herzog 2013).\cr
 \eqn{ 1 / (2.635 + (17.37 * abs(x[adj])) + (42.37 * abs(x[adj])^2) - (21.43 * abs(x[adj])^3) + (14.93 * abs(x[adj])^4))  }\cr
 
 for which \strong{see} Llobera M.-Sluckin T.J. (2007). Zigzagging: Theoretical insights on climbing strategies, Journal of Theoretical Biology 249, 206-217.\cr
+
 
 \strong{Note} that the walking-speed-related cost functions listed above are used as they are, while the other functions are reciprocated.
 This is done since "gdistance works with conductivity rather than the more usual approach using costs"; therefore
@@ -227,8 +261,11 @@ data(destin.loc)
 # setting the time unit to hours and the isochrones interval to 0.05 hour;
 # also, since destination locations are provided,
 # least-cost paths from the origin to the destination locations will be calculated
-# and plotted
-result <- movecost(dtm=volc,origin=volc.loc, destin=destin.loc, breaks=0.05)
+# and plotted; 8-directions move is used
+result <- movecost(dtm=volc,origin=volc.loc, destin=destin.loc, move=8, breaks=0.05)
+
+#same as above, but using 16-directions move (which is the default value)
+result <- movecost(dtm=volc,origin=volc.loc, destin=destin.loc, move=16, breaks=0.05)
 
 }
 \keyword{movecost}
