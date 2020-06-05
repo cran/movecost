@@ -1,3 +1,8 @@
+# movecost 0.5:
+
+* Irmischer-Clarke's modified Tobler hiking functions for female added. This entailed modifying the name of the parameters as follows: `icmonp` for on-path male, `icmoffp` for off-path male, `icfonp` for on-path female, `icfoffp` for off-path female.
+* Minor improvements to the layout of the help documentation.
+
 # movecost 0.4:
 
 * Parameter `move` added, which provides the option to set the number of directions in which cells are connected in the cost calculation.

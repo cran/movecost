@@ -1,5 +1,5 @@
 # movecost
-vers 0.4
+vers 0.5
 
 `movecost` provides the facility to calculate anisotropic accumulated cost surface and least-cost paths using a number of human-movement-related cost functions that can be selected by the user. It just requires a Digital Terrain model, a start location and (optionally) destination locations.
 
@@ -44,16 +44,23 @@ as per Tobler's indication, the off-path walking speed is reduced by 0.6.
 modified version of the Tobler's hiking function as proposed by Joaquín Márquez-Pérez, Ismael Vallejo-Villalta & José I. Álvarez-Francoso (2017), "Estimated travel time for walking trails in natural areas", Geografisk Tidsskrift-Danish Journal of Geography, 117:1, 53-62, DOI: 10.1080/00167223.2017.1316212.
 
 
-* Irmischer-Clarke's modified Tobler hiking function (on-path):
+* Irmischer-Clarke's modified Tobler hiking function (male, on-path):
 
 `(0.11 + exp(-(abs(x[adj])*100 + 5)^2 / (2 * 30)^2)) * 3.6`
 
-modified version of the Tobler's function as proposed for (male) on-path hiking by Irmischer, I. J., & Clarke, K. C. (2018). Measuring and modeling the speed of human navigation. Cartography and Geographic Information Science, 45(2), 177–186. https://doi.org/10.1080/15230406.2017.1292150. **Note**: the function originally expresses speed in m/s; it has been is reshaped (multiplied by 3.6) to turn it into kmh for consistency with the other Tobler-related cost functions; slope is in percent.
+modified version of the Tobler's function as proposed for (male) on-path hiking by Irmischer, I. J., & Clarke, K. C. (2018). Measuring and modeling the speed of human navigation. Cartography and Geographic Information Science, 45(2), 177–186. https://doi.org/10.1080/15230406.2017.1292150. **Note**: all the Irmischer-Clarke's functions are originally express speed in m/s; they have been reshaped (multiplied by 3.6) to turn m/s into km/h for consistency with the other Tobler-related cost functions; slope is in percent.
 
-
-* Irmischer-Clarke's modified Tobler hiking function (off-path):
+* Irmischer-Clarke's modified Tobler hiking function (male, off-path):
 
 `(0.11 + 0.67 * exp(-(abs(x[adj])*100 + 2)^2 / (2 * 30)^2)) * 3.6`
+
+* Irmischer-Clarke's modified Tobler hiking function (female, on-path)
+
+`(0.95 * (0.11 + exp(-(abs(x[adj]) * 100 + 5)^2/(2 * 30^2)))) * 3.6`
+
+* Irmischer-Clarke's modified Tobler hiking function (female, off-path)}:
+
+`(0.95 * (0.11 + 0.67 * exp(-(abs(x[adj]) * 100 + 2)^2/(2 * 30^2)))) * 3.6`
 
 
 * Uriarte González's slope-dependant walking-time cost function:
@@ -138,6 +145,9 @@ The function returns a list storing:
 <br>
 
 ## History
+`version 0.5`:
+Irmischer-Clarke's modified Tobler hiking functions for female added. This entailed modifying the name of the parameters as follows: `icmonp` for on-path male, `icmoffp` for off-path male, `icfonp` for on-path female, `icfoffp` for off-path female. Minor improvements to the layout of the help documentation.
+
 `version 0.4`:
 Parameter `move` added, which provides the option to set the number of directions in which cells are connected in the cost calculation.
 

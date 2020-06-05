@@ -33,17 +33,20 @@ movecost(
 
 \item{destin}{location(s) to which least-cost path(s) is calculated (SpatialPointsDataFrame class).}
 
-\item{funct}{cost function to be used: \strong{t} (default) uses the on-path Tobler's hiking function;
-\strong{tofp} uses the off-path Tobler's hiking function; \strong{mt} uses the modified Tobler's function;
-\strong{ic} uses the Irmischer-Clarke's modified Tobler's hiking function (on-path);
-\strong{icofp} uses the Irmischer-Clarke's modified Tobler's hiking function (off-path);
-\strong{ug} uses the Uriarte Gonzalez's slope-dependant walking-time cost function;
-\strong{alb} uses the Alberti's Tobler hiking function modified for animal foraging excursions;
-\strong{ree} uses the relative energetic expenditure cost function;
-\strong{hrz} uses the Herzog's metabolic cost function;
-\strong{wcs} uses the wheeled-vehicle critical slope cost function;
-\strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;
-\strong{vl} uses the Van Leusen's metabolic energy expenditure cost function.
+\item{funct}{cost function to be used:\cr \strong{t} (default) uses the on-path Tobler's hiking function;\cr
+\strong{tofp} uses the off-path Tobler's hiking function;\cr
+\strong{mt} uses the Marquez-Perez et al.'s modified Tobler's function;\cr
+\strong{icmonp} uses the Irmischer-Clarke's modified Tobler's hiking function (male, on-path);\cr
+\strong{icmoffp} uses the Irmischer-Clarke's modified Tobler's hiking function (male, off-path);\cr
+\strong{icfonp} uses the Irmischer-Clarke's modified Tobler's hiking function (female, on-path);\cr
+\strong{icfoffp} uses the Irmischer-Clarke's modified Tobler's hiking function (female, off-path);\cr
+\strong{ug} uses the Uriarte Gonzalez's slope-dependant walking-time cost function;\cr
+\strong{alb} uses the Alberti's Tobler hiking function modified for animal foraging excursions;\cr
+\strong{ree} uses the relative energetic expenditure cost function;\cr
+\strong{hrz} uses the Herzog's metabolic cost function;\cr
+\strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
+\strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;\cr
+\strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
 \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function (see Details).}
 
 \item{time}{time-unit expressed by the accumulated raster and by the isolines if Tobler's and Tobler-related cost functions are used;
@@ -131,18 +134,25 @@ modified version of the Tobler's hiking function as proposed by Joaquin Marquez-
 Geografisk Tidsskrift-Danish Journal of Geography, 117:1, 53-62, DOI: 10.1080/00167223.2017.1316212.\cr
 
 
-\strong{Irmischer-Clarke's modified Tobler hiking function (on-path)}:\cr
+\strong{Irmischer-Clarke's modified Tobler hiking function (male, on-path)}:\cr
 
 \eqn{ (0.11 + exp(-(abs(x[adj])*100 + 5)^2 / (2 * 30)^2)) * 3.6 }\cr
 
 modified version of the Tobler's function as proposed for (male) on-path hiking by Irmischer, I. J., & Clarke, K. C. (2018). Measuring and modeling the speed of human navigation.
-Cartography and Geographic Information Science, 45(2), 177-186. https://doi.org/10.1080/15230406.2017.1292150. \strong{Note}: the function originally expresses speed in m/s; it has been is reshaped (multiplied by 3.6)
-to turn it into kmh for consistency with the other Tobler-related cost functions.\cr
+Cartography and Geographic Information Science, 45(2), 177-186. https://doi.org/10.1080/15230406.2017.1292150. \strong{Note}: all the all the Irmischer-Clarke's functions are
+originally express speed in m/s; they have been reshaped (multiplied by 3.6) to turn m/s into km/h for consistency with the other Tobler-related cost functions; slope is in percent.\cr
 
-
-\strong{Irmischer-Clarke's modified Tobler hiking function (off-path)}:\cr
+\strong{Irmischer-Clarke's modified Tobler hiking function (male, off-path)}:\cr
 
 \eqn{ (0.11 + 0.67 * exp(-(abs(x[adj])*100 + 2)^2 / (2 * 30)^2)) * 3.6 }\cr
+
+\strong{Irmischer-Clarke's modified Tobler hiking function (female, on-path)}:\cr
+
+\eqn{ (0.95 * (0.11 + exp(-(abs(x[adj]) * 100 + 5)^2/(2 * 30^2)))) * 3.6 }\cr
+
+\strong{Irmischer-Clarke's modified Tobler hiking function (female, off-path)}:\cr
+
+\eqn{ (0.95 * (0.11 + 0.67 * exp(-(abs(x[adj]) * 100 + 2)^2/(2 * 30^2)))) * 3.6 }\cr
 
 
 \strong{Uriarte Gonzalez's slope-dependant walking-time cost function}:\cr

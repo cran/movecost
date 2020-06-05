@@ -41,18 +41,25 @@
 #' Geografisk Tidsskrift-Danish Journal of Geography, 117:1, 53-62, DOI: 10.1080/00167223.2017.1316212.\cr
 #'
 #'
-#' \strong{Irmischer-Clarke's modified Tobler hiking function (on-path)}:\cr
+#' \strong{Irmischer-Clarke's modified Tobler hiking function (male, on-path)}:\cr
 #'
 #' \eqn{ (0.11 + exp(-(abs(x[adj])*100 + 5)^2 / (2 * 30)^2)) * 3.6 }\cr
 #'
 #' modified version of the Tobler's function as proposed for (male) on-path hiking by Irmischer, I. J., & Clarke, K. C. (2018). Measuring and modeling the speed of human navigation.
-#' Cartography and Geographic Information Science, 45(2), 177-186. https://doi.org/10.1080/15230406.2017.1292150. \strong{Note}: the function originally expresses speed in m/s; it has been is reshaped (multiplied by 3.6)
-#' to turn it into kmh for consistency with the other Tobler-related cost functions.\cr
+#' Cartography and Geographic Information Science, 45(2), 177-186. https://doi.org/10.1080/15230406.2017.1292150. \strong{Note}: all the all the Irmischer-Clarke's functions are
+#' originally express speed in m/s; they have been reshaped (multiplied by 3.6) to turn m/s into km/h for consistency with the other Tobler-related cost functions; slope is in percent.\cr
 #'
-#'
-#'\strong{Irmischer-Clarke's modified Tobler hiking function (off-path)}:\cr
+#'\strong{Irmischer-Clarke's modified Tobler hiking function (male, off-path)}:\cr
 #'
 #' \eqn{ (0.11 + 0.67 * exp(-(abs(x[adj])*100 + 2)^2 / (2 * 30)^2)) * 3.6 }\cr
+#'
+#' \strong{Irmischer-Clarke's modified Tobler hiking function (female, on-path)}:\cr
+#'
+#' \eqn{ (0.95 * (0.11 + exp(-(abs(x[adj]) * 100 + 5)^2/(2 * 30^2)))) * 3.6 }\cr
+#'
+#' \strong{Irmischer-Clarke's modified Tobler hiking function (female, off-path)}:\cr
+#'
+#' \eqn{ (0.95 * (0.11 + 0.67 * exp(-(abs(x[adj]) * 100 + 2)^2/(2 * 30^2)))) * 3.6 }\cr
 #'
 #'
 #'\strong{Uriarte Gonzalez's slope-dependant walking-time cost function}:\cr
@@ -160,17 +167,20 @@
 #' @param dtm digital terrain model (RasterLayer class).
 #' @param origin location from which the walking time is computed (SpatialPointsDataFrame class).
 #' @param destin location(s) to which least-cost path(s) is calculated (SpatialPointsDataFrame class).
-#' @param funct cost function to be used: \strong{t} (default) uses the on-path Tobler's hiking function;
-#' \strong{tofp} uses the off-path Tobler's hiking function; \strong{mt} uses the modified Tobler's function;
-#' \strong{ic} uses the Irmischer-Clarke's modified Tobler's hiking function (on-path);
-#' \strong{icofp} uses the Irmischer-Clarke's modified Tobler's hiking function (off-path);
-#' \strong{ug} uses the Uriarte Gonzalez's slope-dependant walking-time cost function;
-#' \strong{alb} uses the Alberti's Tobler hiking function modified for animal foraging excursions;
-#' \strong{ree} uses the relative energetic expenditure cost function;
-#' \strong{hrz} uses the Herzog's metabolic cost function;
-#' \strong{wcs} uses the wheeled-vehicle critical slope cost function;
-#' \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;
-#' \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function.
+#' @param funct cost function to be used:\cr \strong{t} (default) uses the on-path Tobler's hiking function;\cr
+#' \strong{tofp} uses the off-path Tobler's hiking function;\cr
+#' \strong{mt} uses the Marquez-Perez et al.'s modified Tobler's function;\cr
+#' \strong{icmonp} uses the Irmischer-Clarke's modified Tobler's hiking function (male, on-path);\cr
+#' \strong{icmoffp} uses the Irmischer-Clarke's modified Tobler's hiking function (male, off-path);\cr
+#' \strong{icfonp} uses the Irmischer-Clarke's modified Tobler's hiking function (female, on-path);\cr
+#' \strong{icfoffp} uses the Irmischer-Clarke's modified Tobler's hiking function (female, off-path);\cr
+#' \strong{ug} uses the Uriarte Gonzalez's slope-dependant walking-time cost function;\cr
+#' \strong{alb} uses the Alberti's Tobler hiking function modified for animal foraging excursions;\cr
+#' \strong{ree} uses the relative energetic expenditure cost function;\cr
+#' \strong{hrz} uses the Herzog's metabolic cost function;\cr
+#' \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
+#' \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;\cr
+#' \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
 #' \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function (see Details).
 #' @param time time-unit expressed by the accumulated raster and by the isolines if Tobler's and Tobler-related cost functions are used;
 #' 'h' for hour, 'm' for minutes.
@@ -271,30 +281,56 @@ movecost <- function (dtm, origin, destin=NULL, funct="t", time="h", outp="r", m
     sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the Marquez-Perez et al.'s modified Tobler hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
   }
 
-  if(funct=="ic") {
-    #Irmischer-Clarke's modified Tobler hiking function; originally in m/s (males, on-path);
+  if(funct=="icmonp") {
+    #Irmischer-Clarke's modified Tobler hiking function; originally in m/s (male, on-path);
     # the formula is reshaped (multiplied by 3.6) below to turn it into kmh for consistency with the other Tobler-related cost functions;
     # Slope in percent.
     cost_function <- function(x){(0.11 + exp(-(abs(x[adj])*100 + 5)^2 / (2 * 30^2))) * 3.6}
 
     #set the labels to be used within the returned plot
     main.title <- paste0("Walking-time isochrones (in ", time, ") around origin")
-    sub.title <- "Walking-time based on the (on-path) Irmischer-Clarke's modified Tobler hiking function"
+    sub.title <- "Walking-time based on the (male, on-path) Irmischer-Clarke's modified Tobler hiking function"
     legend.cost <- paste0("walking-time (", time,")")
-    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the (on-path) Irmischer-Clarke's modified Tobler hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
+    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the (male, on-path) Irmischer-Clarke's modified Tobler hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
   }
 
-  if(funct=="icofp") {
-    #Irmischer-Clarke's modified Tobler hiking function; originally in m/s (males, off-path);
+  if(funct=="icmoffp") {
+    #Irmischer-Clarke's modified Tobler hiking function; originally in m/s (male, off-path);
     # the formula is reshaped (multiplied by 3.6) below to turn it into kmh for consistency with the other Tobler-related cost functions;
     # Slope in percent.
-    cost_function <- function(x){(0.11 + 0.67 * exp(-(abs(x[adj])*100 + 2)^2 / (2 * 30^2))) * 3.6}
+    cost_function <- function(x){ (0.11 + 0.67 * exp(-(abs(x[adj])*100 + 2)^2 / (2 * 30^2))) * 3.6 }
 
     #set the labels to be used within the returned plot
     main.title <- paste0("Walking-time isochrones (in ", time, ") around origin")
-    sub.title <- "Walking-time based on the (off-path) Irmischer-Clarke's modified Tobler hiking function"
+    sub.title <- "Walking-time based on the (male, off-path) Irmischer-Clarke's modified Tobler hiking function"
     legend.cost <- paste0("walking-time (", time,")")
-    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the (off-path) Irmischer-Clarke's modified Tobler hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
+    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the (male, off-path) Irmischer-Clarke's modified Tobler hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
+  }
+
+  if(funct=="icfonp") {
+    #Irmischer-Clarke's modified Tobler hiking function; originally in m/s (female, on-path);
+    # the formula is reshaped (multiplied by 3.6) below to turn it into kmh for consistency with the other Tobler-related cost functions;
+    # Slope in percent.
+    cost_function <- function(x){ (0.95 * (0.11 + exp(-(abs(x[adj]) * 100 + 5)^2/(2 * 30^2)))) * 3.6 }
+
+    #set the labels to be used within the returned plot
+    main.title <- paste0("Walking-time isochrones (in ", time, ") around origin")
+    sub.title <- "Walking-time based on the (female, on-path) Irmischer-Clarke's modified Tobler hiking function"
+    legend.cost <- paste0("walking-time (", time,")")
+    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the (female, on-path) Irmischer-Clarke's modified Tobler hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
+  }
+
+  if(funct=="icfoffp") {
+    #Irmischer-Clarke's modified Tobler hiking function; originally in m/s (female, off-path);
+    # the formula is reshaped (multiplied by 3.6) below to turn it into kmh for consistency with the other Tobler-related cost functions;
+    # Slope in percent.
+    cost_function <- function(x){ (0.95 * (0.11 + 0.67 * exp(-(abs(x[adj]) * 100 + 2)^2/(2 * 30^2)))) * 3.6 }
+
+    #set the labels to be used within the returned plot
+    main.title <- paste0("Walking-time isochrones (in ", time, ") around origin")
+    sub.title <- "Walking-time based on the (female, off-path) Irmischer-Clarke's modified Tobler hiking function"
+    legend.cost <- paste0("walking-time (", time,")")
+    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the (female, off-path) Irmischer-Clarke's modified Tobler hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
   }
 
   if(funct=="ug") {
@@ -395,7 +431,7 @@ movecost <- function (dtm, origin, destin=NULL, funct="t", time="h", outp="r", m
   }
 
   #cost calculation for walking-speed-based cost functions
-  if (funct=="t" | funct=="tofp" | funct=="mt" | funct=="ic" | funct=="icofp" | funct=="alb") {
+  if (funct=="t" | funct=="tofp" | funct=="mt" | funct=="icmonp" | funct=="icmoffp" | funct=="icfonp" | funct=="icfoffp" | funct=="alb") {
 
     #restrict the speed calculation to adjacent cells by creating an index for adjacent cells (adj) with the function 'adjacent'
     adj <- raster::adjacent(dtm, cells=1:ncell(dtm), pairs=TRUE, directions=move)
@@ -434,7 +470,7 @@ movecost <- function (dtm, origin, destin=NULL, funct="t", time="h", outp="r", m
 
   #if user select the Tobler's, the modified Tobler's, the Irmischer-Clarke's,
   #the Uriarte Gonzalez's or the Alberti's function, turn seconds into the user-defined time-scale
-  if (funct=="t" | funct=="tofp" | funct=="mt" | funct=="ic" | funct=="icofp" | funct=="ug" | funct=="alb") {
+    if (funct=="t" | funct=="tofp" | funct=="mt" | funct=="icmonp" | funct=="icmoffp" | funct=="icfonp" | funct=="icfoffp" | funct=="ug" | funct=="alb"){
     if (time=="h") {
       #turn seconds into hours
       accum_final <- accum_final / 3600
