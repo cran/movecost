@@ -1,3 +1,8 @@
+# movecost 0.6:
+* The facility to download online elevation data (when an input DTM is not provided) has been added; it relies on the 'elevatr' package.
+* Three new datasets (to be used to showcase the added functionality) have been added.
+* Help documentation updated accordingly.
+
 # movecost 0.5:
 
 * Irmischer-Clarke's modified Tobler hiking functions for female added. This entailed modifying the name of the parameters as follows: `icmonp` for on-path male, `icmoffp` for off-path male, `icfonp` for on-path female, `icfoffp` for off-path female.

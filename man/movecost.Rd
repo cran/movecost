@@ -5,9 +5,10 @@
 \title{R function for calculating accumulated anisotropic cost of movement across the terrain and least-cost paths from an origin}
 \usage{
 movecost(
-  dtm,
+  dtm = NULL,
   origin,
   destin = NULL,
+  studyplot = NULL,
   funct = "t",
   time = "h",
   outp = "r",
@@ -17,6 +18,7 @@ movecost(
   L = 0,
   N = 1,
   V = 1.2,
+  z = 9,
   breaks = NULL,
   cont.lab = TRUE,
   destin.lab = TRUE,
@@ -27,11 +29,13 @@ movecost(
 )
 }
 \arguments{
-\item{dtm}{digital terrain model (RasterLayer class).}
+\item{dtm}{Digital Terrain Model (RasterLayer class).}
 
 \item{origin}{location from which the walking time is computed (SpatialPointsDataFrame class).}
 
 \item{destin}{location(s) to which least-cost path(s) is calculated (SpatialPointsDataFrame class).}
+
+\item{studyplot}{polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see Details); NULL is default.}
 
 \item{funct}{cost function to be used:\cr \strong{t} (default) uses the on-path Tobler's hiking function;\cr
 \strong{tofp} uses the off-path Tobler's hiking function;\cr
@@ -66,6 +70,8 @@ movecost(
 
 \item{V}{speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; see Details).}
 
+\item{z}{zoom level for the elevation data downloaded from online sources (9 by default) (see Details).}
+
 \item{breaks}{isolines interval; if no value is supplied, the interval is set by default to 1/10 of the range of values of the accumulated cost surface.}
 
 \item{cont.lab}{if set to TRUE (default) display the labels of the contours over the accumulated cost surface.}
@@ -78,12 +84,13 @@ movecost(
 
 \item{oneplot}{TRUE (default) or FALSE if the user wants or does not want the plots displayed in a single window.}
 
-\item{export}{TRUE or FALSE (default) if the user wants or does not want the outputs to be exported; if TRUE, the accumulated cost surface will be
-exported as a GeoTiff file, while the isolines and the least-cost path(s) will be exported as shapefile; all the exported files will bear a suffix corresponding
+\item{export}{TRUE or FALSE (default) if the user wants or does not want the outputs to be exported; if TRUE, the DTM and the accumulated cost surface will be
+exported as a GeoTiff file, while the isolines and the least-cost path(s) will be exported as shapefile; all the exported files (excluding the DTM) will bear a suffix corresponding
 to the cost function selected by the user.}
 }
 \value{
 The function returns a list storing the following components \itemize{
+ \item{dtm: }{Digital Terrain Model ('RasterLayer' class)}
  \item{accumulated.cost.raster: }{raster representing the accumualted cost ('RasterLayer' class)}
  \item{isolines: }{contour lines derived from the accumulated cost surface ('SpatialLinesDataFrame' class)}
  \item{LCPs: }{estimated least-cost paths ('SpatialLines' class)}
@@ -98,19 +105,34 @@ The function takes as input a Digital Terrain Model ('RasterLayer' class) and a 
 the starting location, i.e. the location from which the accumulated cost is calculated. \cr
 }
 \details{
-If the parameter 'destin' is fed with a dataset representing destination location(s) ('SpatialPointsDataFrame' class), the function also calculate
-least-cost path(s) plotted on the input DTM; the length of each path will be saved under the variable 'length' stored in the 'LCPs' dataset ('SpatialLines' class) returned by the function.
-The red dot(s) representing the destination location(s) will be labelled with numeric values representing
-the cost value at the location(s). The cost value will be also appended to the updated destination dataset returned by the function and
+If the parameter 'destin' is fed with a dataset representing destination location(s) ('SpatialPointsDataFrame' class), the function also calculates
+least-cost path(s) plotted on the input DTM; the length of each path is saved under the variable 'length' stored in the 'LCPs' dataset ('SpatialLines' class) returned by the function.
+The red dot(s) representing the destination location(s) are labelled with numeric values representing
+the cost value at the location(s). The cost value is also appended to the updated destination dataset returned by the function and
 storing a new variable named 'cost'.\cr
 
-The function builds on functions out of Jacob van Etten's 'gdistance' package.
-Under the hood, movecost() calculates the slope as rise over run, following the procedure described
+It is worth reminding the user(s) that all the input layers (i.e., DTM, start location, and destination locations) must use the same projected coordinate system.\cr
+
+If a DTM is not provided, 'movecost' will download elevation data from online sources.
+Elevation data will be aquired for the area enclosed  by the  polygon supplied by the 'studyplot' parameter (SpatialPolygonDataFrame class).
+To tap online elevation data, 'movecost' internally builds on the
+\code{\link[elevatr]{get_elev_raster}} function from the \emph{elevatr} package.\cr
+The zoom level of the downloaded DTM (i.e., its resolution) is controlled by the parameter 'z', which is
+set to 9 by default (a trade off between resolution and download time).
+To know more about what elevation data are tapped from online
+sources, visit: https://cran.r-project.org/web/packages/elevatr/vignettes/introduction_to_elevatr.html.
+For more information about the elevation data resolution per zoom level, visit
+https://github.com/tilezen/joerd/blob/master/docs/data-sources.md#what-is-the-ground-resolution \cr
+
+For the cost-surface and LCPs calculation, 'movecost' builds on functions from Jacob van Etten's
+\href{https://cran.r-project.org/package=gdistance}{gdistance} package.
+Under the hood, 'movecost' calculates the slope as rise over run, following the procedure described
 by van Etten, "R Package gdistance: Distances and Routes on Geographical Grids" in Journal of Statistical Software 76(13), 2017, pp. 14-15.
 The number of directions in which cells are connected in the cost calculation can be set to 4 (rook's case), 8 (queen's case), or
 16 (knight and one-cell queen moves) using the 'move' parameter (see 'Arguments').\cr
 
-Besides citing this package, you may want to refer to: \strong{Alberti (2019) <doi:10.1016/j.softx.2019.100331>}.\cr
+Besides citing this package, you may want to refer to the following journal article:
+\strong{Alberti (2019) <doi:10.1016/j.softx.2019.100331>}.\cr
 
 The following cost functions are implemented (\strong{x[adj]} stands for slope as rise/run calculated for adjacent cells):\cr
 
@@ -172,7 +194,7 @@ when calculating accumulated costs.
 \eqn{ (6 * exp(-3.5 * abs(x[adj] + 0.05))) * 0.25 }\cr
 
 proposed by Gianmarco Alberti;
-\strong{see}: Locating potential pastoral foraging routes in Malta through the use of Geographic Information System (in press).\cr
+\strong{see}: \href{https://www.um.edu.mt/library/oar/bitstream/123456789/64172/1/Chapter_9_Locating_potential_pastoral_foraging_routes.pdf}{Locating potential pastoral foraging routes in Malta through the use of a Geographic Information System}.
 The Tobler’s function has been rescaled to fit animal walking speed during foraging excursions. The distribution of the latter, as empirical data show, turns out to be right-skewed
 and to vary along a continuum. It ranges from very low speed values (corresponding to slow grazing activities grazing while walking) to comparatively higher values
 (up to about 4.0 km/h) corresponding to travels without grazing (directional travel toward feeding stations).
@@ -267,15 +289,24 @@ data(volc.loc)
 # load the sample destination locations on the above DTM
 data(destin.loc)
 
-# calculate walking-time isochrones based on the on-path Tobler's hiking function,
+# calculate walking-time isochrones based on the on-path Tobler's hiking function (default),
 # setting the time unit to hours and the isochrones interval to 0.05 hour;
 # also, since destination locations are provided,
 # least-cost paths from the origin to the destination locations will be calculated
 # and plotted; 8-directions move is used
-result <- movecost(dtm=volc,origin=volc.loc, destin=destin.loc, move=8, breaks=0.05)
 
-#same as above, but using 16-directions move (which is the default value)
-result <- movecost(dtm=volc,origin=volc.loc, destin=destin.loc, move=16, breaks=0.05)
+result <- movecost(dtm=volc, origin=volc.loc, destin=destin.loc, move=8, breaks=0.05)
 
+
+# same as above, but using 16-directions move (which is the default value) and
+# the Irmischer-Clarke's modified Tobler's hiking function (male, on-path)
+
+result <- movecost(dtm=volc, origin=volc.loc, destin=destin.loc, funct="icmonp",
+move=16, breaks=0.05)
+
+
+}
+\seealso{
+\code{\link[elevatr]{get_elev_raster}}
 }
 \keyword{movecost}
