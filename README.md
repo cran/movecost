@@ -1,5 +1,9 @@
 # movecost
-vers 0.6
+vers 0.7
+
+## History
+`version 0.7`:
+Function 'movecorr()' added. In the 'movecost()' function, the option has been added to have the function producing or not a graphical output (via the 'graph.out'parameter).The Marquez-Perez et al.'s modified Tobler's function has been renamed for consistency with the names given to the other functions: from 'mt' (which was standing for "modified Tobler"") to 'mp' (which stands for "Marquez-Perez"").
 
 ## History
 `version 0.6`:

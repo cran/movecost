@@ -1,13 +1,14 @@
-fd820d0188c7fec4471f577693bb38fc *DESCRIPTION
-6bf5c186ac80e4f135141ab80db11560 *NAMESPACE
-7645629d94bf7d8ea78cc04966a77317 *NEWS.md
+14f5cb3d22818515515ad3960244d1ca *DESCRIPTION
+1ea60f07d360c2ca82ae475b2cab58eb *NAMESPACE
+b1dd014b4ecf2a263c009632aa4fdc66 *NEWS.md
 619030f1e96293f15128a09d6440b236 *R/Etna_boundary.r
 038caa329d53d3957fe68cc161adf100 *R/Etna_end_location.r
 4d618e16131dafe2ebb4acefccfe5b84 *R/Etna_start_location.r
 62e071c5bcd473a5edc2ebb6ad69ce31 *R/destin.loc.r
-ff0130c135c41a7e0f0ae5731b04311c *R/movecost.R
+1b4202e37b970037a58aac7f19348af7 *R/movecorr.R
+3e0617d22cde241b0458556f1b0d9526 *R/movecost.R
 221eb371f3cc5271cc3bf178f57f64e8 *R/volc.loc.r
-6775d405390ba61c04db570974ce06b9 *README.md
+80da88d07793575aa0a26cc375e3cde3 *README.md
 237c733da8f085d28a6871414dcb549f *data/Etna_boundary.rda
 8f9cf376d9f780b1efca64b3bb1a1aef *data/Etna_end_location.rda
 d31b0727874d762794311603b014beab *data/Etna_start_location.rda
@@ -17,5 +18,6 @@ d31b0727874d762794311603b014beab *data/Etna_start_location.rda
 b76911bafe7a11c58261543c719c5727 *man/Etna_end_location.Rd
 f8dd5fe0b653e7d08f5751a83e838056 *man/Etna_start_location.Rd
 1d9e923fb66671bd0bb30f56f33da6ad *man/destin.loc.Rd
-6010aad4daa3388ddc794efc2d610f9a *man/movecost.Rd
+f8f14c0dd1880512b2dcf7d07da2412f *man/movecorr.Rd
+fc76dc5ec8c76cd39b142e587b136d4f *man/movecost.Rd
 a3abef6a71985213b2b4c7250471fbe1 *man/volc.loc.Rd

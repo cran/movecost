@@ -24,14 +24,15 @@ movecost(
   destin.lab = TRUE,
   cex.breaks = 0.6,
   cex.lcp.lab = 0.6,
+  graph.out = TRUE,
   oneplot = TRUE,
   export = FALSE
 )
 }
 \arguments{
-\item{dtm}{Digital Terrain Model (RasterLayer class).}
+\item{dtm}{Digital Terrain Model (RasterLayer class); if not provided, elevation data will be acquired online for the area enclosed by the 'studyplot' parameter (see Details).}
 
-\item{origin}{location from which the walking time is computed (SpatialPointsDataFrame class).}
+\item{origin}{location from which the cost surface is calculated (SpatialPointsDataFrame class).}
 
 \item{destin}{location(s) to which least-cost path(s) is calculated (SpatialPointsDataFrame class).}
 
@@ -39,7 +40,7 @@ movecost(
 
 \item{funct}{cost function to be used:\cr \strong{t} (default) uses the on-path Tobler's hiking function;\cr
 \strong{tofp} uses the off-path Tobler's hiking function;\cr
-\strong{mt} uses the Marquez-Perez et al.'s modified Tobler's function;\cr
+\strong{mp} uses the Marquez-Perez et al.'s modified Tobler's function;\cr
 \strong{icmonp} uses the Irmischer-Clarke's modified Tobler's hiking function (male, on-path);\cr
 \strong{icmoffp} uses the Irmischer-Clarke's modified Tobler's hiking function (male, off-path);\cr
 \strong{icfonp} uses the Irmischer-Clarke's modified Tobler's hiking function (female, on-path);\cr
@@ -70,7 +71,7 @@ movecost(
 
 \item{V}{speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; see Details).}
 
-\item{z}{zoom level for the elevation data downloaded from online sources (9 by default) (see Details).}
+\item{z}{zoom level for the elevation data downloaded from online sources (0 to 15; 9 by default) (see Details and \code{\link[elevatr]{get_elev_raster}}).}
 
 \item{breaks}{isolines interval; if no value is supplied, the interval is set by default to 1/10 of the range of values of the accumulated cost surface.}
 
@@ -82,11 +83,13 @@ movecost(
 
 \item{cex.lcp.lab}{set the size of the labels used in least-cost path(s) plot (0.6 by default).}
 
+\item{graph.out}{TRUE (default) or FALSE if the user wants or does not want a graphical output to be generated.}
+
 \item{oneplot}{TRUE (default) or FALSE if the user wants or does not want the plots displayed in a single window.}
 
 \item{export}{TRUE or FALSE (default) if the user wants or does not want the outputs to be exported; if TRUE, the DTM and the accumulated cost surface will be
 exported as a GeoTiff file, while the isolines and the least-cost path(s) will be exported as shapefile; all the exported files (excluding the DTM) will bear a suffix corresponding
-to the cost function selected by the user.}
+to the cost function selected by the user. Notice that the DTM will be exported only if it was not provided by the user and downloaded from online sources by the function.}
 }
 \value{
 The function returns a list storing the following components \itemize{
@@ -118,11 +121,20 @@ Elevation data will be aquired for the area enclosed  by the  polygon supplied b
 To tap online elevation data, 'movecost' internally builds on the
 \code{\link[elevatr]{get_elev_raster}} function from the \emph{elevatr} package.\cr
 The zoom level of the downloaded DTM (i.e., its resolution) is controlled by the parameter 'z', which is
-set to 9 by default (a trade off between resolution and download time).
+set to 9 by default (a trade off between resolution and download time).\cr
+
+To test this facility, the user may want to try the following code, that will generate a least-cost surface and least-cost paths
+in an area close the Mount Etna (Sicily, Italy), whose elevation data are acquired online; the start and end locations, and the
+polygon defining the study area, are provided in this same package:\cr
+
+\eqn{ result <- movecost(origin=Etna_start_location, destin=Etna_end_location, studyplot=Etna_boundary) }\cr
+
 To know more about what elevation data are tapped from online
 sources, visit: https://cran.r-project.org/web/packages/elevatr/vignettes/introduction_to_elevatr.html.
 For more information about the elevation data resolution per zoom level, visit
-https://github.com/tilezen/joerd/blob/master/docs/data-sources.md#what-is-the-ground-resolution \cr
+https://github.com/tilezen/joerd/blob/master/docs/data-sources.md#what-is-the-ground-resolution.
+To know what is sorced at what zoom level, visit
+https://github.com/tilezen/joerd/blob/master/docs/data-sources.md#what-is-sourced-at-what-zooms. \cr
 
 For the cost-surface and LCPs calculation, 'movecost' builds on functions from Jacob van Etten's
 \href{https://cran.r-project.org/package=gdistance}{gdistance} package.
@@ -307,6 +319,6 @@ move=16, breaks=0.05)
 
 }
 \seealso{
-\code{\link[elevatr]{get_elev_raster}}
+\code{\link[elevatr]{get_elev_raster}}, \code{\link{movecorr}}
 }
 \keyword{movecost}

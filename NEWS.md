@@ -1,3 +1,9 @@
+# movecost 0.7:
+* Function 'movecorr()' added.
+* In the 'movecost()' function, the option has been added to have the function producing or not a graphical output (via the 'graph.out'parameter).
+* The Marquez-Perez et al.'s modified Tobler's function has been renamed for consistency with the names given to the other functions: from 'mt' (which was standing for "modified Tobler"") to 'mp' (which stands for "Marquez-Perez"").
+
+
 # movecost 0.6:
 * The facility to download online elevation data (when an input DTM is not provided) has been added; it relies on the 'elevatr' package.
 * Three new datasets (to be used to showcase the added functionality) have been added.

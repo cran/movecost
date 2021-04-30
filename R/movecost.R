@@ -18,11 +18,20 @@
 #' To tap online elevation data, 'movecost' internally builds on the
 #' \code{\link[elevatr]{get_elev_raster}} function from the \emph{elevatr} package.\cr
 #' The zoom level of the downloaded DTM (i.e., its resolution) is controlled by the parameter 'z', which is
-#' set to 9 by default (a trade off between resolution and download time).
+#' set to 9 by default (a trade off between resolution and download time).\cr
+#'
+#' To test this facility, the user may want to try the following code, that will generate a least-cost surface and least-cost paths
+#' in an area close the Mount Etna (Sicily, Italy), whose elevation data are acquired online; the start and end locations, and the
+#' polygon defining the study area, are provided in this same package:\cr
+#'
+#' \eqn{ result <- movecost(origin=Etna_start_location, destin=Etna_end_location, studyplot=Etna_boundary) }\cr
+#'
 #' To know more about what elevation data are tapped from online
 #' sources, visit: https://cran.r-project.org/web/packages/elevatr/vignettes/introduction_to_elevatr.html.
 #' For more information about the elevation data resolution per zoom level, visit
-#' https://github.com/tilezen/joerd/blob/master/docs/data-sources.md#what-is-the-ground-resolution \cr
+#' https://github.com/tilezen/joerd/blob/master/docs/data-sources.md#what-is-the-ground-resolution.
+#' To know what is sorced at what zoom level, visit
+#' https://github.com/tilezen/joerd/blob/master/docs/data-sources.md#what-is-sourced-at-what-zooms. \cr
 #'
 #' For the cost-surface and LCPs calculation, 'movecost' builds on functions from Jacob van Etten's
 #' \href{https://cran.r-project.org/package=gdistance}{gdistance} package.
@@ -179,13 +188,13 @@
 #' The contour lines' interval is set using the parameter 'breaks'; if no value is passed to the parameter, the interval will be set by default to
 #' 1/10 of the range of values of the accumulated cost surface.\cr
 #'
-#' @param dtm Digital Terrain Model (RasterLayer class).
-#' @param origin location from which the walking time is computed (SpatialPointsDataFrame class).
+#' @param dtm Digital Terrain Model (RasterLayer class); if not provided, elevation data will be acquired online for the area enclosed by the 'studyplot' parameter (see Details).
+#' @param origin location from which the cost surface is calculated (SpatialPointsDataFrame class).
 #' @param destin location(s) to which least-cost path(s) is calculated (SpatialPointsDataFrame class).
 #' @param studyplot polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see Details); NULL is default.
 #' @param funct cost function to be used:\cr \strong{t} (default) uses the on-path Tobler's hiking function;\cr
 #' \strong{tofp} uses the off-path Tobler's hiking function;\cr
-#' \strong{mt} uses the Marquez-Perez et al.'s modified Tobler's function;\cr
+#' \strong{mp} uses the Marquez-Perez et al.'s modified Tobler's function;\cr
 #' \strong{icmonp} uses the Irmischer-Clarke's modified Tobler's hiking function (male, on-path);\cr
 #' \strong{icmoffp} uses the Irmischer-Clarke's modified Tobler's hiking function (male, off-path);\cr
 #' \strong{icfonp} uses the Irmischer-Clarke's modified Tobler's hiking function (female, on-path);\cr
@@ -207,16 +216,18 @@
 #' @param L carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see Details).
 #' @param N coefficient representing ease of movement (1 by default) (used by the Pandolf's and Van Leusen's cost function; see Details).
 #' @param V speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; see Details).
-#' @param z zoom level for the elevation data downloaded from online sources (9 by default) (see Details).
+#' @param z zoom level for the elevation data downloaded from online sources (0 to 15; 9 by default) (see Details and \code{\link[elevatr]{get_elev_raster}}).
 #' @param breaks isolines interval; if no value is supplied, the interval is set by default to 1/10 of the range of values of the accumulated cost surface.
 #' @param cont.lab if set to TRUE (default) display the labels of the contours over the accumulated cost surface.
 #' @param destin.lab if set to TRUE (default) display the label(s) indicating the cost at the destination location(s).
 #' @param cex.breaks set the size of the time labels used in the isochrones plot (0.6 by default).
 #' @param cex.lcp.lab set the size of the labels used in least-cost path(s) plot (0.6 by default).
+#' @param graph.out TRUE (default) or FALSE if the user wants or does not want a graphical output to be generated.
 #' @param oneplot TRUE (default) or FALSE if the user wants or does not want the plots displayed in a single window.
 #' @param export TRUE or FALSE (default) if the user wants or does not want the outputs to be exported; if TRUE, the DTM and the accumulated cost surface will be
 #' exported as a GeoTiff file, while the isolines and the least-cost path(s) will be exported as shapefile; all the exported files (excluding the DTM) will bear a suffix corresponding
-#' to the cost function selected by the user.
+#' to the cost function selected by the user. Notice that the DTM will be exported only if it was not provided by the user and downloaded from online sources by the function.
+#'
 #' @return The function returns a list storing the following components \itemize{
 ##'  \item{dtm: }{Digital Terrain Model ('RasterLayer' class)}
 ##'  \item{accumulated.cost.raster: }{raster representing the accumualted cost ('RasterLayer' class)}
@@ -257,10 +268,10 @@
 #' move=16, breaks=0.05)
 #'
 #'
-#' @seealso \code{\link[elevatr]{get_elev_raster}}
+#' @seealso \code{\link[elevatr]{get_elev_raster}}, \code{\link{movecorr}}
 #'
 #'
-movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", time="h", outp="r", move=16, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, breaks=NULL, cont.lab=TRUE, destin.lab=TRUE, cex.breaks=0.6, cex.lcp.lab=0.6, oneplot=TRUE, export=FALSE){
+movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", time="h", outp="r", move=16, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, breaks=NULL, cont.lab=TRUE, destin.lab=TRUE, cex.breaks=0.6, cex.lcp.lab=0.6, graph.out=TRUE, oneplot=TRUE, export=FALSE){
 
   #deactivate the warning messages because a warning that can be safely ignored will be produced by the procedure
   #used to get slope as rise over run
@@ -308,7 +319,7 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
     sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the Tobler's off-path hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
   }
 
-  if(funct=="mt") {
+  if(funct=="mp") {
     #Marquez-Perez et al.'s modified Tobler hiking function; kmh
     cost_function <- function(x){4.8 * exp(-5.3 * abs((x[adj] * 0.7) + 0.03))}
 
@@ -469,7 +480,7 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
   }
 
   #cost calculation for walking-speed-based cost functions
-  if (funct=="t" | funct=="tofp" | funct=="mt" | funct=="icmonp" | funct=="icmoffp" | funct=="icfonp" | funct=="icfoffp" | funct=="alb") {
+  if (funct=="t" | funct=="tofp" | funct=="mp" | funct=="icmonp" | funct=="icmoffp" | funct=="icfonp" | funct=="icfoffp" | funct=="alb") {
 
     #restrict the speed calculation to adjacent cells by creating an index for adjacent cells (adj) with the function 'adjacent'
     adj <- raster::adjacent(dtm, cells=1:ncell(dtm), pairs=TRUE, directions=move)
@@ -508,7 +519,7 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
 
   #if user select the Tobler's, the modified Tobler's, the Irmischer-Clarke's,
   #the Uriarte Gonzalez's or the Alberti's function, turn seconds into the user-defined time-scale
-    if (funct=="t" | funct=="tofp" | funct=="mt" | funct=="icmonp" | funct=="icmoffp" | funct=="icfonp" | funct=="icfoffp" | funct=="ug" | funct=="alb"){
+    if (funct=="t" | funct=="tofp" | funct=="mp" | funct=="icmonp" | funct=="icmoffp" | funct=="icfonp" | funct=="icfoffp" | funct=="ug" | funct=="alb"){
     if (time=="h") {
       #turn seconds into hours
       accum_final <- accum_final / 3600
@@ -535,6 +546,8 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
 
   #set the break values for the isolines, again excluding inf values
   levels <- seq(min(accum_final[][is.finite(accum_final[])]), max(accum_final[][is.finite(accum_final[])]), breaks)
+
+  if (graph.out==TRUE) {
 
   #conditionally set the layout in just one visualization
   if(is.null(destin)==FALSE & oneplot==TRUE){
@@ -576,6 +589,8 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
          add=TRUE)
   }
 
+  }
+
   #calculate and store the contours as a SpatialLinesDataFrame
   isolines <- raster::rasterToContour(accum_final, levels=levels)
 
@@ -585,6 +600,7 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
     #calculate the least-cost path(s)
     sPath <- gdistance::shortestPath(Conductance, sp::coordinates(origin), sp::coordinates(destin), output="SpatialLines")
 
+  if (graph.out==TRUE) {
     #plot the dtm
     raster::plot(dtm, main="Digital Terrain Model with Least-cost Path(s)",
          sub=sub.title.lcp.plot,
@@ -603,6 +619,7 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
 
     #add the LCPs
     graphics::lines(sPath)
+  }
 
     #calculate the length of the least-cost paths and store the values by appending them to a new variable of the sPath object
     sPath$length <- rgeos::gLength(sPath, byid=TRUE)
@@ -610,17 +627,21 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
     #extract the cost from the accum_final to the destination location(s), appending the data to a new column
     destin$cost <- raster::extract(accum_final, destin)
 
+    if (graph.out==TRUE) {
     #if destin.lab is TRUE, add the point(s)'s labels
     if(destin.lab==TRUE){
       raster::text(sp::coordinates(destin),
            labels=round(destin$cost,2),
            pos = 4,
            cex=cex.lcp.lab)
+    }
 
-      #if export is TRUE, export the LPCs as a shapefile
-      if(export==TRUE){
-        rgdal::writeOGR(sPath, ".", paste0("LCPs_", funct), driver="ESRI Shapefile")
-      }
+
+    }
+
+    #if export is TRUE, export the LPCs as a shapefile
+    if(export==TRUE){
+      rgdal::writeOGR(sPath, ".", paste0("LCPs_", funct), driver="ESRI Shapefile")
     }
 
   } else {
@@ -640,9 +661,11 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
     raster::writeRaster(dtm, "dtm", format="GTiff")
   }
 
+  if (graph.out==TRUE) {
   #restore the original graphical device's settings if previously modified
   if(is.null(destin)==FALSE & oneplot==TRUE){
     par(mfrow = c(1,1))
+  }
   }
 
   #restore the advice for error messages on the R console, which has been deactivated
