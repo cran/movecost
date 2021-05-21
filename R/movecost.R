@@ -98,7 +98,7 @@
 #' when calculating accumulated costs.
 #'
 #'
-#'\strong{Alberti's Tobler hiking function modified for animal foraging excursions}:\cr
+#'\strong{Alberti's Tobler hiking function modified for animal foraging excursions (speed in kmh)}:\cr
 #'
 #' \eqn{ (6 * exp(-3.5 * abs(x[adj] + 0.05))) * 0.25 }\cr
 #'
@@ -207,7 +207,7 @@
 #' \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;\cr
 #' \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
 #' \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function (see Details).
-#' @param time time-unit expressed by the accumulated raster and by the isolines if Tobler's and Tobler-related cost functions are used;
+#' @param time time-unit expressed by the accumulated raster and by the isolines if Tobler's and other time-related cost functions are used;
 #' 'h' for hour, 'm' for minutes.
 #' @param outp type of output: 'raster' or 'contours' (see Details).
 #' @param move number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).
@@ -224,12 +224,13 @@
 #' @param cex.lcp.lab set the size of the labels used in least-cost path(s) plot (0.6 by default).
 #' @param graph.out TRUE (default) or FALSE if the user wants or does not want a graphical output to be generated.
 #' @param oneplot TRUE (default) or FALSE if the user wants or does not want the plots displayed in a single window.
-#' @param export TRUE or FALSE (default) if the user wants or does not want the outputs to be exported; if TRUE, the DTM and the accumulated cost surface will be
-#' exported as a GeoTiff file, while the isolines and the least-cost path(s) will be exported as shapefile; all the exported files (excluding the DTM) will bear a suffix corresponding
-#' to the cost function selected by the user. Notice that the DTM will be exported only if it was not provided by the user and downloaded from online sources by the function.
+#' @param export TRUE or FALSE (default) if the user wants or does not want the outputs to be exported; if TRUE, the DTM, the cost-surface, and the accumulated cost surface are
+#' exported as a GeoTiff file, while the isolines and the least-cost path(s) are exported as shapefile; all the exported files (excluding the DTM) will bear a suffix corresponding
+#' to the cost function selected by the user. Notice that the DTM is exported only if it was not provided by the user and downloaded by the function from online sources.
 #'
 #' @return The function returns a list storing the following components \itemize{
 ##'  \item{dtm: }{Digital Terrain Model ('RasterLayer' class)}
+##'  \item{cost.surface: }{raster representing the cost-surface ('RasterLayer' class)}
 ##'  \item{accumulated.cost.raster: }{raster representing the accumualted cost ('RasterLayer' class)}
 ##'  \item{isolines: }{contour lines derived from the accumulated cost surface ('SpatialLinesDataFrame' class)}
 ##'  \item{LCPs: }{estimated least-cost paths ('SpatialLines' class)}
@@ -238,7 +239,7 @@
 ##' }
 #' @keywords movecost
 #' @export
-#' @importFrom raster ncell mask crop
+#' @importFrom raster ncell mask crop raster
 #' @importFrom elevatr get_elev_raster
 #' @importFrom grDevices terrain.colors topo.colors
 #' @importFrom graphics layout par
@@ -483,7 +484,7 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
   if (funct=="t" | funct=="tofp" | funct=="mp" | funct=="icmonp" | funct=="icmoffp" | funct=="icfonp" | funct=="icfoffp" | funct=="alb") {
 
     #restrict the speed calculation to adjacent cells by creating an index for adjacent cells (adj) with the function 'adjacent'
-    adj <- raster::adjacent(dtm, cells=1:ncell(dtm), pairs=TRUE, directions=move)
+    adj <- raster::adjacent(dtm, cells=1:raster::ncell(dtm), pairs=TRUE, directions=move)
 
     speed <- slope
 
@@ -495,6 +496,9 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
 
     #correct the speed values taking into account the distance between cell centers
     Conductance <- gdistance::geoCorrection(speed)
+
+    #cost-surface raster to be exported (the division turns ms back to kmh)
+    cost.surface.to.export <- raster::raster(speed) / 0.278
   }
 
   #cost calculation for other types of cost functions;
@@ -503,7 +507,7 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
   if (funct=="ree" | funct=="hrz" | funct=="wcs" | funct=="vl" | funct=="p" | funct=="ug" | funct=="ls") {
 
     #restrict the cost calculation to adjacent cells by creating an index for adjacent cells (adj) with the function 'adjacent'
-    adj <- raster::adjacent(dtm, cells=1:ncell(dtm), pairs=TRUE, directions=move)
+    adj <- raster::adjacent(dtm, cells=1:raster::ncell(dtm), pairs=TRUE, directions=move)
 
     cost <- slope
 
@@ -512,6 +516,9 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
 
     #correct the cost values taking into account the distance between cell centers
     Conductance <- gdistance::geoCorrection(cost)
+
+    #cost-surface raster to be exported
+    cost.surface.to.export <- raster::raster(cost)
   }
 
   #accumulate the cost outwards from the origin
@@ -649,10 +656,11 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
     dest.loc.w.cost=NULL
   }
 
-  #if export is TRUE, export the accumulated cost surface as a raster file
-  #and the isolines as a shapefile
+  #if export is TRUE, export the cost-surface and the accumulated cost surface as a raster file,
+  #the isolines as a shapefile
   if(export==TRUE){
     raster::writeRaster(accum_final, paste0("accum_cost_surf_", funct), format="GTiff")
+    raster::writeRaster(cost.surface.to.export, paste0("cost_surf_", funct), format="GTiff")
     rgdal::writeOGR(isolines, ".", paste0("isolines_", funct), driver="ESRI Shapefile")
   }
 
@@ -674,6 +682,7 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
 
   #store the results in a list
   results <- list("dtm"=dtm,
+                  "cost.surface"=cost.surface.to.export,
                   "accumulated.cost.raster"=accum_final,
                   "isolines" = isolines,
                   "LCPs"=sPath,

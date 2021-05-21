@@ -54,7 +54,7 @@ movecost(
 \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
 \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function (see Details).}
 
-\item{time}{time-unit expressed by the accumulated raster and by the isolines if Tobler's and Tobler-related cost functions are used;
+\item{time}{time-unit expressed by the accumulated raster and by the isolines if Tobler's and other time-related cost functions are used;
 'h' for hour, 'm' for minutes.}
 
 \item{outp}{type of output: 'raster' or 'contours' (see Details).}
@@ -87,13 +87,14 @@ movecost(
 
 \item{oneplot}{TRUE (default) or FALSE if the user wants or does not want the plots displayed in a single window.}
 
-\item{export}{TRUE or FALSE (default) if the user wants or does not want the outputs to be exported; if TRUE, the DTM and the accumulated cost surface will be
-exported as a GeoTiff file, while the isolines and the least-cost path(s) will be exported as shapefile; all the exported files (excluding the DTM) will bear a suffix corresponding
-to the cost function selected by the user. Notice that the DTM will be exported only if it was not provided by the user and downloaded from online sources by the function.}
+\item{export}{TRUE or FALSE (default) if the user wants or does not want the outputs to be exported; if TRUE, the DTM, the cost-surface, and the accumulated cost surface are
+exported as a GeoTiff file, while the isolines and the least-cost path(s) are exported as shapefile; all the exported files (excluding the DTM) will bear a suffix corresponding
+to the cost function selected by the user. Notice that the DTM is exported only if it was not provided by the user and downloaded by the function from online sources.}
 }
 \value{
 The function returns a list storing the following components \itemize{
  \item{dtm: }{Digital Terrain Model ('RasterLayer' class)}
+ \item{cost.surface: }{raster representing the cost-surface ('RasterLayer' class)}
  \item{accumulated.cost.raster: }{raster representing the accumualted cost ('RasterLayer' class)}
  \item{isolines: }{contour lines derived from the accumulated cost surface ('SpatialLinesDataFrame' class)}
  \item{LCPs: }{estimated least-cost paths ('SpatialLines' class)}
@@ -201,7 +202,7 @@ T/1. Unlike the original cost function, here the pixel resolution is not taken i
 when calculating accumulated costs.
 
 
-\strong{Alberti's Tobler hiking function modified for animal foraging excursions}:\cr
+\strong{Alberti's Tobler hiking function modified for animal foraging excursions (speed in kmh)}:\cr
 
 \eqn{ (6 * exp(-3.5 * abs(x[adj] + 0.05))) * 0.25 }\cr
 

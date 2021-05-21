@@ -1,3 +1,13 @@
+# movecost 0.8:
+* A bug has been fixed that prevented the downloaded DTM to be returned in the list provided by the 'movecorr()' function.
+* The option to customize the labels attached to the point locations on the output map has been added to 'movecorr()'.
+* 'movecorr()' now optionally exports the DTM (if not provided by the user but acquired online), the two LCPs, and the accumulated cost surfaces around a and b.
+* The accumulated cost rasters (around point a and around point b) are now returned by 'movecorr()'.
+* The cost-surface is now returned (but not plotted) by 'movecost()'.
+* Minor internal optimizations.
+* Mninor amendements and improvements to the help documentation.
+
+
 # movecost 0.7:
 * Function 'movecorr()' added.
 * In the 'movecost()' function, the option has been added to have the function producing or not a graphical output (via the 'graph.out'parameter).
