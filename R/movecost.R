@@ -1,4 +1,4 @@
-#' R function for calculating accumulated anisotropic cost of movement across the terrain and least-cost paths from an origin
+#' R function for calculating accumulated anisotropic slope-dependant cost of movement across the terrain and least-cost paths from a point origin
 #'
 #' The function provides the facility to calculate the anisotropic accumulated cost of movement around a starting location and to optionally calculate least-cost path(s) toward
 #' one or multiple destinations. It implements different cost estimations related to human movement across the landscape.
@@ -24,13 +24,15 @@
 #' in an area close the Mount Etna (Sicily, Italy), whose elevation data are acquired online; the start and end locations, and the
 #' polygon defining the study area, are provided in this same package:\cr
 #'
-#' \eqn{ result <- movecost(origin=Etna_start_location, destin=Etna_end_location, studyplot=Etna_boundary) }\cr
+#' result <- movecost(origin=Etna_start_location, destin=Etna_end_location, studyplot=Etna_boundary) \cr
 #'
 #' To know more about what elevation data are tapped from online
-#' sources, visit: https://cran.r-project.org/web/packages/elevatr/vignettes/introduction_to_elevatr.html.
+#' sources, visit: https://cran.r-project.org/web/packages/elevatr/vignettes/introduction_to_elevatr.html. \cr
+#'
 #' For more information about the elevation data resolution per zoom level, visit
-#' https://github.com/tilezen/joerd/blob/master/docs/data-sources.md#what-is-the-ground-resolution.
-#' To know what is sorced at what zoom level, visit
+#' https://github.com/tilezen/joerd/blob/master/docs/data-sources.md#what-is-the-ground-resolution.\cr
+#'
+#' To know what is sourced at what zoom level, visit
 #' https://github.com/tilezen/joerd/blob/master/docs/data-sources.md#what-is-sourced-at-what-zooms. \cr
 #'
 #' For the cost-surface and LCPs calculation, 'movecost' builds on functions from Jacob van Etten's
@@ -39,6 +41,12 @@
 #' by van Etten, "R Package gdistance: Distances and Routes on Geographical Grids" in Journal of Statistical Software 76(13), 2017, pp. 14-15.
 #' The number of directions in which cells are connected in the cost calculation can be set to 4 (rook's case), 8 (queen's case), or
 #' 16 (knight and one-cell queen moves) using the 'move' parameter (see 'Arguments').\cr
+#'
+#' When it comes to the terrain slope, the function provides the facility to use the so-called 'cognitive slope',
+#' following Pingel TJ (2013), Modeling Slope as a Contributor to Route Selection in Mountainous Areas, in Cartography and Geographic Information Science, 37(2), 137-148.
+#' According to Pingel, "Humans tend to overestimate geographic slopes by a surprisingly high margin...This analysis indicates downhill slopes are overestimated
+#' at approximately 2.3 times the vertical, while uphill slopes are overestimated at 2 times the vertical.". As a result,
+#' if the parameter 'cogn.slp' is set to TRUE, positive slope values are preliminarily multiplied by 1.99, while negative slope values are multiplied by 2.31.
 #'
 #' Besides citing this package, you may want to refer to the following journal article:
 #' \strong{Alberti (2019) <doi:10.1016/j.softx.2019.100331>}.\cr
@@ -70,7 +78,7 @@
 #' \eqn{ (0.11 + exp(-(abs(x[adj])*100 + 5)^2 / (2 * 30)^2)) * 3.6 }\cr
 #'
 #' modified version of the Tobler's function as proposed for (male) on-path hiking by Irmischer, I. J., & Clarke, K. C. (2018). Measuring and modeling the speed of human navigation.
-#' Cartography and Geographic Information Science, 45(2), 177-186. https://doi.org/10.1080/15230406.2017.1292150. \strong{Note}: all the all the Irmischer-Clarke's functions are
+#' Cartography and Geographic Information Science, 45(2), 177-186. https://doi.org/10.1080/15230406.2017.1292150. \strong{Note}: all the all the Irmischer-Clarke's functions
 #' originally express speed in m/s; they have been reshaped (multiplied by 3.6) to turn m/s into km/h for consistency with the other Tobler-related cost functions; slope is in percent.\cr
 #'
 #'\strong{Irmischer-Clarke's modified Tobler hiking function (male, off-path)}:\cr
@@ -211,6 +219,7 @@
 #' 'h' for hour, 'm' for minutes.
 #' @param outp type of output: 'raster' or 'contours' (see Details).
 #' @param move number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).
+#' @param cogn.slp  TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see Details).
 #' @param sl.crit critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see Details).
 #' @param W walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see Details).
 #' @param L carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see Details).
@@ -269,16 +278,22 @@
 #' move=16, breaks=0.05)
 #'
 #'
+#' # same as above, but using the 'cognitive slope'
+#'
+#' result <- movecost(dtm=volc, origin=volc.loc, destin=destin.loc, funct="icmonp",
+#' move=16, breaks=0.05, cogn.slp=TRUE)
+#'
+#'
 #' @seealso \code{\link[elevatr]{get_elev_raster}}, \code{\link{movecorr}}
 #'
 #'
-movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", time="h", outp="r", move=16, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, breaks=NULL, cont.lab=TRUE, destin.lab=TRUE, cex.breaks=0.6, cex.lcp.lab=0.6, graph.out=TRUE, oneplot=TRUE, export=FALSE){
+movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", time="h", outp="r", move=16, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, breaks=NULL, cont.lab=TRUE, destin.lab=TRUE, cex.breaks=0.6, cex.lcp.lab=0.6, graph.out=TRUE, oneplot=TRUE, export=FALSE){
 
   #deactivate the warning messages because a warning that can be safely ignored will be produced by the procedure
   #used to get slope as rise over run
   options(warn = -1)
 
-  #if no dtm is provided and 'getelev' is TRUE
+  #if no dtm is provided
   if (is.null(dtm)==TRUE) {
     #get the elvation data using the elevatr's get_elev_raster() function, using the studyplot dataset (SpatialPolygonDataFrame)
     #to select the area whose elevation data are to be downloaded;
@@ -295,6 +310,12 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
   #use the geoCorrection function to divide the altitudinal difference by the distance between cells
   #so getting slope as rise over run
   slope <- gdistance::geoCorrection(hd)
+
+  #if 'cogn.slp' is set to TRUE, positive slope values (ie. up-hill movement) multiplied by 1.99
+  # and negative slope values (ie. down-hill movement) multiplied by 2.31
+  if (cogn.slp==TRUE) {
+    slope@transitionMatrix@x <- ifelse(slope@transitionMatrix@x > 0, slope@transitionMatrix@x * 1.99, slope@transitionMatrix@x * 2.31)
+  }
 
   #define different types of cost functions and set the appropriate text to be used for subsequent plotting
   if (funct=="t") {

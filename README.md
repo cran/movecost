@@ -1,7 +1,13 @@
 # movecost
-vers 0.8
+vers 0.9
 
 ## History
+`version 0.9`:
+* The 'movecorr()' function now can produce either a least-cost corridor between two locations, or corridors between multiple locations.
+* The option has been added to 'movecorr()' to rescale the least-cost values in the output raster to be constrained between 0 and 1.
+* The ficility to use the so-called 'cognitive slope' in place of the true slope has been added to 'movecost()' and 'movecorr()'.
+
+
 `version 0.8`:
 * A bug has been fixed that prevented the downloaded DTM to be returned in the list provided by the 'movecorr()' function.
 * The option to customize the labels attached to the point locations on the output map has been added to 'movecorr()'.

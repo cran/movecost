@@ -2,7 +2,7 @@
 % Please edit documentation in R/movecorr.R
 \name{movecorr}
 \alias{movecorr}
-\title{R function for calculating least-cost corridor between two point locations}
+\title{R function for calculating least-cost corridor between point locations}
 \usage{
 movecorr(
   dtm = NULL,
@@ -15,21 +15,23 @@ movecorr(
   funct = "t",
   time = "h",
   move = 16,
+  cogn.slp = FALSE,
   sl.crit = 10,
   W = 70,
   L = 0,
   N = 1,
   V = 1.2,
   z = 9,
+  rescale = FALSE,
   export = FALSE
 )
 }
 \arguments{
 \item{dtm}{Digital Terrain Model (RasterLayer class); if not provided, elevation data will be acquired online for the area enclosed by the 'studyplot' parameter (see \code{\link{movecost}}).}
 
-\item{a}{first location from which the least-cost corridor is calculated (SpatialPointsDataFrame class).}
+\item{a}{first location from which the least-cost corridor is calculated (SpatialPointsDataFrame class); if it contains more than two locations, see the 'Description' section above.}
 
-\item{b}{second location from which the least-cost corridor is calculated (SpatialPointsDataFrame class).}
+\item{b}{second location from which the least-cost corridor is calculated (SpatialPointsDataFrame class); if parameter 'a' stores more than two locations, this parameter is disregarded; see the 'Description' section above.}
 
 \item{lab.a}{string to be used to label point a on the outplut plot (A is the default)}
 
@@ -60,6 +62,8 @@ movecorr(
 
 \item{move}{number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).}
 
+\item{cogn.slp}{TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see \code{\link{movecost}}).}
+
 \item{sl.crit}{critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see \code{\link{movecost}}).}
 
 \item{W}{walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).}
@@ -72,33 +76,81 @@ movecorr(
 
 \item{z}{zoom level for the elevation data downloaded from online sources (from 0 to 15; 9 by default) (see \code{\link{movecost}} and \code{\link[elevatr]{get_elev_raster}}).}
 
+\item{rescale}{TRUE or FALSE (default) if the user wants or does not want the output least-coast corridor raster to be rescaled between 0 and 1.}
+
 \item{export}{TRUE or FALSE (default) if the user wants or does not want the output to be exported; if TRUE, the least-cost corridor, the dtm (if not provided by the user but acquired online),
-and the accumulated cost surface around a and b are exported as a GeoTiff file; the two LCPs (from a to b, and from b to a) as individual shapefiles.}
+and the accumulated cost surface around a and b are exported as a GeoTiff file, while the two LCPs (from a to b, and from b to a) as individual shapefiles. If multiple locations are analysed, only the
+least-cost corridor (and the DTM if originally not provided) will be exported.}
 }
 \value{
 The function returns a list storing the following components \itemize{
  \item{dtm: }{Digital Terrain Model ('RasterLayer' class)}
- \item{lc.corridor: }{raster of the least-cost corridor ('RasterLayer' class)}
- \item{lcp_a_to_b: }{least-cost past from a to b ('SpatialLines' class)}
- \item{lcp_b_to_a: }{least-cost past from b to a ('SpatialLines' class)}
- \item{accum_cost_surf_a: }{accumulated cost-surface around a ('RasterLayer' class)}
- \item{accum_cost_surf_b: }{accumulated cost-surface around b ('RasterLayer' class)}
+ \item{lc.corridor: }{raster of the least-cost corridor ('RasterLayer' class); if more than two locations are analysed, this raster is the sum of all the corridors between all the pairs of locations}
+ \item{lcp_a_to_b: }{least-cost past from a to b ('SpatialLines' class); returned only when the corridor is calculated between two locations}
+ \item{lcp_b_to_a: }{least-cost past from b to a ('SpatialLines' class); returned only when the corridor is calculated between two locations}
+ \item{accum_cost_surf_a: }{accumulated cost-surface around a ('RasterLayer' class); returned only when the corridor is calculated between two locations}
+ \item{accum_cost_surf_b: }{accumulated cost-surface around b ('RasterLayer' class); returned only when the corridor is calculated between two locations}
+ \item{corridors: }{list of rasters ('RasterLayer' class) representing the least-cost corridor between all the unique pairs of locations; returned only when more than two locations are analysed}
+ \item{locations.matrix: }{matrix whose columns indicate the identifiers for all the unique pairs of locations for which each corridor is calculated; returned only when more than two locations are analysed}
 }
 }
 \description{
-The function provides the facility to calculate the least-cost corridor between two point locations. It just requires an inout DTM,
-and two point locations ('SpatialPointsDataFrame' class) representing the locations between which the corridor is calculated. Under the
-hood, 'movecorr' relies on the \code{\link{movecost}} function and, needless to say, implements the same
-cost functions. See the help documentation of \code{\link{movecost}} for further details.  The function renders a raster representing
-the least cost corridor (with least-cost paths superimposed), and returns a list containing a number of components (see 'Value' below). The corridor raster can be
-exported as GeoTiff (see 'Arguments' below). \cr
+The function provides the facility to calculate the least-cost corridor between point locations.
+It just requires an input DTM and at least two point locations ('SpatialPointsDataFrame' class) representing the locations between which the corridor is calculated.
+Under the hood, 'movecorr' relies on the \code{\link{movecost}} function and, needless to say, implements the same
+cost functions. See the help documentation of \code{\link{movecost}} for further details.\cr
 }
 \details{
-What 'movecorr()' does is to calculate (via the \code{\link{movecost}} function) the accumulated cost surface around location
-a, and then the accumulated cost surface around b. The two surfaces are eventually combined to produce the least-cost
-corridor between location a and b. On the produced corridor raster, the cost of a cell is the total cost to reach it
-from both locations. About least-cost corridors see for instance: \cr
-Mitchell A. (2012), "The ESRI Guide to GIS Analysis. Vol 3. Modelling Suitability, Movement, and Interaction", New York: Esri Press (257-259).
+If only two locations are provided (one via parameter 'a', one via parameter 'b'),
+the function renders a raster representing the least cost corridor (which can be optionally exported as GeoTiff) with least-cost paths superimposed.
+If more than 2 locations are fed into the function via the 'a' parameter, the function calculates the least-cost corridor between pairs of locations.
+All the pair-wise corridor rasters are returned (but not individually plotted) in a list.
+All those rasters will be summed, and the resulting raster will be plotted (and can be, optionally, exported as GeoTiff).\cr
+
+The function returns a list containing a number of components (see 'Value' below). For more details about exporting the function's outputs,  see 'Arguments' below. \cr
+
+If the user wants to calculate the least-cost corridor between two locations only, (s)he may want to use parameter 'a' and 'b' to indicate
+the two locations of interest respectively. For example, using the datasets provided by this package: \cr
+
+result <- movecorr(a=Etna_start_location, b=Etna_end_location[1,], studyplot=Etna_boundary, funct="tofp") \cr
+
+The above will produce the least-cost corridor between two locations close to Mt Etna (Sicily, Italy), using the
+Tobler's cost function (for off-path hiking). Side note: the elevation data will be acquired online. \cr
+
+If the interest lies in using more than 2 locations, the user may want to feed the dataset storing all the locations
+into parameter 'a' (disregarding 'b'). As explained above, in this case the function calculates the least-cost corridor between pairs of locations.
+All the pair-wise corridor rasters are returned in a list. Those rasters will be summed, and the resulting raster will be plotted (and can be, optionally, exported as GeoTiff).
+For example, to calculate the least-cost corridors between every individual unique pair of the 9 locations stored in the 'destin.loc' dataset:\cr
+
+volc <- raster::raster(system.file("external/maungawhau.grd", package="gdistance")) \cr
+
+result <- movecorr(dtm=volc, a=destin.loc, funct="ree", rescale=TRUE) \cr
+
+Note that only parameter 'a' has been used. The function returns and plots the sum of the 36 individual corridors; the latter are not plotted,
+but are stored in a list. If the user wants to plot the least-cost corridor, say, n 4, and then add the two locations
+between which the corridor has been calculated, (s)he can first plot the corridor raster n 4: \cr
+
+raster::plot(result$corridors[[4]]) \cr
+
+Then, identifying which locations are related to corridor n 4 can be easily accomplished by looking up the values stored in
+the 4th column of the returned matrix: \cr
+
+result$locations.matrix \cr
+
+The locations are the n 1 and n 5, so the user can add them to the plot previosly produced using: \cr
+
+raster::plot(destin.loc[1,], pch=20, add=T)\cr
+raster::plot(destin.loc[5,], pch=20, add=T)\cr
+
+Note that the resulting plot can be produced (with a nicer outlook) directly by 'movecorr()' by feeding those two locations in the
+parameter 'a' and 'b' respectively: \cr
+
+result <- movecorr(dtm=volc, a=destin.loc[1,], b=destin.loc[5,], funct="ree") \cr
+
+Overall, what 'movecorr()' does is to calculate (via the \code{\link{movecost}} function) the accumulated cost surface around each location.
+Those are eventually summed to produce the least-cost corridor between locations. On the produced corridor raster, the cost of a cell is the total cost to reach it
+from all the analysed locations. About least-cost corridors between pairs of locations, see for instance: \cr
+Mitchell A. (2012), "The ESRI Guide to GIS Analysis. Vol 3. Modelling Suitability, Movement, and Interaction", New York: Esri Press (257-259). \cr
 }
 \examples{
 # load a sample Digital Terrain Model
@@ -108,11 +160,18 @@ volc <- raster::raster(system.file("external/maungawhau.grd", package="gdistance
 # load the sample destination locations on the above DTM
 data(destin.loc)
 
+
 # calculate the least-cost corridor between two locations, using the
 # relative energetic expenditure cost function, and store the results
-# in the 'res' object
+# in the 'result' object
 
-result <- movecorr(dtm=volc, a=destin.loc[1,], b=destin.loc[3,], funct="ree")
+result <- movecorr(dtm=volc, a=destin.loc[1,], b=destin.loc[3,], funct="ree", move=16)
+
+
+#same as above, but using the 'cognitive slope'
+
+result <- movecorr(dtm=volc, a=destin.loc[1,], b=destin.loc[3,],
+funct="ree", move=16, cogn.slp=TRUE)
 
 
 }
