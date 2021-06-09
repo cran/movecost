@@ -64,7 +64,8 @@
 #' @param lab.b string to be used to label point a on the outplut plot (B is the default).
 #' @param cex.labs scaling factor for the size of the points' labels (0.8 by default)
 #' @param studyplot polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see \code{\link{movecost}}); NULL is default.
-#' @param funct cost function to be used (for details on each of the following, see \code{\link{movecost}}):\cr \strong{t} (default) uses the on-path Tobler's hiking function;\cr
+#' @param funct cost function to be used (for details on each of the following, see \code{\link{movecost}}):\cr
+#' \strong{t} (default) uses the on-path Tobler's hiking function;\cr
 #' \strong{tofp} uses the off-path Tobler's hiking function;\cr
 #' \strong{mp} uses the Marquez-Perez et al.'s modified Tobler's function;\cr
 #' \strong{icmonp} uses the Irmischer-Clarke's modified Tobler's hiking function (male, on-path);\cr
@@ -73,12 +74,15 @@
 #' \strong{icfoffp} uses the Irmischer-Clarke's modified Tobler's hiking function (female, off-path);\cr
 #' \strong{ug} uses the Uriarte Gonzalez's slope-dependant walking-time cost function;\cr
 #' \strong{alb} uses the Alberti's Tobler hiking function modified for animal foraging excursions;\cr
+#' \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
+#' \strong{r} uses the Rees' hiking function;\cr
 #' \strong{ree} uses the relative energetic expenditure cost function;\cr
 #' \strong{hrz} uses the Herzog's metabolic cost function;\cr
 #' \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
 #' \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;\cr
 #' \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
-#' \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function.
+#' \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function.\cr
+#' \strong{b} uses the Bellavia's cost function.\cr
 #' @param time time-unit expressed by the accumulated raster if Tobler's and other time-related cost functions are used;
 #' 'h' for hour, 'm' for minutes.
 #' @param move number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).
@@ -86,7 +90,7 @@
 #' @param sl.crit critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see \code{\link{movecost}}).
 #' @param W walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
 #' @param L carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
-#' @param N coefficient representing ease of movement (1 by default) (used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
+#' @param N coefficient representing ease of movement (1 by default) (used by the Pandolf's, Van Leusen's, and Bellavia's cost function; see \code{\link{movecost}}).
 #' @param V speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
 #' @param z zoom level for the elevation data downloaded from online sources (from 0 to 15; 9 by default) (see \code{\link{movecost}} and \code{\link[elevatr]{get_elev_raster}}).
 #' @param rescale TRUE or FALSE (default) if the user wants or does not want the output least-coast corridor raster to be rescaled between 0 and 1.
@@ -125,13 +129,13 @@
 #' # relative energetic expenditure cost function, and store the results
 #' # in the 'result' object
 #'
-#' result <- movecorr(dtm=volc, a=destin.loc[1,], b=destin.loc[3,], funct="ree", move=16)
+#' result <- movecorr(dtm=volc, a=destin.loc[1,], b=destin.loc[3,], funct="ree", move=8)
 #'
 #'
 #' #same as above, but using the 'cognitive slope'
 #'
-#' result <- movecorr(dtm=volc, a=destin.loc[1,], b=destin.loc[3,],
-#' funct="ree", move=16, cogn.slp=TRUE)
+#' # result <- movecorr(dtm=volc, a=destin.loc[1,], b=destin.loc[3,],
+#' # funct="ree", move=8, cogn.slp=TRUE)
 #'
 #'
 #' @seealso \code{\link{movecost}}
@@ -153,10 +157,10 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
   if (length(a) < 2) {
 
   #calculate the accum cost surface and LCP around and from point a
-  res.a <- movecost::movecost(dtm=dtm, origin=a, destin=b, studyplot=studyplot, funct=funct, time=time, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, graph.out=FALSE)
+  res.a <- movecost::movecost(dtm=dtm, origin=a, destin=b, studyplot=studyplot, funct=funct, time=time, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
 
   #calculate the accum cost surface and LCP around and from point b
-  res.b <- movecost::movecost(dtm=dtm, origin=b, destin=a, studyplot=studyplot, funct=funct, time=time, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, graph.out=FALSE)
+  res.b <- movecost::movecost(dtm=dtm, origin=b, destin=a, studyplot=studyplot, funct=funct, time=time, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
 
   #combine the 2 accumulated cost surfaces obtained at the preceding steps
   res.corridor <- res.a$accumulated.cost.raster + res.b$accumulated.cost.raster
@@ -182,8 +186,8 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
     #loop through all the locations to calculate the accumulated cost surfaces
     #and store them in the list
     for (i in 1:(ncol(pairw.list))) {
-      acc.cost.srf.a <- movecost::movecost(dtm=dtm, origin=a[pairw.list[,i][1],], studyplot=studyplot, funct=funct, time=time, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, graph.out=FALSE)$accumulated.cost.raster
-      acc.cost.srf.b <- movecost::movecost(dtm=dtm, origin=a[pairw.list[,i][2],], studyplot=studyplot, funct=funct, time=time, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, graph.out=FALSE)$accumulated.cost.raster
+      acc.cost.srf.a <- movecost::movecost(dtm=dtm, origin=a[pairw.list[,i][1],], studyplot=studyplot, funct=funct, time=time, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, return.base=FALSE, graph.out=FALSE)$accumulated.cost.raster
+      acc.cost.srf.b <- movecost::movecost(dtm=dtm, origin=a[pairw.list[,i][2],], studyplot=studyplot, funct=funct, time=time, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, return.base=FALSE, graph.out=FALSE)$accumulated.cost.raster
       corridors[[i]] <- acc.cost.srf.a + acc.cost.srf.b
       setTxtProgressBar(pb, i)
     }
@@ -227,7 +231,7 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
 
     #set the labels to be used within the returned plot
     main.title <- paste0("Least-cost corridor (cost in ", time, ")")
-    sub.title <- "Walking-time based on the (male, on-path) Irmischer-Clarke's modified Tobler hiking function"
+    sub.title <- "Walking-time based on the (male, on-path) Irmischer-Clarke's hiking function"
     legend.cost <- paste0("walking-time (", time,")")
   }
 
@@ -235,7 +239,7 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
 
     #set the labels to be used within the returned plot
     main.title <- paste0("Least-cost corridor (cost in ", time, ")")
-    sub.title <- "Walking-time based on the (male, off-path) Irmischer-Clarke's modified Tobler hiking function"
+    sub.title <- "Walking-time based on the (male, off-path) Irmischer-Clarke's hiking function"
     legend.cost <- paste0("walking-time (", time,")")
   }
 
@@ -243,13 +247,25 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
 
     #set the labels to be used within the returned plot
     main.title <- paste0("Least-cost corridor (cost in ", time, ")")
-    sub.title <- "Walking-time based on the (female, on-path) Irmischer-Clarke's modified Tobler hiking function"
+    sub.title <- "Walking-time based on the (female, on-path) Irmischer-Clarke's hiking function"
     legend.cost <- paste0("walking-time (", time,")")
   }
 
   if(funct=="icfoffp") {
     main.title <- paste0("Least-cost corridor (cost in ", time, ")")
-    sub.title <- "Walking-time based on the (female, off-path) Irmischer-Clarke's modified Tobler hiking function"
+    sub.title <- "Walking-time based on the (female, off-path) Irmischer-Clarke's hiking function"
+    legend.cost <- paste0("walking-time (", time,")")
+  }
+
+  if(funct=="gkrs") {
+    main.title <- paste0("Least-cost corridor (cost in ", time, ")")
+    sub.title <- "Walking-time based on the Garmy et al.'s hiking function"
+    legend.cost <- paste0("walking-time (", time,")")
+  }
+
+  if(funct=="r") {
+    main.title <- paste0("Least-cost corridor (cost in ", time, ")")
+    sub.title <- "Walking-time based on the Rees' hiking function"
     legend.cost <- paste0("walking-time (", time,")")
   }
 
@@ -257,7 +273,7 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
 
     #set the labels to be used within the returned plot
     main.title <- paste0("Least-cost corridor (cost in ", time, ")")
-    sub.title <- "Walking-time based on the Uriarte Gonzalez's cost function"
+    sub.title <- "Walking-time based on the Uriarte Gonzalez's hiking function"
     legend.cost <- paste0("walking-time (", time,")")
   }
 
@@ -265,7 +281,7 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
 
     #set the labels to be used within the returned plot
     main.title <- "Least-cost corridor"
-    sub.title <- "Cost based on the slope-based relative energetic expenditure cost function"
+    sub.title <- "Cost based on the slope-dependant relative energetic expenditure cost function"
     legend.cost <- "cost"
   }
 
@@ -316,6 +332,15 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
     sub.title <- "Walking-time based on the Alberti's modified Tobler hiking function"
     legend.cost <- paste0("walking-time (", time,")")
   }
+
+  if(funct=="b") {
+
+    #set the labels to be used within the returned plot
+    main.title <- "Least-cost corridor"
+    sub.title <- "Cost based on the slope-dependant Bellavia's cost function"
+    legend.cost <- "cost"
+  }
+
 
   #plot the corridor raster
   raster::plot(res.corridor,

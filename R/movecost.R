@@ -8,8 +8,8 @@
 #' If the parameter 'destin' is fed with a dataset representing destination location(s) ('SpatialPointsDataFrame' class), the function also calculates
 #' least-cost path(s) plotted on the input DTM; the length of each path is saved under the variable 'length' stored in the 'LCPs' dataset ('SpatialLines' class) returned by the function.
 #' The red dot(s) representing the destination location(s) are labelled with numeric values representing
-#' the cost value at the location(s). The cost value is also appended to the updated destination dataset returned by the function and
-#' storing a new variable named 'cost'.\cr
+#' the cost value at the location(s). The cost value is also appended to the updated destination locations dataset returned by the function, which
+#' stores a new variable labelled 'cost'.\cr
 #'
 #' It is worth reminding the user(s) that all the input layers (i.e., DTM, start location, and destination locations) must use the same projected coordinate system.\cr
 #'
@@ -25,6 +25,10 @@
 #' polygon defining the study area, are provided in this same package:\cr
 #'
 #' result <- movecost(origin=Etna_start_location, destin=Etna_end_location, studyplot=Etna_boundary) \cr
+#'
+#' The LCPs back to the origin can be calculated and plotted setting the parameter 'return.base' to TRUE:\cr
+#'
+#' result <- movecost(origin=Etna_start_location, destin=Etna_end_location, studyplot=Etna_boundary, return.base=TRUE) \cr
 #'
 #' To know more about what elevation data are tapped from online
 #' sources, visit: https://cran.r-project.org/web/packages/elevatr/vignettes/introduction_to_elevatr.html. \cr
@@ -121,6 +125,31 @@
 #' The factor corresponds to the ratio between the flock average speed (1.5 km/h) and the maximum human walking speed (about 6.0 km/h) on a favourable slope.
 #'
 #'
+#'
+#' \strong{Garmy, Kaddouri, Rozenblat, and Schneider's hiking function (speed in kmh)}:\cr
+#'
+#' \eqn{ 4 * exp(-0.008 * ((atan(abs(x[adj]))*180/pi)^2)) }\cr
+#'
+#' slope in degrees;
+#' \strong{see}: Herzog, I. (2020). Spatial Analysis Based on Cost Functions. In Gillings M, Haciguzeller P, Lock G (eds), "Archaeological Spatial Analysis. A Methodological Guide.",
+#' Routledge: New York, 333-358 (with previous references).\cr
+#'
+#'
+#'
+#' \strong{Rees' hiking function (speed in kmh)}:\cr
+#'
+#' \eqn{ (1 / (0.75 + 0.09 * abs(x[adj]) + 14.6 * (abs(x[adj]))^2)) * 3.6  }\cr
+#'
+#' Rees' slope-dependant cost function; it is originally expressed in terms of time (1/v in Rees' publication);
+#' here it is the reciprocal of time (i.e. speed) that is used in order to eventually get the reciprocal of speed (i.e. time).
+#' Slope is dealt with here as originally expressed in Rees' publication (i.e. rise over run). The speed, which is originally expressed in m/s,
+#' has been here transposed to kmh (i.e., multiplied by 3.6) for consistency with other hiking functions.\cr
+#' For this cost function \strong{see}: Rees, WG (2004). Least-cost paths in mountainous terrain.
+#' Computers & Geosciences, 30(3), 203–209. See also: Campbell MJ, Dennison PE, Butler BW, Page WG (2019). Using crowdsourced
+#' fitness tracker data to model the relationship between slope and travel rates. Applied Geography 106, 93-107 (with previous references).\cr
+#'
+#'
+#'
 #'\strong{Relative energetic expenditure cost function}:\cr
 #'
 #' \eqn{ 1 / (tan((atan(abs(x[adj]))*180/pi)*pi/180) / tan (1*pi/180)) }\cr
@@ -132,11 +161,13 @@
 #' Canada. Journal of Field Archaeology, 41(6), 684-698. https://doi.org/10.1080/00934690.2016.1234897.\cr
 #'
 #'
+#'
 #' \strong{Herzog's metabolic cost function in J/(kg*m)}:\cr
 #'
 #' \eqn{ 1 / ((1337.8 * abs(x[adj])^6) + (278.19 * abs(x[adj])^5) - (517.39 * abs(x[adj])^4) - (78.199 * abs(x[adj])^3) + (93.419 * abs(x[adj])^2) + (19.825 * abs(x[adj])) + 1.64) }\cr
 #'
 #' \strong{see} Herzog, I. (2016). Potential and Limits of Optimal Path Analysis. In A. Bevan & M. Lake (Eds.), Computational Approaches to Archaeological Spaces (pp. 179-211). New York: Routledge.\cr
+#'
 #'
 #'
 #' \strong{Wheeled-vehicle critical slope cost function}:\cr
@@ -145,6 +176,7 @@
 #'
 #' where \eqn{sl.crit} (=critical slope, in percent) is "the transition where switchbacks become more effective than direct uphill or downhill paths" and typically is in the range 8-16;
 #' \strong{see} Herzog, I. (2016). Potential and Limits of Optimal Path Analysis. In A. Bevan & M. Lake (Eds.), Computational Approaches to Archaeological Spaces (pp. 179-211). New York: Routledge. \cr
+#'
 #'
 #'
 #' \strong{Pandolf et al.'s metabolic energy expenditure cost function (in Watts)}:\cr
@@ -164,6 +196,7 @@
 #' \strong{Note}: in the returned charts, the cost is transposed from Watts to Megawatts (see, e.g., Rademaker et al 2012 cited above).\cr
 #'
 #'
+#'
 #' \strong{Van Leusen's metabolic energy expenditure cost function (in Watts)}:\cr
 #'
 #' \eqn{ 1 / (1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * V^2 + 0.35 * V * abs(x[adj])*100) + 10))  }\cr
@@ -174,11 +207,25 @@
 #' the value of 6 used by Van Leusen (as per Herzog 2013).\cr
 #' \strong{Note}: in the returned charts, the cost is transposed from Watts to Megawatts.\cr
 #'
+#'
+#'
 #' \strong{Llobera-Sluckin's metabolic energy expenditure cost function (in KJ/m)}:\cr
 #'
 #' \eqn{ 1 / (2.635 + (17.37 * abs(x[adj])) + (42.37 * abs(x[adj])^2) - (21.43 * abs(x[adj])^3) + (14.93 * abs(x[adj])^4))  }\cr
 #'
 #' for which \strong{see} Llobera M.-Sluckin T.J. (2007). Zigzagging: Theoretical insights on climbing strategies, Journal of Theoretical Biology 249, 206-217.\cr
+#'
+#'
+#'
+#' \strong{Bellavia's cost function}:\cr
+#'
+#' \eqn{ 1 / N * ((atan(abs(x[adj]))*180/pi)+1)  }\cr
+#'
+#' proposed by G. Bellavia, it measures abstract cost. Slope in degrees; N is a terrain factor (see above).
+#' \strong{See}: Herzog, I. (2020). Spatial Analysis Based on Cost Functions. In Gillings M, Haciguzeller P, Lock G (eds), "Archaeological Spatial Analysis. A Methodological Guide.",
+#' Routledge: New York, 333-358 (with previous references).\cr
+#'
+#'
 #'
 #'
 #' \strong{Note} that the walking-speed-related cost functions listed above are used as they are, while the other functions are reciprocated.
@@ -187,7 +234,7 @@
 #'  As a consequence, if we want to estimate time, we have to use the walking-speed functions as they are since the final accumulated values will correspond to the
 #'  reciprocal of speed, i.e. pace. In the other cases, we have to use 1/cost-function to eventually get cost-function/1.\cr
 #'
-#' When using the Tobler-related cost functions, the time unit can be selected by the user setting the 'time' parameter to 'h' (hour) or to 'm' (minutes).\cr
+#' When using cost functions expressing cost in terms of time, the time unit can be selected by the user setting the 'time' parameter to 'h' (hour) or to 'm' (minutes).\cr
 #'
 #' In general, the user can also select which type of visualization the function has to produce; this is achieved setting the 'outp' parameter to either 'r' (=raster)
 #' or to 'c' (=contours). The former will produce a raster with a colour scale and contour lines representing the accumulated cost surface; the latter parameter will only
@@ -200,7 +247,8 @@
 #' @param origin location from which the cost surface is calculated (SpatialPointsDataFrame class).
 #' @param destin location(s) to which least-cost path(s) is calculated (SpatialPointsDataFrame class).
 #' @param studyplot polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see Details); NULL is default.
-#' @param funct cost function to be used:\cr \strong{t} (default) uses the on-path Tobler's hiking function;\cr
+#' @param funct cost function to be used:\cr
+#' \strong{t} (default) uses the on-path Tobler's hiking function;\cr
 #' \strong{tofp} uses the off-path Tobler's hiking function;\cr
 #' \strong{mp} uses the Marquez-Perez et al.'s modified Tobler's function;\cr
 #' \strong{icmonp} uses the Irmischer-Clarke's modified Tobler's hiking function (male, on-path);\cr
@@ -209,12 +257,15 @@
 #' \strong{icfoffp} uses the Irmischer-Clarke's modified Tobler's hiking function (female, off-path);\cr
 #' \strong{ug} uses the Uriarte Gonzalez's slope-dependant walking-time cost function;\cr
 #' \strong{alb} uses the Alberti's Tobler hiking function modified for animal foraging excursions;\cr
+#' \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
+#' \strong{r} uses the Rees' hiking function;\cr
 #' \strong{ree} uses the relative energetic expenditure cost function;\cr
 #' \strong{hrz} uses the Herzog's metabolic cost function;\cr
 #' \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
 #' \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;\cr
 #' \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
-#' \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function (see Details).
+#' \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
+#' \strong{b} uses the Bellavia's cost function (for all the above cost functions, see Details).\cr
 #' @param time time-unit expressed by the accumulated raster and by the isolines if Tobler's and other time-related cost functions are used;
 #' 'h' for hour, 'm' for minutes.
 #' @param outp type of output: 'raster' or 'contours' (see Details).
@@ -223,9 +274,11 @@
 #' @param sl.crit critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see Details).
 #' @param W walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see Details).
 #' @param L carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see Details).
-#' @param N coefficient representing ease of movement (1 by default) (used by the Pandolf's and Van Leusen's cost function; see Details).
+#' @param N coefficient representing ease of movement (1 by default) (used by the Pandolf's, Van Leusen's, and Bellavia's cost function; see Details).
 #' @param V speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; see Details).
 #' @param z zoom level for the elevation data downloaded from online sources (0 to 15; 9 by default) (see Details and \code{\link[elevatr]{get_elev_raster}}).
+#' @param return.base TRUE or FALSE (default) if the user wants or does not want the least-cost paths back to the origin to be calculated and plotted.
+#' @param rb.lty Line type used to represent the least-cost paths back to the origin in the returned plot (2 by default; dashed line; see 'lty' parameter in \code{\link[graphics]{par}}).
 #' @param breaks isolines interval; if no value is supplied, the interval is set by default to 1/10 of the range of values of the accumulated cost surface.
 #' @param cont.lab if set to TRUE (default) display the labels of the contours over the accumulated cost surface.
 #' @param destin.lab if set to TRUE (default) display the label(s) indicating the cost at the destination location(s).
@@ -243,7 +296,9 @@
 ##'  \item{accumulated.cost.raster: }{raster representing the accumualted cost ('RasterLayer' class)}
 ##'  \item{isolines: }{contour lines derived from the accumulated cost surface ('SpatialLinesDataFrame' class)}
 ##'  \item{LCPs: }{estimated least-cost paths ('SpatialLines' class)}
+##'  \item{LCPs.back: }{estimated least-cost paths back to the origin ('SpatialLines' class)}
 ##'  \item{LCPs$length: }{length of each least-cost path (units depend on the unit used in the input DTM)}
+##'  \item{LCPs.back$length: }{length of each least-cost path back to the origin (units depend on the unit used in the input DTM)}
 ##'  \item{dest.loc.w.cost: }{copy of the input destination location(s) dataset with a new variable ('cost') added}
 ##' }
 #' @keywords movecost
@@ -252,6 +307,7 @@
 #' @importFrom elevatr get_elev_raster
 #' @importFrom grDevices terrain.colors topo.colors
 #' @importFrom graphics layout par
+#'
 #' @examples
 #' # load a sample Digital Terrain Model
 #' volc <- raster::raster(system.file("external/maungawhau.grd", package="gdistance"))
@@ -275,19 +331,25 @@
 #' # the Irmischer-Clarke's modified Tobler's hiking function (male, on-path)
 #'
 #' result <- movecost(dtm=volc, origin=volc.loc, destin=destin.loc, funct="icmonp",
-#' move=16, breaks=0.05)
+#' move=8, breaks=0.05)
 #'
 #'
 #' # same as above, but using the 'cognitive slope'
 #'
 #' result <- movecost(dtm=volc, origin=volc.loc, destin=destin.loc, funct="icmonp",
-#' move=16, breaks=0.05, cogn.slp=TRUE)
+#' move=8, breaks=0.05, cogn.slp=TRUE)
+#'
+#'
+#' # calculate accumulated cost surface and the least-cost path between the
+#' # origin and one destination, and also calculate the LCP back to the origin
+#'
+#' results <- movecost(dtm=volc, origin=volc.loc, destin=destin.loc[2,], move=8, return.base = TRUE)
 #'
 #'
 #' @seealso \code{\link[elevatr]{get_elev_raster}}, \code{\link{movecorr}}
 #'
 #'
-movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", time="h", outp="r", move=16, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, breaks=NULL, cont.lab=TRUE, destin.lab=TRUE, cex.breaks=0.6, cex.lcp.lab=0.6, graph.out=TRUE, oneplot=TRUE, export=FALSE){
+movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", time="h", outp="r", move=16, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, return.base=FALSE, rb.lty=2, breaks=NULL, cont.lab=TRUE, destin.lab=TRUE, cex.breaks=0.6, cex.lcp.lab=0.6, graph.out=TRUE, oneplot=TRUE, export=FALSE){
 
   #deactivate the warning messages because a warning that can be safely ignored will be produced by the procedure
   #used to get slope as rise over run
@@ -352,6 +414,17 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
     sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the Marquez-Perez et al.'s modified Tobler hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
   }
 
+  if(funct=="alb") {
+    #Alberti's modified Tobler hiking function, adapted for animal foraging excursions
+    cost_function <- function(x){(6 * exp(-3.5 * abs(x[adj] + 0.05))) * 0.25}
+
+    #set the labels to be used within the returned plot
+    main.title <- paste0("Walking-time isochrones (in ", time, ") around origin")
+    sub.title <- "Walking-time based on the Alberti's modified Tobler hiking function"
+    legend.cost <- paste0("walking-time (", time,")")
+    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the Alberti's modified Tobler hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
+  }
+
   if(funct=="icmonp") {
     #Irmischer-Clarke's modified Tobler hiking function; originally in m/s (male, on-path);
     # the formula is reshaped (multiplied by 3.6) below to turn it into kmh for consistency with the other Tobler-related cost functions;
@@ -360,9 +433,9 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
 
     #set the labels to be used within the returned plot
     main.title <- paste0("Walking-time isochrones (in ", time, ") around origin")
-    sub.title <- "Walking-time based on the (male, on-path) Irmischer-Clarke's modified Tobler hiking function"
+    sub.title <- "Walking-time based on the (male, on-path) Irmischer-Clarke's hiking function"
     legend.cost <- paste0("walking-time (", time,")")
-    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the (male, on-path) Irmischer-Clarke's modified Tobler hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
+    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the (male, on-path) Irmischer-Clarke's hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
   }
 
   if(funct=="icmoffp") {
@@ -373,9 +446,9 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
 
     #set the labels to be used within the returned plot
     main.title <- paste0("Walking-time isochrones (in ", time, ") around origin")
-    sub.title <- "Walking-time based on the (male, off-path) Irmischer-Clarke's modified Tobler hiking function"
+    sub.title <- "Walking-time based on the (male, off-path) Irmischer-Clarke's hiking function"
     legend.cost <- paste0("walking-time (", time,")")
-    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the (male, off-path) Irmischer-Clarke's modified Tobler hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
+    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the (male, off-path) Irmischer-Clarke's hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
   }
 
   if(funct=="icfonp") {
@@ -386,9 +459,9 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
 
     #set the labels to be used within the returned plot
     main.title <- paste0("Walking-time isochrones (in ", time, ") around origin")
-    sub.title <- "Walking-time based on the (female, on-path) Irmischer-Clarke's modified Tobler hiking function"
+    sub.title <- "Walking-time based on the (female, on-path) Irmischer-Clarke's hiking function"
     legend.cost <- paste0("walking-time (", time,")")
-    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the (female, on-path) Irmischer-Clarke's modified Tobler hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
+    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the (female, on-path) Irmischer-Clarke's hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
   }
 
   if(funct=="icfoffp") {
@@ -399,9 +472,21 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
 
     #set the labels to be used within the returned plot
     main.title <- paste0("Walking-time isochrones (in ", time, ") around origin")
-    sub.title <- "Walking-time based on the (female, off-path) Irmischer-Clarke's modified Tobler hiking function"
+    sub.title <- "Walking-time based on the (female, off-path) Irmischer-Clarke's hiking function"
     legend.cost <- paste0("walking-time (", time,")")
-    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the (female, off-path) Irmischer-Clarke's modified Tobler hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
+    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the (female, off-path) Irmischer-Clarke's hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
+  }
+
+  if(funct=="gkrs") {
+    #Garmy, Kaddouri, Rozenblat, Schneider's slope-dependant hiking function; speed in kmh;
+    #slope is originally in degrees; (atan(abs(x[adj]))*180/pi) turns rise/run into degrees
+    cost_function <- function(x){ 4 * exp(-0.008 * ((atan(abs(x[adj]))*180/pi)^2)) }
+
+    #set the labels to be used within the returned plot
+    main.title <- paste0("Walking-time isochrones (in ", time, ") around origin")
+    sub.title <- "Walking-time based on the Garmy et al.'s hiking function"
+    legend.cost <- paste0("walking-time (", time,")")
+    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the Garmy et al.'s hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
   }
 
   if(funct=="ug") {
@@ -410,13 +495,28 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
     #T/1. Slope is in percent.
     #Note: unlike the original formula, here the pixel resolution is not taken into account since 'gdistance' takes care of the cells' dimension
     #when calculating accumulated costs.
-    cost_function <- function(x){ 1/ (0.0277 * (abs(x[adj])*100) + 0.6115) }
+    cost_function <- function(x){ 1 / (0.0277 * (abs(x[adj])*100) + 0.6115) }
 
     #set the labels to be used within the returned plot
     main.title <- paste0("Walking-time isochrones (in ", time, ") around origin")
-    sub.title <- "Walking-time based on the Uriarte Gonzalez's cost function"
+    sub.title <- "Walking-time based on the Uriarte Gonzalez's hiking function"
     legend.cost <- paste0("walking-time (", time,")")
-    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the Uriarte Gonzalez's cost function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
+    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the Uriarte Gonzalez's hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
+  }
+
+  if(funct=="r") {
+    #Rees' slope-dependant walking-time cost function;
+    #the cost function is originally expressed in terms of time (1/v in Rees' publication);
+    #here it is the reciprocal of time (i.e. speed) that is used in order to eventually get
+    #the reciprocal of speed (i.e. time). Slope is as originally expressed in Rees' publication (i.e. rise over run);
+    #the speed is originally expressed in m/s, so here has been transposed to kmh (i.e., multiplied by 3.6)
+    cost_function <- function(x){ (1 / (0.75 + 0.09 * abs(x[adj]) + 14.6 * (abs(x[adj]))^2)) * 3.6 }
+
+    #set the labels to be used within the returned plot
+    main.title <- paste0("Walking-time isochrones (in ", time, ") around origin")
+    sub.title <- "Walking-time based on the Rees' hiking function"
+    legend.cost <- paste0("walking-time (", time,")")
+    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the Rees' hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
   }
 
   if(funct=="ree") {
@@ -427,7 +527,7 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
 
     #set the labels to be used within the returned plot
     main.title <- "Accumulated cost isolines around origin"
-    sub.title <- "Cost based on the slope-based relative energetic expenditure cost function"
+    sub.title <- "Cost based on the slope-dependant relative energetic expenditure cost function"
     legend.cost <- "cost"
     sub.title.lcp.plot <- paste0("LCP(s) and cost distance(s) based on the slope-based relative energetic expenditure cost function \nblack dot=start location\n red dot(s)=destination location(s)")
   }
@@ -490,19 +590,20 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
     sub.title.lcp.plot <- paste0("LCP(s) and cost distance(s) based on the Llobera-Sluckin's metabolic energy expenditure cost function \n cost in KJ/m \nblack dot=start location\n red dot(s)=destination location(s)")
   }
 
-  if(funct=="alb") {
-    #Alberti's modified Tobler hiking function, adapted for anomal foraging excursions
-    cost_function <- function(x){(6 * exp(-3.5 * abs(x[adj] + 0.05))) * 0.25}
+  if(funct=="b") {
+    #Bellavia 2002's cost function; it measures abstract cost;
+    #slope is originally in degrees; (atan(abs(x[adj]))*180/pi) turns rise/run into degrees
+    cost_function <- function(x){ 1 / N * ((atan(abs(x[adj]))*180/pi)+1) }
 
     #set the labels to be used within the returned plot
-    main.title <- paste0("Walking-time isochrones (in ", time, ") around origin")
-    sub.title <- "Walking-time based on the Alberti's modified Tobler hiking function"
-    legend.cost <- paste0("walking-time (", time,")")
-    sub.title.lcp.plot <- paste0("LCP(s) and walking-time distance(s) based on the Alberti's modified Tobler hiking function (time in ", time, ") \nblack dot=start location\n red dot(s)=destination location(s)")
+    main.title <- "Accumulated cost isolines around origin"
+    sub.title <- "Cost based on the slope-dependant Bellavia's cost function"
+    legend.cost <- "cost"
+    sub.title.lcp.plot <- paste0("LCP(s) and cost distance(s) based on the Bellavia's cost function \nblack dot=start location\n red dot(s)=destination location(s)")
   }
 
   #cost calculation for walking-speed-based cost functions
-  if (funct=="t" | funct=="tofp" | funct=="mp" | funct=="icmonp" | funct=="icmoffp" | funct=="icfonp" | funct=="icfoffp" | funct=="alb") {
+  if (funct=="t" | funct=="tofp" | funct=="mp" | funct=="icmonp" | funct=="icmoffp" | funct=="icfonp" | funct=="icfoffp" | funct=="alb" | funct=="gkrs" | funct=="r") {
 
     #restrict the speed calculation to adjacent cells by creating an index for adjacent cells (adj) with the function 'adjacent'
     adj <- raster::adjacent(dtm, cells=1:raster::ncell(dtm), pairs=TRUE, directions=move)
@@ -525,7 +626,7 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
   #cost calculation for other types of cost functions;
   #note the Uriarte Gonzalez's slope-dependant walking-time cost function is in this group since (unlike the above functions)
   #it expresses cost as time NOT speed
-  if (funct=="ree" | funct=="hrz" | funct=="wcs" | funct=="vl" | funct=="p" | funct=="ug" | funct=="ls") {
+  if (funct=="ree" | funct=="hrz" | funct=="wcs" | funct=="vl" | funct=="p" | funct=="ug" | funct=="ls" | funct=="b") {
 
     #restrict the cost calculation to adjacent cells by creating an index for adjacent cells (adj) with the function 'adjacent'
     adj <- raster::adjacent(dtm, cells=1:raster::ncell(dtm), pairs=TRUE, directions=move)
@@ -546,8 +647,8 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
   accum_final <- gdistance::accCost(Conductance, sp::coordinates(origin))
 
   #if user select the Tobler's, the modified Tobler's, the Irmischer-Clarke's,
-  #the Uriarte Gonzalez's or the Alberti's function, turn seconds into the user-defined time-scale
-    if (funct=="t" | funct=="tofp" | funct=="mp" | funct=="icmonp" | funct=="icmoffp" | funct=="icfonp" | funct=="icfoffp" | funct=="ug" | funct=="alb"){
+  #the Uriarte Gonzalez's, the Alberti's function, or other speed-related functions, turn seconds into the user-defined time-scale
+    if (funct=="t" | funct=="tofp" | funct=="mp" | funct=="icmonp" | funct=="icmoffp" | funct=="icfonp" | funct=="icfoffp" | funct=="ug" | funct=="alb" | funct=="gkrs" | funct=="r"){
     if (time=="h") {
       #turn seconds into hours
       accum_final <- accum_final / 3600
@@ -622,11 +723,28 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
   #calculate and store the contours as a SpatialLinesDataFrame
   isolines <- raster::rasterToContour(accum_final, levels=levels)
 
+
   #if 'destin' is NOT NULL, calculate the least-cost path(s) from the origin to the destination(s);
   #the 'Conductance' transitional layer is used
   if(is.null(destin)==FALSE){
     #calculate the least-cost path(s)
     sPath <- gdistance::shortestPath(Conductance, sp::coordinates(origin), sp::coordinates(destin), output="SpatialLines")
+
+    sPath.back <- NULL
+
+    #if 'return.base' is set to TRUE
+    if(return.base==TRUE){
+      #create an empty list to store the LCPs back to the origin
+      sPath.back <- list()
+      #loop through the destinations, for each calculate the LCPs to the origin, and store those in the
+      #previously created list
+      for(i in 1:length(destin)) {
+        sPath.back[[i]]<- gdistance::shortestPath(Conductance, sp::coordinates(destin[i,]), sp::coordinates(origin), output="SpatialLines")
+      }
+      #merge the individual LCPs
+      sPath.back <- base::do.call(rbind, sPath.back)
+    }
+
 
   if (graph.out==TRUE) {
     #plot the dtm
@@ -646,11 +764,23 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
          col="red")
 
     #add the LCPs
-    graphics::lines(sPath)
+    raster::plot(sPath, add=TRUE)
+
+    #if 'return.base' is set to TRUE, plot the LCPs back to the origin
+    if(return.base==TRUE){
+      for(i in 1:length(destin)) {
+        raster::plot(sPath.back, lty=rb.lty, add=TRUE)
+      }
+    }
   }
 
     #calculate the length of the least-cost paths and store the values by appending them to a new variable of the sPath object
     sPath$length <- rgeos::gLength(sPath, byid=TRUE)
+
+    #same as above if the LCPs back to the origin had been calculated
+    if(return.base==TRUE){
+      sPath.back$length <- rgeos::gLength(sPath.back, byid=TRUE)
+      }
 
     #extract the cost from the accum_final to the destination location(s), appending the data to a new column
     destin$cost <- raster::extract(accum_final, destin)
@@ -663,17 +793,20 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
            pos = 4,
            cex=cex.lcp.lab)
     }
-
-
-    }
+  }
 
     #if export is TRUE, export the LPCs as a shapefile
     if(export==TRUE){
       rgdal::writeOGR(sPath, ".", paste0("LCPs_", funct), driver="ESRI Shapefile")
+      #same as above if the LCPs back to the origin had been calculated
+      if(return.base==TRUE){
+        rgdal::writeOGR(sPath.back, ".", paste0("LCPs_back_", funct), driver="ESRI Shapefile")
+      }
     }
 
   } else {
     sPath=NULL
+    sPath.back=NULL
     dest.loc.w.cost=NULL
   }
 
@@ -707,5 +840,6 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, funct="t", 
                   "accumulated.cost.raster"=accum_final,
                   "isolines" = isolines,
                   "LCPs"=sPath,
+                  "LCPs.back"=sPath.back,
                   "dest.loc.w.cost"=destin)
 }

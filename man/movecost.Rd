@@ -20,6 +20,8 @@ movecost(
   N = 1,
   V = 1.2,
   z = 9,
+  return.base = FALSE,
+  rb.lty = 2,
   breaks = NULL,
   cont.lab = TRUE,
   destin.lab = TRUE,
@@ -39,7 +41,8 @@ movecost(
 
 \item{studyplot}{polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see Details); NULL is default.}
 
-\item{funct}{cost function to be used:\cr \strong{t} (default) uses the on-path Tobler's hiking function;\cr
+\item{funct}{cost function to be used:\cr
+\strong{t} (default) uses the on-path Tobler's hiking function;\cr
 \strong{tofp} uses the off-path Tobler's hiking function;\cr
 \strong{mp} uses the Marquez-Perez et al.'s modified Tobler's function;\cr
 \strong{icmonp} uses the Irmischer-Clarke's modified Tobler's hiking function (male, on-path);\cr
@@ -48,12 +51,15 @@ movecost(
 \strong{icfoffp} uses the Irmischer-Clarke's modified Tobler's hiking function (female, off-path);\cr
 \strong{ug} uses the Uriarte Gonzalez's slope-dependant walking-time cost function;\cr
 \strong{alb} uses the Alberti's Tobler hiking function modified for animal foraging excursions;\cr
+\strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
+\strong{r} uses the Rees' hiking function;\cr
 \strong{ree} uses the relative energetic expenditure cost function;\cr
 \strong{hrz} uses the Herzog's metabolic cost function;\cr
 \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
 \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;\cr
 \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
-\strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function (see Details).}
+\strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
+\strong{b} uses the Bellavia's cost function (for all the above cost functions, see Details).\cr}
 
 \item{time}{time-unit expressed by the accumulated raster and by the isolines if Tobler's and other time-related cost functions are used;
 'h' for hour, 'm' for minutes.}
@@ -70,11 +76,15 @@ movecost(
 
 \item{L}{carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see Details).}
 
-\item{N}{coefficient representing ease of movement (1 by default) (used by the Pandolf's and Van Leusen's cost function; see Details).}
+\item{N}{coefficient representing ease of movement (1 by default) (used by the Pandolf's, Van Leusen's, and Bellavia's cost function; see Details).}
 
 \item{V}{speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; see Details).}
 
 \item{z}{zoom level for the elevation data downloaded from online sources (0 to 15; 9 by default) (see Details and \code{\link[elevatr]{get_elev_raster}}).}
+
+\item{return.base}{TRUE or FALSE (default) if the user wants or does not want the least-cost paths back to the origin to be calculated and plotted.}
+
+\item{rb.lty}{Line type used to represent the least-cost paths back to the origin in the returned plot (2 by default; dashed line; see 'lty' parameter in \code{\link[graphics]{par}}).}
 
 \item{breaks}{isolines interval; if no value is supplied, the interval is set by default to 1/10 of the range of values of the accumulated cost surface.}
 
@@ -101,7 +111,9 @@ The function returns a list storing the following components \itemize{
  \item{accumulated.cost.raster: }{raster representing the accumualted cost ('RasterLayer' class)}
  \item{isolines: }{contour lines derived from the accumulated cost surface ('SpatialLinesDataFrame' class)}
  \item{LCPs: }{estimated least-cost paths ('SpatialLines' class)}
+ \item{LCPs.back: }{estimated least-cost paths back to the origin ('SpatialLines' class)}
  \item{LCPs$length: }{length of each least-cost path (units depend on the unit used in the input DTM)}
+ \item{LCPs.back$length: }{length of each least-cost path back to the origin (units depend on the unit used in the input DTM)}
  \item{dest.loc.w.cost: }{copy of the input destination location(s) dataset with a new variable ('cost') added}
 }
 }
@@ -115,8 +127,8 @@ the starting location, i.e. the location from which the accumulated cost is calc
 If the parameter 'destin' is fed with a dataset representing destination location(s) ('SpatialPointsDataFrame' class), the function also calculates
 least-cost path(s) plotted on the input DTM; the length of each path is saved under the variable 'length' stored in the 'LCPs' dataset ('SpatialLines' class) returned by the function.
 The red dot(s) representing the destination location(s) are labelled with numeric values representing
-the cost value at the location(s). The cost value is also appended to the updated destination dataset returned by the function and
-storing a new variable named 'cost'.\cr
+the cost value at the location(s). The cost value is also appended to the updated destination locations dataset returned by the function, which
+stores a new variable labelled 'cost'.\cr
 
 It is worth reminding the user(s) that all the input layers (i.e., DTM, start location, and destination locations) must use the same projected coordinate system.\cr
 
@@ -132,6 +144,10 @@ in an area close the Mount Etna (Sicily, Italy), whose elevation data are acquir
 polygon defining the study area, are provided in this same package:\cr
 
 result <- movecost(origin=Etna_start_location, destin=Etna_end_location, studyplot=Etna_boundary) \cr
+
+The LCPs back to the origin can be calculated and plotted setting the parameter 'return.base' to TRUE:\cr
+
+result <- movecost(origin=Etna_start_location, destin=Etna_end_location, studyplot=Etna_boundary, return.base=TRUE) \cr
 
 To know more about what elevation data are tapped from online
 sources, visit: https://cran.r-project.org/web/packages/elevatr/vignettes/introduction_to_elevatr.html. \cr
@@ -228,6 +244,31 @@ Tobler’s hiking function has been rescaled by a factor of 0.25 to represent th
 The factor corresponds to the ratio between the flock average speed (1.5 km/h) and the maximum human walking speed (about 6.0 km/h) on a favourable slope.
 
 
+
+\strong{Garmy, Kaddouri, Rozenblat, and Schneider's hiking function (speed in kmh)}:\cr
+
+\eqn{ 4 * exp(-0.008 * ((atan(abs(x[adj]))*180/pi)^2)) }\cr
+
+slope in degrees;
+\strong{see}: Herzog, I. (2020). Spatial Analysis Based on Cost Functions. In Gillings M, Haciguzeller P, Lock G (eds), "Archaeological Spatial Analysis. A Methodological Guide.",
+Routledge: New York, 333-358 (with previous references).\cr
+
+
+
+\strong{Rees' hiking function (speed in kmh)}:\cr
+
+\eqn{ (1 / (0.75 + 0.09 * abs(x[adj]) + 14.6 * (abs(x[adj]))^2)) * 3.6  }\cr
+
+Rees' slope-dependant cost function; it is originally expressed in terms of time (1/v in Rees' publication);
+here it is the reciprocal of time (i.e. speed) that is used in order to eventually get the reciprocal of speed (i.e. time).
+Slope is dealt with here as originally expressed in Rees' publication (i.e. rise over run). The speed, which is originally expressed in m/s,
+has been here transposed to kmh (i.e., multiplied by 3.6) for consistency with other hiking functions.\cr
+For this cost function \strong{see}: Rees, WG (2004). Least-cost paths in mountainous terrain.
+Computers & Geosciences, 30(3), 203–209. See also: Campbell MJ, Dennison PE, Butler BW, Page WG (2019). Using crowdsourced
+fitness tracker data to model the relationship between slope and travel rates. Applied Geography 106, 93-107 (with previous references).\cr
+
+
+
 \strong{Relative energetic expenditure cost function}:\cr
 
 \eqn{ 1 / (tan((atan(abs(x[adj]))*180/pi)*pi/180) / tan (1*pi/180)) }\cr
@@ -239,11 +280,13 @@ function; \strong{see also} ten Bruggencate, R. E., Stup, J. P., Milne, S. B., S
 Canada. Journal of Field Archaeology, 41(6), 684-698. https://doi.org/10.1080/00934690.2016.1234897.\cr
 
 
+
 \strong{Herzog's metabolic cost function in J/(kg*m)}:\cr
 
 \eqn{ 1 / ((1337.8 * abs(x[adj])^6) + (278.19 * abs(x[adj])^5) - (517.39 * abs(x[adj])^4) - (78.199 * abs(x[adj])^3) + (93.419 * abs(x[adj])^2) + (19.825 * abs(x[adj])) + 1.64) }\cr
 
 \strong{see} Herzog, I. (2016). Potential and Limits of Optimal Path Analysis. In A. Bevan & M. Lake (Eds.), Computational Approaches to Archaeological Spaces (pp. 179-211). New York: Routledge.\cr
+
 
 
 \strong{Wheeled-vehicle critical slope cost function}:\cr
@@ -252,6 +295,7 @@ Canada. Journal of Field Archaeology, 41(6), 684-698. https://doi.org/10.1080/00
 
 where \eqn{sl.crit} (=critical slope, in percent) is "the transition where switchbacks become more effective than direct uphill or downhill paths" and typically is in the range 8-16;
 \strong{see} Herzog, I. (2016). Potential and Limits of Optimal Path Analysis. In A. Bevan & M. Lake (Eds.), Computational Approaches to Archaeological Spaces (pp. 179-211). New York: Routledge. \cr
+
 
 
 \strong{Pandolf et al.'s metabolic energy expenditure cost function (in Watts)}:\cr
@@ -271,6 +315,7 @@ For the use of this cost function in a case study, \strong{see} Rademaker, K., R
 \strong{Note}: in the returned charts, the cost is transposed from Watts to Megawatts (see, e.g., Rademaker et al 2012 cited above).\cr
 
 
+
 \strong{Van Leusen's metabolic energy expenditure cost function (in Watts)}:\cr
 
 \eqn{ 1 / (1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * V^2 + 0.35 * V * abs(x[adj])*100) + 10))  }\cr
@@ -281,11 +326,25 @@ unlike Van Leusen (2002), in the above equation slope is expressed in percent an
 the value of 6 used by Van Leusen (as per Herzog 2013).\cr
 \strong{Note}: in the returned charts, the cost is transposed from Watts to Megawatts.\cr
 
+
+
 \strong{Llobera-Sluckin's metabolic energy expenditure cost function (in KJ/m)}:\cr
 
 \eqn{ 1 / (2.635 + (17.37 * abs(x[adj])) + (42.37 * abs(x[adj])^2) - (21.43 * abs(x[adj])^3) + (14.93 * abs(x[adj])^4))  }\cr
 
 for which \strong{see} Llobera M.-Sluckin T.J. (2007). Zigzagging: Theoretical insights on climbing strategies, Journal of Theoretical Biology 249, 206-217.\cr
+
+
+
+\strong{Bellavia's cost function}:\cr
+
+\eqn{ 1 / N * ((atan(abs(x[adj]))*180/pi)+1)  }\cr
+
+proposed by G. Bellavia, it measures abstract cost. Slope in degrees; N is a terrain factor (see above).
+\strong{See}: Herzog, I. (2020). Spatial Analysis Based on Cost Functions. In Gillings M, Haciguzeller P, Lock G (eds), "Archaeological Spatial Analysis. A Methodological Guide.",
+Routledge: New York, 333-358 (with previous references).\cr
+
+
 
 
 \strong{Note} that the walking-speed-related cost functions listed above are used as they are, while the other functions are reciprocated.
@@ -294,7 +353,7 @@ This is done since "gdistance works with conductivity rather than the more usual
  As a consequence, if we want to estimate time, we have to use the walking-speed functions as they are since the final accumulated values will correspond to the
  reciprocal of speed, i.e. pace. In the other cases, we have to use 1/cost-function to eventually get cost-function/1.\cr
 
-When using the Tobler-related cost functions, the time unit can be selected by the user setting the 'time' parameter to 'h' (hour) or to 'm' (minutes).\cr
+When using cost functions expressing cost in terms of time, the time unit can be selected by the user setting the 'time' parameter to 'h' (hour) or to 'm' (minutes).\cr
 
 In general, the user can also select which type of visualization the function has to produce; this is achieved setting the 'outp' parameter to either 'r' (=raster)
 or to 'c' (=contours). The former will produce a raster with a colour scale and contour lines representing the accumulated cost surface; the latter parameter will only
@@ -326,13 +385,19 @@ result <- movecost(dtm=volc, origin=volc.loc, destin=destin.loc, move=8, breaks=
 # the Irmischer-Clarke's modified Tobler's hiking function (male, on-path)
 
 result <- movecost(dtm=volc, origin=volc.loc, destin=destin.loc, funct="icmonp",
-move=16, breaks=0.05)
+move=8, breaks=0.05)
 
 
 # same as above, but using the 'cognitive slope'
 
 result <- movecost(dtm=volc, origin=volc.loc, destin=destin.loc, funct="icmonp",
-move=16, breaks=0.05, cogn.slp=TRUE)
+move=8, breaks=0.05, cogn.slp=TRUE)
+
+
+# calculate accumulated cost surface and the least-cost path between the
+# origin and one destination, and also calculate the LCP back to the origin
+
+results <- movecost(dtm=volc, origin=volc.loc, destin=destin.loc[2,], move=8, return.base = TRUE)
 
 
 }

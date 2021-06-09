@@ -1,7 +1,15 @@
 # movecost
-vers 0.9
+vers 1.0
+
 
 ## History
+`version 1.0`:
+* The option to calculate and plot the LCPs back to the origin has been added to 'movecost()'.
+* The following cost functions have been implemented in 'movecost()' (and, consequently, in 'movecorr()'): Garmy, Kaddouri, Rozenblat, and Schneider's; Rees'; Bellavia's. The total number of the implemented cost functions is now eighteen.
+* Help documentation updated accordingly, with bibliographical references for the new cost fucntions added.
+* Minor amendements and improvements to some of the labels attached to the returned plots.
+
+
 `version 0.9`:
 * The 'movecorr()' function now can produce either a least-cost corridor between two locations, or corridors between multiple locations.
 * The option has been added to 'movecorr()' to rescale the least-cost values in the output raster to be constrained between 0 and 1.
@@ -15,7 +23,7 @@ vers 0.9
 * The accumulated cost rasters (around point a and around point b) are now returned by 'movecorr()'.
 * The cost-surface is now returned (but not plotted) by 'movecost()'.
 * Minor internal optimizations.
-* Mninor amendements and improvements to the help documentation.
+* Minor amendements and improvements to the help documentation.
 
 `version 0.7`:
 Function 'movecorr()' added. In the 'movecost()' function, the option has been added to have the function producing or not a graphical output (via the 'graph.out'parameter).The Marquez-Perez et al.'s modified Tobler's function has been renamed for consistency with the names given to the other functions: from 'mt' (which was standing for "modified Tobler"") to 'mp' (which stands for "Marquez-Perez"").

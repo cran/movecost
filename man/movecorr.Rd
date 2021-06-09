@@ -41,7 +41,8 @@ movecorr(
 
 \item{studyplot}{polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see \code{\link{movecost}}); NULL is default.}
 
-\item{funct}{cost function to be used (for details on each of the following, see \code{\link{movecost}}):\cr \strong{t} (default) uses the on-path Tobler's hiking function;\cr
+\item{funct}{cost function to be used (for details on each of the following, see \code{\link{movecost}}):\cr
+\strong{t} (default) uses the on-path Tobler's hiking function;\cr
 \strong{tofp} uses the off-path Tobler's hiking function;\cr
 \strong{mp} uses the Marquez-Perez et al.'s modified Tobler's function;\cr
 \strong{icmonp} uses the Irmischer-Clarke's modified Tobler's hiking function (male, on-path);\cr
@@ -50,12 +51,15 @@ movecorr(
 \strong{icfoffp} uses the Irmischer-Clarke's modified Tobler's hiking function (female, off-path);\cr
 \strong{ug} uses the Uriarte Gonzalez's slope-dependant walking-time cost function;\cr
 \strong{alb} uses the Alberti's Tobler hiking function modified for animal foraging excursions;\cr
+\strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
+\strong{r} uses the Rees' hiking function;\cr
 \strong{ree} uses the relative energetic expenditure cost function;\cr
 \strong{hrz} uses the Herzog's metabolic cost function;\cr
 \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
 \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;\cr
 \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
-\strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function.}
+\strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function.\cr
+\strong{b} uses the Bellavia's cost function.\cr}
 
 \item{time}{time-unit expressed by the accumulated raster if Tobler's and other time-related cost functions are used;
 'h' for hour, 'm' for minutes.}
@@ -70,7 +74,7 @@ movecorr(
 
 \item{L}{carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).}
 
-\item{N}{coefficient representing ease of movement (1 by default) (used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).}
+\item{N}{coefficient representing ease of movement (1 by default) (used by the Pandolf's, Van Leusen's, and Bellavia's cost function; see \code{\link{movecost}}).}
 
 \item{V}{speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).}
 
@@ -165,13 +169,13 @@ data(destin.loc)
 # relative energetic expenditure cost function, and store the results
 # in the 'result' object
 
-result <- movecorr(dtm=volc, a=destin.loc[1,], b=destin.loc[3,], funct="ree", move=16)
+result <- movecorr(dtm=volc, a=destin.loc[1,], b=destin.loc[3,], funct="ree", move=8)
 
 
 #same as above, but using the 'cognitive slope'
 
-result <- movecorr(dtm=volc, a=destin.loc[1,], b=destin.loc[3,],
-funct="ree", move=16, cogn.slp=TRUE)
+# result <- movecorr(dtm=volc, a=destin.loc[1,], b=destin.loc[3,],
+# funct="ree", move=8, cogn.slp=TRUE)
 
 
 }
