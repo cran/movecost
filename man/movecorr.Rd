@@ -45,12 +45,12 @@ movecorr(
 \strong{t} (default) uses the on-path Tobler's hiking function;\cr
 \strong{tofp} uses the off-path Tobler's hiking function;\cr
 \strong{mp} uses the Marquez-Perez et al.'s modified Tobler's function;\cr
-\strong{icmonp} uses the Irmischer-Clarke's modified Tobler's hiking function (male, on-path);\cr
-\strong{icmoffp} uses the Irmischer-Clarke's modified Tobler's hiking function (male, off-path);\cr
-\strong{icfonp} uses the Irmischer-Clarke's modified Tobler's hiking function (female, on-path);\cr
-\strong{icfoffp} uses the Irmischer-Clarke's modified Tobler's hiking function (female, off-path);\cr
+\strong{icmonp} uses the Irmischer-Clarke's hiking function (male, on-path);\cr
+\strong{icmoffp} uses the Irmischer-Clarke's hiking function (male, off-path);\cr
+\strong{icfonp} uses the Irmischer-Clarke's hiking function (female, on-path);\cr
+\strong{icfoffp} uses the Irmischer-Clarke's hiking function (female, off-path);\cr
 \strong{ug} uses the Uriarte Gonzalez's slope-dependant walking-time cost function;\cr
-\strong{alb} uses the Alberti's Tobler hiking function modified for animal foraging excursions;\cr
+\strong{alb} uses the Alberti's Tobler hiking function modified for pastoral foraging excursions;\cr
 \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
 \strong{r} uses the Rees' hiking function;\cr
 \strong{ree} uses the relative energetic expenditure cost function;\cr
@@ -74,7 +74,7 @@ movecorr(
 
 \item{L}{carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).}
 
-\item{N}{coefficient representing ease of movement (1 by default) (used by the Pandolf's, Van Leusen's, and Bellavia's cost function; see \code{\link{movecost}}).}
+\item{N}{coefficient representing ease of movement (1 by default) (see \code{\link{movecost}}).}
 
 \item{V}{speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).}
 

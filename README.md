@@ -1,8 +1,15 @@
 # movecost
-vers 1.0
+vers 1.1
 
 
 ## History
+`version 1.1`:
+* Fix to an error in the Bellavia's cost function, which has been introduced in ver 1.0.
+* The use of a terrain factor (N) has been extended to almost all the implemented cost functions; help documentation updated accordingly.
+* Minor adjustements to the returned plots to indicate the value of the used terrain factor.
+* Improvements to the content and layout of the 'movecost()'s help documentation.
+
+
 `version 1.0`:
 * The option to calculate and plot the LCPs back to the origin has been added to 'movecost()'.
 * The following cost functions have been implemented in 'movecost()' (and, consequently, in 'movecorr()'): Garmy, Kaddouri, Rozenblat, and Schneider's; Rees'; Bellavia's. The total number of the implemented cost functions is now eighteen.
