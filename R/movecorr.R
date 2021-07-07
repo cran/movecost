@@ -2,7 +2,7 @@
 #'
 #' The function provides the facility to calculate the least-cost corridor between point locations.
 #' It just requires an input DTM and at least two point locations ('SpatialPointsDataFrame' class) representing the locations between which the corridor is calculated.
-#' Under the hood, 'movecorr' relies on the \code{\link{movecost}} function and, needless to say, implements the same
+#' Under the hood, 'movecorr()' relies on the \code{\link{movecost}} function and, needless to say, implements the same
 #' cost functions. See the help documentation of \code{\link{movecost}} for further details.\cr
 #'
 #' If only two locations are provided (one via parameter 'a', one via parameter 'b'),
@@ -94,9 +94,10 @@
 #' @param V speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
 #' @param z zoom level for the elevation data downloaded from online sources (from 0 to 15; 9 by default) (see \code{\link{movecost}} and \code{\link[elevatr]{get_elev_raster}}).
 #' @param rescale TRUE or FALSE (default) if the user wants or does not want the output least-coast corridor raster to be rescaled between 0 and 1.
+#' @param transp set the transparency of the hillshade raster that is plotted over the least-cost corridor raster (0.5 by default).
 #' @param export TRUE or FALSE (default) if the user wants or does not want the output to be exported; if TRUE, the least-cost corridor, the dtm (if not provided by the user but acquired online),
 #' and the accumulated cost surface around a and b are exported as a GeoTiff file, while the two LCPs (from a to b, and from b to a) as individual shapefiles. If multiple locations are analysed, only the
-#' least-cost corridor (and the DTM if originally not provided) will be exported.
+#' least-cost corridor (and the DTM if originally not provided) will be exported. All the exported files (excluding the DTM) will bear a suffix corresponding to the cost function selected by the user.
 #'
 #' @return The function returns a list storing the following components \itemize{
 ##'  \item{dtm: }{Digital Terrain Model ('RasterLayer' class)}
@@ -111,10 +112,11 @@
 ##'
 #' @keywords movecorr
 #' @export
-#' @importFrom raster ncell mask crop stack cellStats
+#' @importFrom raster ncell mask crop stack cellStats raster hillShade terrain
 #' @importFrom elevatr get_elev_raster
 #' @importFrom graphics layout par
 #' @importFrom utils combn setTxtProgressBar txtProgressBar
+#' @importFrom grDevices terrain.colors topo.colors grey
 #'
 #' @examples
 #' # load a sample Digital Terrain Model
@@ -141,7 +143,7 @@
 #' @seealso \code{\link{movecost}}
 #'
 #'
-movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyplot=NULL, funct="t", time="h", move=16, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, rescale=FALSE, export=FALSE){
+movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyplot=NULL, funct="t", time="h", move=16, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, rescale=FALSE, transp=0.5, export=FALSE){
 
   #if no dtm is provided
   if (is.null(dtm)==TRUE) {
@@ -207,7 +209,7 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
 
     #set the labels to be used within the returned plot
     main.title <- paste0("Least-cost corridor (cost in ", time, ")")
-    sub.title <- "Walking-time based on the Tobler's on-path hiking function"
+    sub.title <- paste0("Walking-time based on the Tobler's on-path hiking function \n terrain factor N=", N)
     legend.cost <- paste0("walking-time (", time,")")
   }
 
@@ -223,7 +225,7 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
 
     #set the labels to be used within the returned plot
     main.title <- paste0("Least-cost corridor (cost in ", time, ")")
-    sub.title <- "Walking-time based on the Marquez-Perez et al.'s modified Tobler hiking function"
+    sub.title <- paste0("Walking-time based on the Marquez-Perez et al.'s modified Tobler hiking function \n terrain factor N=", N)
     legend.cost <- paste0("walking-time (", time,")")
   }
 
@@ -231,7 +233,7 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
 
     #set the labels to be used within the returned plot
     main.title <- paste0("Least-cost corridor (cost in ", time, ")")
-    sub.title <- "Walking-time based on the (male, on-path) Irmischer-Clarke's hiking function"
+    sub.title <- paste0("Walking-time based on the (male, on-path) Irmischer-Clarke's hiking function \n terrain factor N=", N)
     legend.cost <- paste0("walking-time (", time,")")
   }
 
@@ -247,7 +249,7 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
 
     #set the labels to be used within the returned plot
     main.title <- paste0("Least-cost corridor (cost in ", time, ")")
-    sub.title <- "Walking-time based on the (female, on-path) Irmischer-Clarke's hiking function"
+    sub.title <- paste0("Walking-time based on the (female, on-path) Irmischer-Clarke's hiking function \n terrain factor N=", N)
     legend.cost <- paste0("walking-time (", time,")")
   }
 
@@ -259,13 +261,13 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
 
   if(funct=="gkrs") {
     main.title <- paste0("Least-cost corridor (cost in ", time, ")")
-    sub.title <- "Walking-time based on the Garmy et al.'s hiking function"
+    sub.title <- paste0("Walking-time based on the Garmy et al.'s hiking function \n terrain factor N=", N)
     legend.cost <- paste0("walking-time (", time,")")
   }
 
   if(funct=="r") {
     main.title <- paste0("Least-cost corridor (cost in ", time, ")")
-    sub.title <- "Walking-time based on the Rees' hiking function"
+    sub.title <- paste0("Walking-time based on the Rees' hiking function \n terrain factor N=", N)
     legend.cost <- paste0("walking-time (", time,")")
   }
 
@@ -273,7 +275,7 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
 
     #set the labels to be used within the returned plot
     main.title <- paste0("Least-cost corridor (cost in ", time, ")")
-    sub.title <- "Walking-time based on the Uriarte Gonzalez's hiking function"
+    sub.title <- paste0("Walking-time based on the Uriarte Gonzalez's hiking function \n terrain factor N=", N)
     legend.cost <- paste0("walking-time (", time,")")
   }
 
@@ -281,7 +283,7 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
 
     #set the labels to be used within the returned plot
     main.title <- "Least-cost corridor"
-    sub.title <- "Cost based on the slope-dependant relative energetic expenditure cost function"
+    sub.title <- paste0("Cost based on the relative energetic expenditure cost function \n terrain factor N=", N)
     legend.cost <- "cost"
   }
 
@@ -289,7 +291,7 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
 
     #set the labels to be used within the returned plot
     main.title <- "Least-cost corridor"
-    sub.title <- "Cost based on the Herzog's metabolic cost function \n cost in J / (Kg*m)"
+    sub.title <- paste0("Cost based on the Herzog's metabolic cost function \n cost in J / (Kg*m) \n terrain factor N=", N)
     legend.cost <- "metabolic cost J / (Kg*m)"
   }
 
@@ -297,7 +299,7 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
 
     #set the labels to be used within the returned plot
     main.title <- "Least-cost corridor"
-    sub.title <- paste0("Cost based on the wheeled-vehicle critical slope cost function \ncritical slope set to ", sl.crit, " percent")
+    sub.title <- paste0("Cost based on the wheeled-vehicle critical slope cost function \ncritical slope set to ", sl.crit, " percent \n terrain factor N=", N)
     legend.cost <- "cost"
   }
 
@@ -321,7 +323,7 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
 
     #set the labels to be used within the returned plot
     main.title <- "Least-cost corridor"
-    sub.title <- paste0("Cost based on the Llobera-Sluckin's metabolic energy expenditure cost function")
+    sub.title <- paste0("Cost based on the Llobera-Sluckin's metabolic energy expenditure cost function \n terrain factor N=", N)
     legend.cost <- "energy expenditure cost (KJ/m)"
   }
 
@@ -337,7 +339,7 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
 
     #set the labels to be used within the returned plot
     main.title <- "Least-cost corridor"
-    sub.title <- "Cost based on the slope-dependant Bellavia's cost function"
+    sub.title <- paste0("Cost based on the Bellavia's cost function \n terrain factor N=", N)
     legend.cost <- "cost"
   }
 
@@ -349,6 +351,20 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
                cex.main=0.95,
                cex.sub=0.75,
                legend.lab=legend.cost)
+
+  #produce the ingredients for the hillshade raster
+  #to be used in both the rendered plots
+  slope <- raster::terrain(dtm, opt = "slope")
+  aspect <- raster::terrain(dtm, opt = "aspect")
+  hill <- raster::hillShade(slope, aspect, angle = 45, direction = 0)
+
+  #add the hillshade
+  raster::plot(hill,
+               col = grey(0:100/100),
+               legend = FALSE,
+               alpha=transp,
+               add=TRUE)
+
 
   #if the input dataset a was containing just 1 feature...
   if (length(a) < 2) {
@@ -386,7 +402,6 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
                pos = 4,
                cex=cex.labs)
   }
-
 
 
   #if export is TRUE & if the input dataset 'a' was containing just 1 feature

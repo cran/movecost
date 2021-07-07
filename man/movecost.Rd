@@ -28,6 +28,7 @@ movecost(
   cex.breaks = 0.6,
   cex.lcp.lab = 0.6,
   graph.out = TRUE,
+  transp = 0.5,
   oneplot = TRUE,
   export = FALSE
 )
@@ -98,11 +99,14 @@ movecost(
 
 \item{graph.out}{TRUE (default) or FALSE if the user wants or does not want a graphical output to be generated.}
 
+\item{transp}{set the transparency of the hillshade raster that is plotted over the rendered plots (0.5 by default).}
+
 \item{oneplot}{TRUE (default) or FALSE if the user wants or does not want the plots displayed in a single window.}
 
 \item{export}{TRUE or FALSE (default) if the user wants or does not want the outputs to be exported; if TRUE, the DTM, the cost-surface, and the accumulated cost surface are
-exported as a GeoTiff file, while the isolines and the least-cost path(s) are exported as shapefile; all the exported files (excluding the DTM) will bear a suffix corresponding
-to the cost function selected by the user. Notice that the DTM is exported only if it was not provided by the user and downloaded by the function from online sources.}
+exported as a GeoTiff file, while the isolines, the least-cost path(s), and a copy of the input destination locations (storing the cost measured at each location)
+are exported as shapefile; all the exported files (excluding the DTM) will bear a suffix corresponding to the cost function selected by the user.
+Note that the DTM is exported only if it was not provided by the user and downloaded by the function from online sources.}
 }
 \value{
 The function returns a list storing the following components \itemize{
@@ -114,7 +118,9 @@ The function returns a list storing the following components \itemize{
  \item{LCPs.back: }{estimated least-cost paths back to the origin ('SpatialLines' class)}
  \item{LCPs$length: }{length of each least-cost path (units depend on the unit used in the input DTM)}
  \item{LCPs.back$length: }{length of each least-cost path back to the origin (units depend on the unit used in the input DTM)}
- \item{dest.loc.w.cost: }{copy of the input destination location(s) dataset with a new variable ('cost') added}
+ \item{dest.loc.w.cost: }{copy of the input destination location(s) dataset with a new variable ('cost') added; if
+ the cost is expressed in terms of time, the 'cost' variable will store the time values in decimal numbers, while another variable named
+ 'cost_hms' will store the time values in sexagesimmal numbers (hours, minutes, seconds)}
 }
 }
 \description{
@@ -127,10 +133,15 @@ the starting location, i.e. the location from which the accumulated cost is calc
 If the parameter 'destin' is fed with a dataset representing destination location(s) ('SpatialPointsDataFrame' class), the function also calculates
 least-cost path(s) plotted on the input DTM; the length of each path is saved under the variable 'length' stored in the 'LCPs' dataset ('SpatialLines' class) returned by the function.
 In the produced plot, the red dot(s) representing the destination location(s) are labelled with numeric values representing
-the cost value at the location(s). The cost value is also appended to the updated destination locations dataset returned by the function, which
-stores a new variable labelled 'cost'.\cr
+the cost value at the location(s). \cr
 
-When using cost functions expressing cost in terms of time, the time unit can be selected by the user setting the 'time' parameter to 'h' (hour) or to 'm' (minutes).\cr
+The cost value is also appended to the updated destination locations dataset returned by the function, which
+stores a new variable labelled 'cost'. If the cost is expressed in terms of walking time, the labels accompaining each destinaton location will
+express time in sexagesimal numbers (hours, minutes, seconds). In this case, the variable 'cost' appended to the returned destination location datset
+will store the time figures in decimal numbers, while another variable named 'cost_hms' will store the corresponding value in sexagesimal numbers.
+When interpreting the time values stored in the 'cost' variable, the user may want to bear in mind the selected time unit (see right below).\cr
+
+When using cost functions expressing cost in terms of time, the time unit can be selected by the user setting the 'time' parameter to 'h' (hours) or to 'm' (minutes).\cr
 
 In general, the user can also select which type of visualization the function has to produce; this is achieved setting the 'outp' parameter to either 'r' (=raster)
 or to 'c' (=contours). The former will produce a raster with a colour scale and contour lines representing the accumulated cost surface; the latter parameter will only
@@ -152,7 +163,7 @@ The number of directions in which cells are connected in the cost calculation ca
 
 
 Acquiring online elevation data:\cr
-if a DTM is not provided, 'movecost' will download elevation data from online sources.
+if a DTM is not provided, 'movecost()' will download elevation data from online sources.
 Elevation data will be aquired for the area enclosed  by the  polygon supplied by the 'studyplot' parameter (SpatialPolygonDataFrame class).
 To tap online elevation data, 'movecost' internally builds on the
 \code{\link[elevatr]{get_elev_raster}} function from the \emph{elevatr} package.\cr
@@ -248,7 +259,9 @@ factors to be used for cost functions measuring time, the second for functions m
 Besides citing this package, you may want to refer to the following journal article:
 \strong{Alberti (2019) <doi:10.1016/j.softx.2019.100331>}.\cr
 
-The following cost functions are implemented (\strong{x[adj]} stands for slope as rise/run calculated for adjacent cells):\cr
+
+Implemented cost functions:\cr
+note that in what follows \strong{x[adj]} stands for slope as rise/run calculated for adjacent cells:\cr
 
 \strong{Tobler's hiking function (on-path) (speed in kmh)}:\cr
 
@@ -270,7 +283,7 @@ modified version of the Tobler's hiking function as proposed by Joaquin Marquez-
 Geografisk Tidsskrift-Danish Journal of Geography, 117:1, 53-62, DOI: 10.1080/00167223.2017.1316212.\cr
 
 
-\strong{Irmischer-Clarke's modified Tobler hiking function (male, on-path)}:\cr
+\strong{Irmischer-Clarke's modified Tobler hiking function (male, on-path; speed in kmh)}:\cr
 
 \eqn{(0.11 + exp(-(abs(x[adj])*100 + 5)^2 / (2 * 30)^2)) * 3.6}\cr
 
@@ -278,15 +291,15 @@ modified version of the Tobler's function as proposed for (male) on-path hiking 
 Cartography and Geographic Information Science, 45(2), 177-186. https://doi.org/10.1080/15230406.2017.1292150. \strong{Note}: all the all the Irmischer-Clarke's functions
 originally express speed in m/s; they have been reshaped (multiplied by 3.6) to turn m/s into km/h for consistency with the other Tobler-related cost functions; slope is in percent.\cr
 
-\strong{Irmischer-Clarke's modified Tobler hiking function (male, off-path)}:\cr
+\strong{Irmischer-Clarke's modified Tobler hiking function (male, off-path; speed in kmh)}:\cr
 
 \eqn{(0.11 + 0.67 * exp(-(abs(x[adj])*100 + 2)^2 / (2 * 30)^2)) * 3.6}\cr
 
-\strong{Irmischer-Clarke's modified Tobler hiking function (female, on-path)}:\cr
+\strong{Irmischer-Clarke's modified Tobler hiking function (female, on-path; speed in kmh)}:\cr
 
 \eqn{(0.95 * (0.11 + exp(-(abs(x[adj]) * 100 + 5)^2/(2 * 30^2)))) * 3.6 }\cr
 
-\strong{Irmischer-Clarke's modified Tobler hiking function (female, off-path)}:\cr
+\strong{Irmischer-Clarke's modified Tobler hiking function (female, off-path; speed in kmh)}:\cr
 
 \eqn{(0.95 * (0.11 + 0.67 * exp(-(abs(x[adj]) * 100 + 2)^2/(2 * 30^2)))) * 3.6}\cr
 
@@ -376,7 +389,7 @@ where \eqn{sl.crit} (=critical slope, in percent) is "the transition where switc
 
 \eqn{1 / (1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * V^2 + 0.35 * V * (abs(x[adj])*100)))}\cr
 
-where \eqn{W} is the walker's body weight (Kg), \eqn{L} is the carried load (in Kg), \eqn{V} is the velocity in m/s, \eqn{N} is a coefficient representing ease of movement on the terrain (see below).\cr
+where \eqn{W} is the walker's body weight (Kg), \eqn{L} is the carried load (in Kg), \eqn{V} is the velocity in m/s, \eqn{N} is a coefficient representing ease of movement on the terrain (see above).\cr
 
 For this cost function, \strong{see} Pandolf, K. B., Givoni, B., & Goldman, R. F. (1977). Predicting energy expenditure with loads while standing or walking very slowly. Journal of Applied Physiology,
 43(4), 577-581. https://doi.org/10.1152/jappl.1977.43.4.577.\cr
@@ -414,7 +427,7 @@ for which \strong{see} Llobera M.-Sluckin T.J. (2007). Zigzagging: Theoretical i
 
 \eqn{1 / (N * ((atan(abs(x[adj]))*180/pi)+1))}\cr
 
-proposed by G. Bellavia, it measures abstract cost. Slope in degrees; N is a terrain factor (see below).
+proposed by G. Bellavia, it measures abstract cost. Slope in degrees; N is a terrain factor (see above).
 \strong{See}: Herzog, I. (2020). Spatial Analysis Based on Cost Functions. In Gillings M, Haciguzeller P, Lock G (eds), "Archaeological Spatial Analysis. A Methodological Guide.",
 Routledge: New York, 333-358 (with previous references).\cr
 
@@ -466,6 +479,6 @@ results <- movecost(dtm=volc, origin=volc.loc, destin=destin.loc[2,], move=8, re
 
 }
 \seealso{
-\code{\link[elevatr]{get_elev_raster}}, \code{\link{movecorr}}
+\code{\link[elevatr]{get_elev_raster}}, \code{\link{movecorr}}, \code{\link{movebound}}
 }
 \keyword{movecost}

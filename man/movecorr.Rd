@@ -23,6 +23,7 @@ movecorr(
   V = 1.2,
   z = 9,
   rescale = FALSE,
+  transp = 0.5,
   export = FALSE
 )
 }
@@ -82,9 +83,11 @@ movecorr(
 
 \item{rescale}{TRUE or FALSE (default) if the user wants or does not want the output least-coast corridor raster to be rescaled between 0 and 1.}
 
+\item{transp}{set the transparency of the hillshade raster that is plotted over the least-cost corridor raster (0.5 by default).}
+
 \item{export}{TRUE or FALSE (default) if the user wants or does not want the output to be exported; if TRUE, the least-cost corridor, the dtm (if not provided by the user but acquired online),
 and the accumulated cost surface around a and b are exported as a GeoTiff file, while the two LCPs (from a to b, and from b to a) as individual shapefiles. If multiple locations are analysed, only the
-least-cost corridor (and the DTM if originally not provided) will be exported.}
+least-cost corridor (and the DTM if originally not provided) will be exported. All the exported files (excluding the DTM) will bear a suffix corresponding to the cost function selected by the user.}
 }
 \value{
 The function returns a list storing the following components \itemize{
@@ -101,7 +104,7 @@ The function returns a list storing the following components \itemize{
 \description{
 The function provides the facility to calculate the least-cost corridor between point locations.
 It just requires an input DTM and at least two point locations ('SpatialPointsDataFrame' class) representing the locations between which the corridor is calculated.
-Under the hood, 'movecorr' relies on the \code{\link{movecost}} function and, needless to say, implements the same
+Under the hood, 'movecorr()' relies on the \code{\link{movecost}} function and, needless to say, implements the same
 cost functions. See the help documentation of \code{\link{movecost}} for further details.\cr
 }
 \details{
