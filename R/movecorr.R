@@ -3,7 +3,7 @@
 #' The function provides the facility to calculate the least-cost corridor between point locations.
 #' It just requires an input DTM and at least two point locations ('SpatialPointsDataFrame' class) representing the locations between which the corridor is calculated.
 #' Under the hood, 'movecorr()' relies on the \code{\link{movecost}} function and, needless to say, implements the same
-#' cost functions. See the help documentation of \code{\link{movecost}} for further details.\cr
+#' cost functions. See the help documentation of 'movecost()' for further details.\cr
 #'
 #' If only two locations are provided (one via parameter 'a', one via parameter 'b'),
 #' the function renders a raster representing the least cost corridor (which can be optionally exported as GeoTiff) with least-cost paths superimposed.
@@ -76,6 +76,7 @@
 #' \strong{alb} uses the Alberti's Tobler hiking function modified for pastoral foraging excursions;\cr
 #' \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
 #' \strong{r} uses the Rees' hiking function;\cr
+#' \strong{ks} uses the Kondo-Seino's hiking function;\cr
 #' \strong{ree} uses the relative energetic expenditure cost function;\cr
 #' \strong{hrz} uses the Herzog's metabolic cost function;\cr
 #' \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
@@ -91,7 +92,7 @@
 #' @param W walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
 #' @param L carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
 #' @param N coefficient representing ease of movement (1 by default) (see \code{\link{movecost}}).
-#' @param V speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
+#' @param V speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; if set to 0, it is internally worked out on the basis of Tobler on-path hiking function; see \code{\link{movecost}}).
 #' @param z zoom level for the elevation data downloaded from online sources (from 0 to 15; 9 by default) (see \code{\link{movecost}} and \code{\link[elevatr]{get_elev_raster}}).
 #' @param rescale TRUE or FALSE (default) if the user wants or does not want the output least-coast corridor raster to be rescaled between 0 and 1.
 #' @param transp set the transparency of the hillshade raster that is plotted over the least-cost corridor raster (0.5 by default).
@@ -279,6 +280,12 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
     legend.cost <- paste0("walking-time (", time,")")
   }
 
+  if(funct=="ks") {
+    main.title <- paste0("Least-cost corridor (cost in ", time, ")")
+    sub.title <- paste0("Walking-time based on the Kondo-Seino's hiking function \n terrain factor N=", N)
+    legend.cost <- paste0("walking-time (", time,")")
+  }
+
   if(funct=="ree") {
 
     #set the labels to be used within the returned plot
@@ -307,16 +314,24 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
 
     #set the labels to be used within the returned plot
     main.title <- "Least-cost corridor"
-    sub.title <- paste0("Cost based on the Van Leusen's metabolic energy expenditure cost function \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V: ", V)
     legend.cost <- "energy expenditure cost (Megawatts)"
+    if (V==0) {
+      sub.title <- paste0("Cost based on the Van Leusen's metabolic energy expenditure cost function \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V is based on the Tobler on-path hiking function")
+    } else {
+      sub.title <- paste0("Cost based on the Van Leusen's metabolic energy expenditure cost function \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V: ", V)
+    }
   }
 
   if(funct=="p") {
 
     #set the labels to be used within the returned plot
     main.title <- "Least-cost corridor"
-    sub.title <- paste0("Cost based on the Pandolf et al.'s metabolic energy expenditure cost function \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V: ", V)
     legend.cost <- "energy expenditure cost (Megawatts)"
+    if (V==0) {
+      sub.title <- paste0("Cost based on the Pandolf et al.'s metabolic energy expenditure cost function \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V is based on the Tobler on-path hiking function")
+    } else {
+      sub.title <- paste0("Cost based on the Pandolf et al.'s metabolic energy expenditure cost function \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V: ", V)
+    }
   }
 
   if(funct=="ls") {
@@ -401,6 +416,16 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
                labels=lab.b,
                pos = 4,
                cex=cex.labs)
+  }
+
+
+  #if the input dataset a was containing more than 2 features...
+  if (length(a) > 2) {
+    #plot all the point locations on top of the previously
+    #plotted hillshade and corridor rasters
+    raster::plot(a,
+                 pch=20,
+                 add=TRUE)
   }
 
 

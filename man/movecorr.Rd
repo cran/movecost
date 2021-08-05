@@ -54,6 +54,7 @@ movecorr(
 \strong{alb} uses the Alberti's Tobler hiking function modified for pastoral foraging excursions;\cr
 \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
 \strong{r} uses the Rees' hiking function;\cr
+\strong{ks} uses the Kondo-Seino's hiking function;\cr
 \strong{ree} uses the relative energetic expenditure cost function;\cr
 \strong{hrz} uses the Herzog's metabolic cost function;\cr
 \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
@@ -77,7 +78,7 @@ movecorr(
 
 \item{N}{coefficient representing ease of movement (1 by default) (see \code{\link{movecost}}).}
 
-\item{V}{speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).}
+\item{V}{speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; if set to 0, it is internally worked out on the basis of Tobler on-path hiking function; see \code{\link{movecost}}).}
 
 \item{z}{zoom level for the elevation data downloaded from online sources (from 0 to 15; 9 by default) (see \code{\link{movecost}} and \code{\link[elevatr]{get_elev_raster}}).}
 
@@ -105,7 +106,7 @@ The function returns a list storing the following components \itemize{
 The function provides the facility to calculate the least-cost corridor between point locations.
 It just requires an input DTM and at least two point locations ('SpatialPointsDataFrame' class) representing the locations between which the corridor is calculated.
 Under the hood, 'movecorr()' relies on the \code{\link{movecost}} function and, needless to say, implements the same
-cost functions. See the help documentation of \code{\link{movecost}} for further details.\cr
+cost functions. See the help documentation of 'movecost()' for further details.\cr
 }
 \details{
 If only two locations are provided (one via parameter 'a', one via parameter 'b'),

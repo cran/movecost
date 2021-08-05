@@ -14,7 +14,7 @@
 #' The function just requires an input DTM and a dataset ('SpatialPointsDataFrame' class) containing at least one point location.
 #' If a DTM is not provided, 'movebound()' will download elevation data from online sources (see \code{\link{movecost}} for more details).
 #' Under the hood, 'movebound()' relies on the \code{\link{movecost}} function and implements the same
-#' cost functions: see the help documentation of \code{\link{movecost}} for further information.\cr
+#' cost functions: see the help documentation of 'movecost()' for further information.\cr
 #'
 #' 'movebound()' produces a plot representing the input DTM overlaid by an hillshade raster, whose transparency can be adjusted uding
 #' the 'transp' parameter. On the rendered plot, the calculated isoline(s) is displayed and the label(s) representing the cost limit can be
@@ -36,6 +36,7 @@
 #' \strong{alb} uses the Alberti's Tobler hiking function modified for pastoral foraging excursions;\cr
 #' \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
 #' \strong{r} uses the Rees' hiking function;\cr
+#' \strong{ks} uses the Kondo-Seino's hiking function;\cr
 #' \strong{ree} uses the relative energetic expenditure cost function;\cr
 #' \strong{hrz} uses the Herzog's metabolic cost function;\cr
 #' \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
@@ -52,7 +53,7 @@
 #' @param W walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
 #' @param L carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
 #' @param N coefficient representing ease of movement (1 by default) (see \code{\link{movecost}}).
-#' @param V speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
+#' @param V speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; if set to 0, it is internally worked out on the basis of Tobler on-path hiking function;see \code{\link{movecost}}).
 #' @param z zoom level for the elevation data downloaded from online sources (from 0 to 15; 9 by default) (see \code{\link{movecost}} and \code{\link[elevatr]{get_elev_raster}}).
 #' @param cont.lab TRUE (default) or FALSE if the usuer wants or does not want labels to be attached to the isolines.
 #' @param transp set the transparency of the hillshade raster that is plotted over the DTM (0.5 by default).
@@ -184,6 +185,14 @@ movebound <- function (dtm=NULL, origin, studyplot=NULL, funct="t", time="h", mo
     legend.cost <- paste0("walking-time (", time,")")
   }
 
+  if(funct=="ks") {
+
+    #set the labels to be used within the returned plot
+    main.title <- paste0("Boundary(ies) corresponding to ", cont.value, time, " walking limit")
+    sub.title <- paste0("Walking-time based on the Kondo-Seino's hiking function \n terrain factor N=", N)
+    legend.cost <- paste0("walking-time (", time,")")
+  }
+
   if(funct=="ree") {
 
     #set the labels to be used within the returned plot
@@ -212,16 +221,24 @@ movebound <- function (dtm=NULL, origin, studyplot=NULL, funct="t", time="h", mo
 
     #set the labels to be used within the returned plot
     main.title <-  paste0("Boundary(ies) corresponding to ", cont.value, " Megawatts cost limit")
-    sub.title <- paste0("Cost based on the Van Leusen's metabolic energy expenditure cost function \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V: ", V)
     legend.cost <- "energy expenditure cost (Megawatts)"
+    if (V==0) {
+      sub.title <- paste0("Cost based on the Van Leusen's metabolic energy expenditure cost function \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V is based on the Tobler on-path hiking function")
+    } else {
+      sub.title <- paste0("Cost based on the Van Leusen's metabolic energy expenditure cost function \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V: ", V)
+    }
   }
 
   if(funct=="p") {
 
     #set the labels to be used within the returned plot
     main.title <- paste0("Boundary(ies) corresponding to ", cont.value, " Megawatts cost limit")
-    sub.title <- paste0("Cost based on the Pandolf et al.'s metabolic energy expenditure cost function \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V: ", V)
     legend.cost <- "energy expenditure cost (Megawatts)"
+    if (V==0) {
+      sub.title <- paste0("Cost based on the Pandolf et al.'s metabolic energy expenditure cost function \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V is based on the Tobler on-path hiking function")
+    } else {
+      sub.title <- paste0("Cost based on the Pandolf et al.'s metabolic energy expenditure cost function \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V: ", V)
+    }
   }
 
   if(funct=="ls") {

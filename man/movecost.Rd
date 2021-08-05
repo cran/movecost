@@ -50,10 +50,11 @@ movecost(
 \strong{icmoffp} uses the Irmischer-Clarke's hiking function (male, off-path);\cr
 \strong{icfonp} uses the Irmischer-Clarke's hiking function (female, on-path);\cr
 \strong{icfoffp} uses the Irmischer-Clarke's hiking function (female, off-path);\cr
-\strong{ug} uses the Uriarte Gonzalez's slope-dependant walking-time cost function;\cr
+\strong{ug} uses the Uriarte Gonzalez's walking-time cost function;\cr
 \strong{alb} uses the Alberti's Tobler hiking function modified for pastoral foraging excursions;\cr
 \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
 \strong{r} uses the Rees' hiking function;\cr
+\strong{ks} uses the Kondo-Seino's hiking function;\cr
 \strong{ree} uses the relative energetic expenditure cost function;\cr
 \strong{hrz} uses the Herzog's metabolic cost function;\cr
 \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
@@ -79,21 +80,21 @@ movecost(
 
 \item{N}{coefficient representing ease of movement (1 by default) (see Details).}
 
-\item{V}{speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; see Details).}
+\item{V}{speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; if set to 0, it is internally worked out on the basis of Tobler on-path hiking function; see Details).}
 
 \item{z}{zoom level for the elevation data downloaded from online sources (0 to 15; 9 by default) (see Details and \code{\link[elevatr]{get_elev_raster}}).}
 
 \item{return.base}{TRUE or FALSE (default) if the user wants or does not want the least-cost paths back to the origin to be calculated and plotted (as dashed lines).}
 
-\item{rb.lty}{Line type used to represent the least-cost paths back to the origin in the returned plot (2 by default; dashed line; see 'lty' parameter in \code{\link[graphics]{par}}).}
+\item{rb.lty}{line type used to represent the least-cost paths back to the origin in the returned plot (2 by default; dashed line; see 'lty' parameter in \code{\link[graphics]{par}}).}
 
-\item{breaks}{isolines interval; if no value is supplied, the interval is set by default to 1/10 of the range of values of the accumulated cost surface.}
+\item{breaks}{contour interval; if no value is supplied, the interval is set by default to 1/10 of the range of values of the accumulated cost surface.}
 
 \item{cont.lab}{if set to TRUE (default) display the labels of the contours over the accumulated cost surface.}
 
 \item{destin.lab}{if set to TRUE (default) display the label(s) indicating the cost at the destination location(s).}
 
-\item{cex.breaks}{set the size of the time labels used in the isochrones plot (0.6 by default).}
+\item{cex.breaks}{set the size of the cost labels used in the contour plot (0.6 by default).}
 
 \item{cex.lcp.lab}{set the size of the labels used in least-cost path(s) plot (0.6 by default).}
 
@@ -288,8 +289,12 @@ Geografisk Tidsskrift-Danish Journal of Geography, 117:1, 53-62, DOI: 10.1080/00
 \eqn{(0.11 + exp(-(abs(x[adj])*100 + 5)^2 / (2 * 30)^2)) * 3.6}\cr
 
 modified version of the Tobler's function as proposed for (male) on-path hiking by Irmischer, I. J., & Clarke, K. C. (2018). Measuring and modeling the speed of human navigation.
-Cartography and Geographic Information Science, 45(2), 177-186. https://doi.org/10.1080/15230406.2017.1292150. \strong{Note}: all the all the Irmischer-Clarke's functions
-originally express speed in m/s; they have been reshaped (multiplied by 3.6) to turn m/s into km/h for consistency with the other Tobler-related cost functions; slope is in percent.\cr
+Cartography and Geographic Information Science, 45(2), 177-186. https://doi.org/10.1080/15230406.2017.1292150.
+It is interesting to note that the hiking speed predicted by this and by the other functions proposed by the authors is slower than the one
+modelled by Tobler's hiking function. This is attributed to the cognition involved in wayfinding
+, such as map reading, analyzing the terrain, decision making, determining routes, etc.
+\strong{Note}: all the all the Irmischer-Clarke's functions originally express speed in m/s; they have been reshaped (multiplied by 3.6) to turn m/s into km/h for consistency
+with the other Tobler-related cost functions; slope is in percent.\cr
 
 \strong{Irmischer-Clarke's modified Tobler hiking function (male, off-path; speed in kmh)}:\cr
 
@@ -322,12 +327,12 @@ when calculating accumulated costs.
 
 proposed by Gianmarco Alberti;
 \strong{see}: \href{https://www.um.edu.mt/library/oar/bitstream/123456789/64172/1/Chapter_9_Locating_potential_pastoral_foraging_routes.pdf}{Locating potential pastoral foraging routes in Malta through the use of a Geographic Information System}.
-The Tobler’s function has been rescaled to fit animal walking speed during foraging excursions. The distribution of the latter, as empirical data show, turns out to be right-skewed
+The Tobler's function has been rescaled to fit animal walking speed during foraging excursions. The distribution of the latter, as empirical data show, turns out to be right-skewed
 and to vary along a continuum. It ranges from very low speed values (corresponding to slow grazing activities grazing while walking) to comparatively higher values
 (up to about 4.0 km/h) corresponding to travels without grazing (directional travel toward feeding stations).
 The function consider 1.5 km/h as the average flock speed, which roughly corresponds to the average speed recorded in some studies, and
 can be considered the typical speed of flocks during excursions in which grazing takes place while walking  (typical form of grazing in most situations).
-Tobler’s hiking function has been rescaled by a factor of 0.25 to represent the walking pace of a flock instead of humans.
+Tobler's hiking function has been rescaled by a factor of 0.25 to represent the walking pace of a flock instead of humans.
 The factor corresponds to the ratio between the flock average speed (1.5 km/h) and the maximum human walking speed (about 6.0 km/h) on a favourable slope.
 
 
@@ -351,8 +356,20 @@ here it is the reciprocal of time (i.e. speed) that is used in order to eventual
 Slope is dealt with here as originally expressed in Rees' publication (i.e. rise over run). The speed, which is originally expressed in m/s,
 has been here transposed to kmh (i.e., multiplied by 3.6) for consistency with other hiking functions.\cr
 For this cost function \strong{see}: Rees, WG (2004). Least-cost paths in mountainous terrain.
-Computers & Geosciences, 30(3), 203–209. See also: Campbell MJ, Dennison PE, Butler BW, Page WG (2019). Using crowdsourced
+Computers & Geosciences, 30(3), 203-209. See also: Campbell MJ, Dennison PE, Butler BW, Page WG (2019). Using crowdsourced
 fitness tracker data to model the relationship between slope and travel rates. Applied Geography 106, 93-107 (with previous references).\cr
+
+
+
+\strong{Kondo-Seino's modified Tobler hiking function (speed in kmh)}:\cr
+
+\eqn{ ifelse(abs(x[adj]) >= -0.07, 5.1 * exp(-2.25 * abs(x[adj] + 0.07)), 5.1 * exp(-1.5 * abs(x[adj] + 0.07))) }\cr
+
+Kondo-Seino's modified Tobler hiking function; it expresses walking speed in Kmh; slope as rise/run;
+\strong{see} Kondo Y., Seino Y. (2010). GPS-aided Walking Experiments and Data-driven Travel Cost Modelingon the Historical Road of Nakasendō-Kisoji
+(Central Highland Japan), in: Frischer B., Webb Crawford J., Koller D. (eds.), Making History Interactive.
+Computer Applications and Quantitative Methods in Archaeology (CAA). Proceedings of the 37th International Conference, Williamsburg, Virginia, United States of America,
+March 22-26 (BAR International Series S2079). Archaeopress, Oxford, 158-165.
 
 
 
@@ -389,7 +406,9 @@ where \eqn{sl.crit} (=critical slope, in percent) is "the transition where switc
 
 \eqn{1 / (1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * V^2 + 0.35 * V * (abs(x[adj])*100)))}\cr
 
-where \eqn{W} is the walker's body weight (Kg), \eqn{L} is the carried load (in Kg), \eqn{V} is the velocity in m/s, \eqn{N} is a coefficient representing ease of movement on the terrain (see above).\cr
+where \eqn{W} is the walker's body weight (Kg), \eqn{L} is the carried load (in Kg), \eqn{V} is the velocity in m/s, \eqn{N} is a coefficient representing ease of movement on the terrain (see above).
+\strong{Note} that if \eqn{V} is set to 0 by the user, it is internally worked out on the basis of the Tobler function for on-path hiking; therefore, \eqn{V} will not be
+considered constant throughout the analysed area, but will vary as function of the slope. \cr
 
 For this cost function, \strong{see} Pandolf, K. B., Givoni, B., & Goldman, R. F. (1977). Predicting energy expenditure with loads while standing or walking very slowly. Journal of Applied Physiology,
 43(4), 577-581. https://doi.org/10.1152/jappl.1977.43.4.577.\cr
@@ -407,10 +426,12 @@ University of Utah Press;
 
 \eqn{1 / (1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * V^2 + 0.35 * V * abs(x[adj])*100) + 10))}\cr
 
-which modifies the Pandolf et al.'s equation; \strong{see} Van Leusen, P. M. (2002). Pattern to process: methodological investigations into the formation and interpretation of spatial patterns in archaeological landscapes. University of Groningen.\cr
+which modifies the Pandolf et al.'s equation; \strong{see} Van Leusen, P. M. (2002). Pattern to process: methodological investigations into the formation and interpretation of spatial patterns in archaeological landscapes. University of Groningen.
 \strong{Note} that, as per Herzog, I. (2013). Least-cost Paths - Some Methodological Issues, Internet Archaeology 36 (http://intarch.ac.uk/journal/issue36/index.html) and
 unlike Van Leusen (2002), in the above equation slope is expressed in percent and speed in m/s; also, in the last bit of the equantion, 10 replaces
 the value of 6 used by Van Leusen (as per Herzog 2013).\cr
+As explained above, if \eqn{V} is set to 0 by the user, it is internally worked out on the basis of the Tobler function for on-path hiking; therefore, \eqn{V} will not be considered constant
+throughout the analysed area, but will vary as function of the slope.\cr
 \strong{Note}: in the returned charts, the cost is transposed from Watts to Megawatts.\cr
 
 
@@ -479,6 +500,6 @@ results <- movecost(dtm=volc, origin=volc.loc, destin=destin.loc[2,], move=8, re
 
 }
 \seealso{
-\code{\link[elevatr]{get_elev_raster}}, \code{\link{movecorr}}, \code{\link{movebound}}
+\code{\link[elevatr]{get_elev_raster}}, \code{\link{movecorr}}, \code{\link{movebound}}, \code{\link{movealloc}}
 }
 \keyword{movecost}

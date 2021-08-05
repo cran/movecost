@@ -1,10 +1,7 @@
-# movecost 1.2:
+# movecost 1.3:
 
-* 'movebound()' function added.
-* In the plots rendered by 'movecost()' and 'movecorr()', the accumulated cost surface, the DTM, and the least-cost corridor are overlaid by a hillshade raster to better convey the features of the terrain; the transparency of the hillshade can be adjusted using the 'transp' parameter.
-* In the plot showing the least-cost path(s) rendered by 'movecost()', destination locations' label(s) shows time in sexagesimal numbers (hours, minutes, seconds).
-* The destination location layer ('dest.loc.w.cost') returned by 'movecost()' is now included in the layers than can be exported using the 'export' parameter.
-* In the destination location layer ('dest.loc.w.cost') returned by 'movecost()', when the cost is expressed in terms of time, a new variable ('cost_hms') is added (besides 'cost') expressing time in sexagesimal numbers. The variable 'cost' still stores the cost at the destination location(s), but it is expressed in decimal numbers.
-* Minor adjustments to the subtitle of the plot rendered by 'movecorr()' to indicate the used terrain factor.
-* Minor adjustments to the annotations of the LCP plot rendered by 'movecost()'.
-* Minor edits and amendements to the help documentation of 'movecost()' function.
+* The 'movealloc()' function has been added.
+* Kondo-Seino's modified Tobler hiking function added.
+* The Pandolf et al. and Van Leusen's cost functions can now internally work out the walking speed on the basis of the Tobler function (on-path hiking); to achieve this, the user has to simply set the V parameter to 0.
+* Help documentation updated accordingly.
+* In the corridor raster produced by 'movecorr()', when multiple origins are used, the point locations are now plotted on top of the rendered plot.
