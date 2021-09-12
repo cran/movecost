@@ -11,7 +11,7 @@ movebound(
   funct = "t",
   time = "h",
   move = 16,
-  cont.value,
+  cont.value = NULL,
   cogn.slp = FALSE,
   sl.crit = 10,
   W = 70,
@@ -21,6 +21,7 @@ movebound(
   z = 9,
   cont.lab = TRUE,
   transp = 0.5,
+  add.geom = FALSE,
   export = FALSE
 )
 }
@@ -32,6 +33,8 @@ movebound(
 \item{studyplot}{polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see \code{\link{movecost}}); NULL is default.}
 
 \item{funct}{cost function to be used (for details on each of the following, see \code{\link{movecost}}):\cr
+
+\strong{-functions expressing cost as walking time-}\cr
 \strong{t} (default) uses the on-path Tobler's hiking function;\cr
 \strong{tofp} uses the off-path Tobler's hiking function;\cr
 \strong{mp} uses the Marquez-Perez et al.'s modified Tobler's function;\cr
@@ -39,25 +42,35 @@ movebound(
 \strong{icmoffp} uses the Irmischer-Clarke's hiking function (male, off-path);\cr
 \strong{icfonp} uses the Irmischer-Clarke's hiking function (female, on-path);\cr
 \strong{icfoffp} uses the Irmischer-Clarke's hiking function (female, off-path);\cr
-\strong{ug} uses the Uriarte Gonzalez's slope-dependant walking-time cost function;\cr
+\strong{ug} uses the Uriarte Gonzalez's walking-time cost function;\cr
+\strong{ma} uses the Marin Arroyo's walking-time cost function;\cr
 \strong{alb} uses the Alberti's Tobler hiking function modified for pastoral foraging excursions;\cr
 \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
 \strong{r} uses the Rees' hiking function;\cr
 \strong{ks} uses the Kondo-Seino's hiking function;\cr
-\strong{ree} uses the relative energetic expenditure cost function;\cr
-\strong{hrz} uses the Herzog's metabolic cost function;\cr
+
+\strong{-functions for wheeled-vehicles-}\cr
 \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
+
+\strong{-functions expressing abstract cost-}\cr
+\strong{ree} uses the relative energetic expenditure cost function;\cr
+\strong{b} uses the Bellavia's cost function;\cr
+
+\strong{-functions expressing cost as metabolic energy expenditure-}\cr
 \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;\cr
+\strong{pcf} uses the Pandolf et al.'s cost function with correction factor for downhill movements;\cr
+\strong{m} uses the Minetti et al.'s metabolic energy expenditure cost function;\cr
+\strong{hrz} uses the Herzog's metabolic energy expenditure cost function;\cr
 \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
-\strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function.\cr
-\strong{b} uses the Bellavia's cost function.\cr}
+\strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
+\strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function (for all the mentioned cost functions, see Details);\cr}
 
 \item{time}{time-unit expressed by the isoline(s) if Tobler's and other time-related cost functions are used;
 'h' for hour, 'm' for minutes.}
 
 \item{move}{number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).}
 
-\item{cont.value}{cost value represented by the calculated isoline(s).}
+\item{cont.value}{cost value represented by the calculated isoline(s) (NULL by default); if no value is supplied, it is set to 1/10 of the range of values of the accumulated cost surface.}
 
 \item{cogn.slp}{TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see \code{\link{movecost}}).}
 
@@ -69,7 +82,7 @@ movebound(
 
 \item{N}{coefficient representing ease of movement (1 by default) (see \code{\link{movecost}}).}
 
-\item{V}{speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; if set to 0, it is internally worked out on the basis of Tobler on-path hiking function;see \code{\link{movecost}}).}
+\item{V}{speed in m/s (1.2 by default) (used by the Pandolf et al.'s, Pandolf et al.s with correction factor, Van Leusen's, and Ardigo et al.'s cost function; if set to 0, it is internally worked out on the basis of Tobler on-path hiking function (see \code{\link{movecost}}).}
 
 \item{z}{zoom level for the elevation data downloaded from online sources (from 0 to 15; 9 by default) (see \code{\link{movecost}} and \code{\link[elevatr]{get_elev_raster}}).}
 
@@ -77,14 +90,18 @@ movebound(
 
 \item{transp}{set the transparency of the hillshade raster that is plotted over the DTM (0.5 by default).}
 
-\item{export}{TRUE or FALSE (default) if the user wants or does not want the isoline(s) to be exported; if TRUE, the isoline(s) will be exported as a shapefile;
-the exported file will bear a suffix corresponding to the cost function selected by the user. The DTM is exported only if it was not provided by the user and downloaded
-by the function from online sources.}
+\item{add.geom}{TRUE or FALSE (default) if the user wants or does not want the perimeter and area enclosed by each isolines to be calculated (see Details).}
+
+\item{export}{TRUE or FALSE (default) if the user wants or does not want the isoline(s) and the copy of the input 'origin' dataset (storing boundaries' geometry information)
+to be exported; if TRUE, they will be exported as a shapefile; the exported file will bear a suffix corresponding to the cost function selected by the user.
+The DTM is exported only if it was not provided by the user and downloaded by the function from online sources.}
 }
 \value{
 The function returns a list storing the following components \itemize{
  \item{dtm: }{Digital Terrain Model ('RasterLayer' class)}
- \item{isolines: }{contour line(s) representing the selected walking cost limit ('SpatialLinesDataFrame' class)}
+ \item{isolines: }{contour line(s) representing the selected cost limit ('SpatialLinesDataFrame' class)}
+ \item{origin_w_isolines_geom: }{copy of the input origin location(s) dataset with two new variables ('perimeter' and 'area') storing the
+ perimeter and area values of the boundary calculated around each location}
 }
 }
 \description{
@@ -94,21 +111,42 @@ calculate and plot a boundary (or boundaries) corresponding to a specific walkin
 either in terms of walking time or energy expenditure.\cr
 }
 \details{
-The following example uses in-built datasets and calculates 45minute boundaries around three locations close to Mt Etna (Sicily, Italy), using the
+The function just requires an input DTM and a dataset ('SpatialPointsDataFrame' class) containing at least one point location.
+If a DTM is not provided, 'movebound()' will download elevation data from online sources (see \code{\link{movecost}} for more details).
+Under the hood, 'movebound()' relies on the 'movecost()' function and implements the same
+cost functions: see the help documentation of 'movecost()' for further information.\cr
+
+The following example uses in-built datasets and calculates 45-minute boundaries around three locations close to Mt Etna (Sicily, Italy), using the
 Tobler's off-path hiking function (note: elevation data are acquired online for the area enclosed by the polygon fed via the
 'studyplot' parameter):\cr
 
-result <- movebound(origin=Etna_end_location, cont.value=45, time="m", cont.lab = TRUE, funct="tofp", studyplot = Etna_boundary)\cr
+result <- movebound(origin=Etna_end_location, cont.value=45, time="m", cont.lab = TRUE, funct="tofp", studyplot = Etna_boundary, add.geom=TRUE)\cr
 
-The function just requires an input DTM and a dataset ('SpatialPointsDataFrame' class) containing at least one point location.
-If a DTM is not provided, 'movebound()' will download elevation data from online sources (see \code{\link{movecost}} for more details).
-Under the hood, 'movebound()' relies on the \code{\link{movecost}} function and implements the same
-cost functions: see the help documentation of 'movecost()' for further information.\cr
+Note that by setting the parameter 'add.geom' to TRUE, the function calculates the perimeter and the area enclosed by the boundary represented by each
+calculated isoline. Needless to say, the unit of measure is the one used by the input layers' coordinate system. The value(s) of the perimeter and area
+will be appended as two new variables to a copy of the input 'origin' dataset. The said geometries (perimeter, area) can only be calculated if the
+isolines are "complete" and not truncated (i.e., if they do not meet the end of the study area for instance). Therefore, before using this option,
+the user may want to be sure that all the isolines are actual loops.\cr
 
-'movebound()' produces a plot representing the input DTM overlaid by an hillshade raster, whose transparency can be adjusted uding
+With reference to the above example, the area of the three 45-minutes boundaries can be retrieved typing what follows:\cr
+
+result$origin_w_isolines_geom$area \cr
+
+It will return:\cr
+17857994 20428575 9172688\cr
+
+that are the values of the area of each 45-minute boundary in square meter.\cr
+Needless to say, if we want to convert to square km we can just:\cr
+result$origin_w_isolines_geom$area/1000000 \cr
+
+which gives\cr
+17.857994 20.428575  9.172688 \cr
+
+'movebound()' produces a plot representing the input DTM overlaid by an hillshade raster, whose transparency can be adjusted using
 the 'transp' parameter. On the rendered plot, the calculated isoline(s) is displayed and the label(s) representing the cost limit can be
 activated or deactivated using the 'cont.lab' parameter. The function also returns the isoline(s) ('SpatialLinesDataFrame' class) corresponding
-to the selected accumulated cost limit (see 'Value' below). The isoline(s) can be exported as shapefile using the 'export' parameter. \cr
+to the selected accumulated cost limit and the copy of the 'origin' dataset (storing information about the boundaries' geometry) (see 'Value' below).
+The isoline(s) and the copy of the 'origin' dataset can be exported as shapefile by setting the 'export' parameter to TRUE. \cr
 }
 \examples{
 # load a sample Digital Terrain Model

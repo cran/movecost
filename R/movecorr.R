@@ -65,6 +65,8 @@
 #' @param cex.labs scaling factor for the size of the points' labels (0.8 by default)
 #' @param studyplot polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see \code{\link{movecost}}); NULL is default.
 #' @param funct cost function to be used (for details on each of the following, see \code{\link{movecost}}):\cr
+#'
+#' \strong{-functions expressing cost as walking time-}\cr
 #' \strong{t} (default) uses the on-path Tobler's hiking function;\cr
 #' \strong{tofp} uses the off-path Tobler's hiking function;\cr
 #' \strong{mp} uses the Marquez-Perez et al.'s modified Tobler's function;\cr
@@ -72,18 +74,28 @@
 #' \strong{icmoffp} uses the Irmischer-Clarke's hiking function (male, off-path);\cr
 #' \strong{icfonp} uses the Irmischer-Clarke's hiking function (female, on-path);\cr
 #' \strong{icfoffp} uses the Irmischer-Clarke's hiking function (female, off-path);\cr
-#' \strong{ug} uses the Uriarte Gonzalez's slope-dependant walking-time cost function;\cr
+#' \strong{ug} uses the Uriarte Gonzalez's walking-time cost function;\cr
+#' \strong{ma} uses the Marin Arroyo's walking-time cost function;\cr
 #' \strong{alb} uses the Alberti's Tobler hiking function modified for pastoral foraging excursions;\cr
 #' \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
 #' \strong{r} uses the Rees' hiking function;\cr
 #' \strong{ks} uses the Kondo-Seino's hiking function;\cr
-#' \strong{ree} uses the relative energetic expenditure cost function;\cr
-#' \strong{hrz} uses the Herzog's metabolic cost function;\cr
+#'
+#' \strong{-functions for wheeled-vehicles-}\cr
 #' \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
+#'
+#' \strong{-functions expressing abstract cost-}\cr
+#' \strong{ree} uses the relative energetic expenditure cost function;\cr
+#' \strong{b} uses the Bellavia's cost function;\cr
+#'
+#' \strong{-functions expressing cost as metabolic energy expenditure-}\cr
 #' \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;\cr
+#' \strong{pcf} uses the Pandolf et al.'s cost function with correction factor for downhill movements;\cr
+#' \strong{m} uses the Minetti et al.'s metabolic energy expenditure cost function;\cr
+#' \strong{hrz} uses the Herzog's metabolic energy expenditure cost function;\cr
 #' \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
-#' \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function.\cr
-#' \strong{b} uses the Bellavia's cost function.\cr
+#' \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
+#' \strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function (for all the mentioned cost functions, see Details);\cr
 #' @param time time-unit expressed by the accumulated raster if Tobler's and other time-related cost functions are used;
 #' 'h' for hour, 'm' for minutes.
 #' @param move number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).
@@ -92,7 +104,7 @@
 #' @param W walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
 #' @param L carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
 #' @param N coefficient representing ease of movement (1 by default) (see \code{\link{movecost}}).
-#' @param V speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; if set to 0, it is internally worked out on the basis of Tobler on-path hiking function; see \code{\link{movecost}}).
+#' @param V speed in m/s (1.2 by default) (used by the Pandolf et al.'s, Pandolf et al.s with correction factor, Van Leusen's, and Ardigo et al.'s cost function; if set to 0, it is internally worked out on the basis of Tobler on-path hiking function (see \code{\link{movecost}}).
 #' @param z zoom level for the elevation data downloaded from online sources (from 0 to 15; 9 by default) (see \code{\link{movecost}} and \code{\link[elevatr]{get_elev_raster}}).
 #' @param rescale TRUE or FALSE (default) if the user wants or does not want the output least-coast corridor raster to be rescaled between 0 and 1.
 #' @param transp set the transparency of the hillshade raster that is plotted over the least-cost corridor raster (0.5 by default).
@@ -103,8 +115,8 @@
 #' @return The function returns a list storing the following components \itemize{
 ##'  \item{dtm: }{Digital Terrain Model ('RasterLayer' class)}
 ##'  \item{lc.corridor: }{raster of the least-cost corridor ('RasterLayer' class); if more than two locations are analysed, this raster is the sum of all the corridors between all the pairs of locations}
-##'  \item{lcp_a_to_b: }{least-cost past from a to b ('SpatialLines' class); returned only when the corridor is calculated between two locations}
-##'  \item{lcp_b_to_a: }{least-cost past from b to a ('SpatialLines' class); returned only when the corridor is calculated between two locations}
+##'  \item{lcp_a_to_b: }{least-cost past from a to b ('SpatialLinesDataFrame' class); returned only when the corridor is calculated between two locations}
+##'  \item{lcp_b_to_a: }{least-cost past from b to a ('SpatialLinesDataFrame' class); returned only when the corridor is calculated between two locations}
 ##'  \item{accum_cost_surf_a: }{accumulated cost-surface around a ('RasterLayer' class); returned only when the corridor is calculated between two locations}
 ##'  \item{accum_cost_surf_b: }{accumulated cost-surface around b ('RasterLayer' class); returned only when the corridor is calculated between two locations}
 ##'  \item{corridors: }{list of rasters ('RasterLayer' class) representing the least-cost corridor between all the unique pairs of locations; returned only when more than two locations are analysed}
@@ -181,7 +193,7 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
     pairw.list <- combn(seq(1:length(a)),2)
     pairw.list <-as.matrix(pairw.list)
 
-    print(paste0("Wait...processing ", ncol(pairw.list), " unique pairs of locations..."))
+    message(paste0("Wait...processing ", ncol(pairw.list), " unique pairs of locations..."))
 
     #set the progress bar
     pb <- txtProgressBar(min = 0, max = length(a), style = 3)
@@ -334,6 +346,26 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
     }
   }
 
+  if(funct=="pcf") {
+
+    #set the labels to be used within the returned plot
+    main.title <- "Least-cost corridor"
+    legend.cost <- "energy expenditure cost (Megawatts)"
+    if (V==0) {
+      sub.title <- paste0("Cost based on the Pandolf et al.'s metabolic energy expenditure cost function with correction factor \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V is based on the Tobler on-path hiking function")
+    } else {
+      sub.title <- paste0("Cost based on the Pandolf et al.'s metabolic energy expenditure cost function with correction factor \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V: ", V)
+    }
+  }
+
+  if(funct=="m") {
+
+    #set the labels to be used within the returned plot
+    main.title <- "Least-cost corridor"
+    sub.title <- paste0("Cost based on the Minetti et al.'s metabolic cost function \n cost in J / (Kg*m) \n terrain factor N=", N)
+    legend.cost <- "metabolic cost J / (Kg*m)"
+  }
+
   if(funct=="ls") {
 
     #set the labels to be used within the returned plot
@@ -358,6 +390,25 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
     legend.cost <- "cost"
   }
 
+  if (funct=="ma") {
+
+    #set the labels to be used within the returned plot
+    main.title <- paste0("Least-cost corridor (cost in ", time, ")")
+    sub.title <- paste0("Walking-time based on the Marin Arroyo's hiking function \n terrain factor N=", N)
+    legend.cost <- paste0("walking-time (", time,")")
+  }
+
+  if(funct=="a") {
+
+    #set the labels to be used within the returned plot
+    main.title <- "Least-cost corridor"
+    legend.cost <- "energy expenditure cost J / (Kg*m)"
+    if (V==0) {
+      sub.title <- paste0("Cost based on the Ardigo et al.'s metabolic energy expenditure cost function \n cost in J / (Kg*m) \nparameters: N: ", N, "; V is based on the Tobler on-path hiking function")
+    } else {
+      sub.title <- paste0("Cost based on the Ardigo et al.'s metabolic energy expenditure cost function \n cost in J / (Kg*m) \nparameters: N: ", N, "; V: ", V)
+    }
+  }
 
   #plot the corridor raster
   raster::plot(res.corridor,

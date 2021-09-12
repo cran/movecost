@@ -37,6 +37,8 @@ movealloc(
 \item{studyplot}{polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see \code{\link{movecost}}); NULL is default.}
 
 \item{funct}{cost function to be used (for details on each of the following, see \code{\link{movecost}}):\cr
+
+\strong{-functions expressing cost as walking time-}\cr
 \strong{t} (default) uses the on-path Tobler's hiking function;\cr
 \strong{tofp} uses the off-path Tobler's hiking function;\cr
 \strong{mp} uses the Marquez-Perez et al.'s modified Tobler's function;\cr
@@ -44,18 +46,28 @@ movealloc(
 \strong{icmoffp} uses the Irmischer-Clarke's hiking function (male, off-path);\cr
 \strong{icfonp} uses the Irmischer-Clarke's hiking function (female, on-path);\cr
 \strong{icfoffp} uses the Irmischer-Clarke's hiking function (female, off-path);\cr
-\strong{ug} uses the Uriarte Gonzalez's slope-dependant walking-time cost function;\cr
+\strong{ug} uses the Uriarte Gonzalez's walking-time cost function;\cr
+\strong{ma} uses the Marin Arroyo's walking-time cost function;\cr
 \strong{alb} uses the Alberti's Tobler hiking function modified for pastoral foraging excursions;\cr
 \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
 \strong{r} uses the Rees' hiking function;\cr
 \strong{ks} uses the Kondo-Seino's hiking function;\cr
-\strong{ree} uses the relative energetic expenditure cost function;\cr
-\strong{hrz} uses the Herzog's metabolic cost function;\cr
+
+\strong{-functions for wheeled-vehicles-}\cr
 \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
+
+\strong{-functions expressing abstract cost-}\cr
+\strong{ree} uses the relative energetic expenditure cost function;\cr
+\strong{b} uses the Bellavia's cost function;\cr
+
+\strong{-functions expressing cost as metabolic energy expenditure-}\cr
 \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;\cr
+\strong{pcf} uses the Pandolf et al.'s cost function with correction factor for downhill movements;\cr
+\strong{m} uses the Minetti et al.'s metabolic energy expenditure cost function;\cr
+\strong{hrz} uses the Herzog's metabolic energy expenditure cost function;\cr
 \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
-\strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function.\cr
-\strong{b} uses the Bellavia's cost function.\cr}
+\strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
+\strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function (for all the mentioned cost functions, see Details);\cr}
 
 \item{time}{time-unit expressed by the isoline(s) if Tobler's and other time-related cost functions are used;
 'h' for hour, 'm' for minutes.}
@@ -72,7 +84,7 @@ movealloc(
 
 \item{N}{coefficient representing ease of movement (1 by default) (see \code{\link{movecost}}).}
 
-\item{V}{speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; if set to 0, it is internally worked out on the basis of Tobler on-path hiking function;see \code{\link{movecost}}).}
+\item{V}{speed in m/s (1.2 by default) (used by the Pandolf et al.'s, Pandolf et al.s with correction factor, Van Leusen's, and Ardigo et al.'s cost function; if set to 0, it is internally worked out on the basis of Tobler on-path hiking function (see \code{\link{movecost}}).}
 
 \item{z}{zoom level for the elevation data downloaded from online sources (from 0 to 15; 9 by default) (see \code{\link{movecost}} and \code{\link[elevatr]{get_elev_raster}}).}
 

@@ -1,7 +1,6 @@
-# movecost 1.3:
+# movecost 1.4:
 
-* The 'movealloc()' function has been added.
-* Kondo-Seino's modified Tobler hiking function added.
-* The Pandolf et al. and Van Leusen's cost functions can now internally work out the walking speed on the basis of the Tobler function (on-path hiking); to achieve this, the user has to simply set the V parameter to 0.
-* Help documentation updated accordingly.
-* In the corridor raster produced by 'movecorr()', when multiple origins are used, the point locations are now plotted on top of the rendered plot.
+* The 'movecomp()' and 'movenetw() functions have been added.
+* Cost functions added: Minetti et al.'s, Marin Arroyo's, Ardigo et al.'s, Pandolf et al.'s with correction factor (the total number of implemented functions is now 23).
+* The option has been added to 'movebound()' to calculate the perimeter and area enclosed by each cost-limit boundary.
+* Help documentions updated accordingly and improved layout-wise.

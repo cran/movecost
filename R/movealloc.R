@@ -26,6 +26,8 @@
 #' @param origin location(s) in relation to which the cost allocation is carried out (SpatialPointsDataFrame class).
 #' @param studyplot polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see \code{\link{movecost}}); NULL is default.
 #' @param funct cost function to be used (for details on each of the following, see \code{\link{movecost}}):\cr
+#'
+#' \strong{-functions expressing cost as walking time-}\cr
 #' \strong{t} (default) uses the on-path Tobler's hiking function;\cr
 #' \strong{tofp} uses the off-path Tobler's hiking function;\cr
 #' \strong{mp} uses the Marquez-Perez et al.'s modified Tobler's function;\cr
@@ -33,18 +35,28 @@
 #' \strong{icmoffp} uses the Irmischer-Clarke's hiking function (male, off-path);\cr
 #' \strong{icfonp} uses the Irmischer-Clarke's hiking function (female, on-path);\cr
 #' \strong{icfoffp} uses the Irmischer-Clarke's hiking function (female, off-path);\cr
-#' \strong{ug} uses the Uriarte Gonzalez's slope-dependant walking-time cost function;\cr
+#' \strong{ug} uses the Uriarte Gonzalez's walking-time cost function;\cr
+#' \strong{ma} uses the Marin Arroyo's walking-time cost function;\cr
 #' \strong{alb} uses the Alberti's Tobler hiking function modified for pastoral foraging excursions;\cr
 #' \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
 #' \strong{r} uses the Rees' hiking function;\cr
 #' \strong{ks} uses the Kondo-Seino's hiking function;\cr
-#' \strong{ree} uses the relative energetic expenditure cost function;\cr
-#' \strong{hrz} uses the Herzog's metabolic cost function;\cr
+#'
+#' \strong{-functions for wheeled-vehicles-}\cr
 #' \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
+#'
+#' \strong{-functions expressing abstract cost-}\cr
+#' \strong{ree} uses the relative energetic expenditure cost function;\cr
+#' \strong{b} uses the Bellavia's cost function;\cr
+#'
+#' \strong{-functions expressing cost as metabolic energy expenditure-}\cr
 #' \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;\cr
+#' \strong{pcf} uses the Pandolf et al.'s cost function with correction factor for downhill movements;\cr
+#' \strong{m} uses the Minetti et al.'s metabolic energy expenditure cost function;\cr
+#' \strong{hrz} uses the Herzog's metabolic energy expenditure cost function;\cr
 #' \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
-#' \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function.\cr
-#' \strong{b} uses the Bellavia's cost function.\cr
+#' \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
+#' \strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function (for all the mentioned cost functions, see Details);\cr
 #' @param time time-unit expressed by the isoline(s) if Tobler's and other time-related cost functions are used;
 #' 'h' for hour, 'm' for minutes.
 #' @param move number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).
@@ -53,7 +65,7 @@
 #' @param W walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
 #' @param L carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
 #' @param N coefficient representing ease of movement (1 by default) (see \code{\link{movecost}}).
-#' @param V speed in m/s (1.2 by default) (used by the Pandolf's and Van Leusen's cost function; if set to 0, it is internally worked out on the basis of Tobler on-path hiking function;see \code{\link{movecost}}).
+#' @param V speed in m/s (1.2 by default) (used by the Pandolf et al.'s, Pandolf et al.s with correction factor, Van Leusen's, and Ardigo et al.'s cost function; if set to 0, it is internally worked out on the basis of Tobler on-path hiking function (see \code{\link{movecost}}).
 #' @param z zoom level for the elevation data downloaded from online sources (from 0 to 15; 9 by default) (see \code{\link{movecost}} and \code{\link[elevatr]{get_elev_raster}}).
 #' @param isolines TRUE or FALSE (default) is the user wants or does not want cost isolines/contours around the origins to be calculated and plotted.
 #' @param breaks contours' (i.e., isolines') interval; if no value is supplied, the interval is set by default to 1/10 of the range of values of the cost surface accumulated around the origins.
@@ -262,6 +274,17 @@ movealloc <- function (dtm=NULL, origin, studyplot=NULL, funct="t", time="h", mo
     }
   }
 
+  if(funct=="pcf") {
+    main.title.accum.cost <- "Accumulated metabolic cost around origins"
+    main.title.cost.alloc <- "Allocation based on metabolic cost accumulated around origins"
+    legend.cost <- "energy expenditure cost (Megawatts)"
+    if (V==0) {
+      sub.title <- paste0("Cost based on the Pandolf et al.'s metabolic energy expenditure cost function with correction factor \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V is based on the Tobler on-path hiking function")
+    } else {
+      sub.title <- paste0("Cost based on the Pandolf et al.'s metabolic energy expenditure cost function with correction factor \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V: ", V)
+    }
+  }
+
   if(funct=="ls") {
     main.title.accum.cost <- "Accumulated metabolic cost around origins"
     main.title.cost.alloc <- "Allocation based on metabolic cost accumulated around origins"
@@ -274,6 +297,31 @@ movealloc <- function (dtm=NULL, origin, studyplot=NULL, funct="t", time="h", mo
     main.title.cost.alloc <- "Allocation based on cost accumulated around origins"
     sub.title <- paste0("Cost based on the Bellavia's cost function \n terrain factor N=", N)
     legend.cost <- "cost"
+  }
+
+  if(funct=="m") {
+    main.title.accum.cost <- "Accumulated metabolic cost around origins"
+    main.title.cost.alloc <- "Allocation based on metabolic cost accumulated around origins"
+    sub.title <- paste0("Cost based on the Minetti et al.'s  metabolic cost function \n cost in J / (Kg*m) \n terrain factor N=", N)
+    legend.cost <- "metabolic cost J / (Kg*m)"
+  }
+
+  if (funct=="ma") {
+    main.title.accum.cost <- paste0("Accumulated walking-time cost (in ", time, ") around origins")
+    main.title.cost.alloc <- paste0("Cost allocation based on walking-time (in ", time, ") around origins")
+    sub.title <- paste0("Walking-time based on the Marin Arroyo's hiking function \nterrain factor N=", N)
+    legend.cost <- paste0("walking-time (", time,")")
+  }
+
+  if(funct=="a") {
+    main.title.accum.cost <- "Accumulated metabolic cost around origins"
+    main.title.cost.alloc <- "Allocation based on metabolic cost accumulated around origins"
+    legend.cost <- "energy expenditure cost J / (Kg*m)"
+    if (V==0) {
+      sub.title <- paste0("Cost based on the Ardigo et al.'s metabolic energy expenditure cost function \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V is based on the Tobler on-path hiking function")
+    } else {
+      sub.title <- paste0("Cost based on the Ardigo et al.'s metabolic energy expenditure cost function \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V: ", V)
+    }
   }
 
   #turn the allocation raster into polygons, so to get
