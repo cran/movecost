@@ -531,7 +531,7 @@ This is done since "gdistance works with conductivity rather than the more usual
 }
 \examples{
 # load a sample Digital Terrain Model
-volc <- raster::raster(system.file("external/maungawhau.grd", package="gdistance"))
+data(volc)
 
 # load a sample start location on the above DTM
 data(volc.loc)

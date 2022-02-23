@@ -150,7 +150,7 @@ The isoline(s) and the copy of the 'origin' dataset can be exported as shapefile
 }
 \examples{
 # load a sample Digital Terrain Model
-volc <- raster::raster(system.file("external/maungawhau.grd", package="gdistance"))
+data(volc)
 
 
 # load the sample destination locations on the above DTM

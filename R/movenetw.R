@@ -19,8 +19,8 @@
 #' split by origin, a SpatialLineDataFrame representing the merged LCPs, and two rasters representing the LCPs network density
 #' expressed as counts and percentages respectively.
 #'
-#' The mentioned data can be exported by setting the 'export' parameter to TRUE. The LCPs network and the density raster will
-#' bear a suffix indicating the used cost function.\cr
+#' The mentioned data can be exported by setting the 'export' parameter to TRUE. The LCPs network (exported as a shapefile)
+#' and the density raster (as a GeoTiff) will bear a suffix indicating the used cost function.\cr
 #'
 #' @param dtm Digital Terrain Model (RasterLayer class); if not provided, elevation data will be acquired online for the area enclosed by the 'studyplot' parameter (see \code{\link{movecost}}).
 #' @param origin location(s) around which the boundary(ies) is calculated (SpatialPointsDataFrame class).
@@ -67,7 +67,7 @@
 #' @param lcp.dens TRUE or FALSE (default) if the user wants or does not want the least-cost paths density raster to be produced.
 #' @param transp set the transparency of the hillshade raster that is plotted over the DTM (0.5 by default).
 #' @param oneplot TRUE (default) or FALSE if the user wants or does not want the plots displayed in a single window.
-#' @param export TRUE or FALSE (default) if the user wants or does not want the LCPs network to be exported as a shapefile, and the LCPs network density as a raster; the DTM is exported only if it was not provided by the user
+#' @param export TRUE or FALSE (default) if the user wants or does not want the LCPs network to be exported as a shapefile, and the LCPs network density as a GeoTiff; the DTM is exported only if it was not provided by the user
 #' and downloaded by the function from online sources.
 #'
 #' @return The function returns a list storing the following components \itemize{
@@ -89,7 +89,7 @@
 #'
 #' @examples
 #' # load a sample Digital Terrain Model
-#' volc <- raster::raster(system.file("external/maungawhau.grd", package="gdistance"))
+#' data(volc)
 #'
 #'
 #' # load the sample destination locations on the above DTM
@@ -335,8 +335,8 @@ movenetw <- function (dtm=NULL, origin, studyplot=NULL, funct="t", move=16, cogn
   #if export is TRUE, export the LCPs network as a shapefile, and the density rasters as geotiff
   if(export==TRUE){
     rgdal::writeOGR(paths.netw.merged, ".", paste0("LCPs.netw.merged_", funct), driver="ESRI Shapefile")
-    raster::writeRaster(pathcounts, paste0("LCPs_density_count_", funct, format="GTiff"))
-    raster::writeRaster(lcp.density.perc, paste0("LCPs_density_perc_", funct, format="GTiff"))
+    raster::writeRaster(pathcounts, paste0("LCPs_density_count_", funct), format="GTiff")
+    raster::writeRaster(lcp.density.perc, paste0("LCPs_density_perc_", funct), format="GTiff")
   }
 
   #if no DTM was provided (i.e., if 'studyplot' is not NULL), export the downloaded DTM as a raster file

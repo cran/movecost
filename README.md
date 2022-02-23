@@ -1,8 +1,12 @@
 # movecost
-vers 1.4
+vers 1.5
 
 
 ## History
+`version 1.5`:
+
+
+
 `version 1.4`:
 * The 'movecomp()' and 'movenetw() functions have been added.
 * Cost functions added: Minetti et al.'s, Marin Arroyo's, Ardigo et al.'s, Pandolf et al.'s with correction factor (the total number of implemented functions is now 23).

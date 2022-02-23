@@ -174,7 +174,7 @@ Mitchell A. (2012), "The ESRI Guide to GIS Analysis. Vol 3. Modelling Suitabilit
 }
 \examples{
 # load a sample Digital Terrain Model
-volc <- raster::raster(system.file("external/maungawhau.grd", package="gdistance"))
+data(volc)
 
 
 # load the sample destination locations on the above DTM

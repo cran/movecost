@@ -481,7 +481,7 @@
 #'
 #' @examples
 #' # load a sample Digital Terrain Model
-#' volc <- raster::raster(system.file("external/maungawhau.grd", package="gdistance"))
+#' data(volc)
 #'
 #' # load a sample start location on the above DTM
 #' data(volc.loc)

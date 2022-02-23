@@ -84,7 +84,7 @@ movenetw(
 
 \item{oneplot}{TRUE (default) or FALSE if the user wants or does not want the plots displayed in a single window.}
 
-\item{export}{TRUE or FALSE (default) if the user wants or does not want the LCPs network to be exported as a shapefile, and the LCPs network density as a raster; the DTM is exported only if it was not provided by the user
+\item{export}{TRUE or FALSE (default) if the user wants or does not want the LCPs network to be exported as a shapefile, and the LCPs network density as a GeoTiff; the DTM is exported only if it was not provided by the user
 and downloaded by the function from online sources.}
 }
 \value{
@@ -117,12 +117,12 @@ The function returns a list storing the DTM (only in case this has not been fed 
 split by origin, a SpatialLineDataFrame representing the merged LCPs, and two rasters representing the LCPs network density
 expressed as counts and percentages respectively.
 
-The mentioned data can be exported by setting the 'export' parameter to TRUE. The LCPs network and the density raster will
-bear a suffix indicating the used cost function.\cr
+The mentioned data can be exported by setting the 'export' parameter to TRUE. The LCPs network (exported as a shapefile)
+and the density raster (as a GeoTiff) will bear a suffix indicating the used cost function.\cr
 }
 \examples{
 # load a sample Digital Terrain Model
-volc <- raster::raster(system.file("external/maungawhau.grd", package="gdistance"))
+data(volc)
 
 
 # load the sample destination locations on the above DTM

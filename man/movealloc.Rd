@@ -141,7 +141,7 @@ be exported by setting the 'export' parameter to TRUE. All the exported files (e
 }
 \examples{
 # load a sample Digital Terrain Model
-volc <- raster::raster(system.file("external/maungawhau.grd", package="gdistance"))
+data(volc)
 
 
 # load the sample locations on the above DTM
