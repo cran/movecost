@@ -1,5 +1,5 @@
-# movecost 1.5:
+# movecost 1.6:
 
-* 'movenetw()': fix to an error in the way the exported GeoTiff files were given a name.
-* minor adjustements and amendements to the help documentation of 'movenetw()'.
-* 'volc' RasterLayer added to the body of sample datasets
+* fix to a projection issue in the in-built 'volc' raster dataset;
+* internal optimizations in the 'movenetw()' function;
+* improvements layout- and content-wise to the functions' help documentation.

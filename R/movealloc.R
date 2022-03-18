@@ -23,7 +23,7 @@
 #'
 #'
 #' @param dtm Digital Terrain Model (RasterLayer class); if not provided, elevation data will be acquired online for the area enclosed by the 'studyplot' parameter (see \code{\link{movecost}}).
-#' @param origin location(s) in relation to which the cost allocation is carried out (SpatialPointsDataFrame class).
+#' @param origin locations (two at least) in relation to which the cost allocation is carried out (SpatialPointsDataFrame class).
 #' @param studyplot polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see \code{\link{movecost}}); NULL is default.
 #' @param funct cost function to be used (for details on each of the following, see \code{\link{movecost}}):\cr
 #'

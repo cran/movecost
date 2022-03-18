@@ -32,7 +32,7 @@ movealloc(
 \arguments{
 \item{dtm}{Digital Terrain Model (RasterLayer class); if not provided, elevation data will be acquired online for the area enclosed by the 'studyplot' parameter (see \code{\link{movecost}}).}
 
-\item{origin}{location(s) in relation to which the cost allocation is carried out (SpatialPointsDataFrame class).}
+\item{origin}{locations (two at least) in relation to which the cost allocation is carried out (SpatialPointsDataFrame class).}
 
 \item{studyplot}{polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see \code{\link{movecost}}); NULL is default.}
 
