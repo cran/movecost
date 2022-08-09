@@ -8,8 +8,10 @@ movenetw(
   dtm = NULL,
   origin,
   studyplot = NULL,
+  barrier = NULL,
   funct = "t",
   move = 16,
+  field = 0,
   cogn.slp = FALSE,
   sl.crit = 10,
   W = 70,
@@ -19,7 +21,6 @@ movenetw(
   z = 9,
   lcp.dens = FALSE,
   transp = 0.5,
-  oneplot = TRUE,
   export = FALSE
 )
 }
@@ -29,6 +30,8 @@ movenetw(
 \item{origin}{location(s) around which the boundary(ies) is calculated (SpatialPointsDataFrame class).}
 
 \item{studyplot}{polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see \code{\link{movecost}}); NULL is default.}
+
+\item{barrier}{area where the movement is inhibited (SpatialLineDataFrame or SpatialPolygonDataFrame class) (see \code{\link{movecost}}.}
 
 \item{funct}{cost function to be used (for details on each of the following, see \code{\link{movecost}}):\cr
 \strong{-functions expressing cost as walking time-}\cr
@@ -52,6 +55,7 @@ movenetw(
 \strong{-functions expressing abstract cost-}\cr
 \strong{ree} uses the relative energetic expenditure cost function;\cr
 \strong{b} uses the Bellavia's cost function;\cr
+\strong{e} uses the Eastman's cost function;\cr
 
 \strong{-functions expressing cost as metabolic energy expenditure-}\cr
 \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;\cr
@@ -60,9 +64,12 @@ movenetw(
 \strong{hrz} uses the Herzog's metabolic energy expenditure cost function;\cr
 \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
 \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
-\strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function (for all the mentioned cost functions, see Details);\cr}
+\strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function;\cr
+\strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see \code{\link{movecost}});\cr}
 
 \item{move}{number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).}
+
+\item{field}{value assigned to the cells coincidinng with the barrier (0 by default) (see \code{\link{movecost}}.}
 
 \item{cogn.slp}{TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see \code{\link{movecost}}).}
 
@@ -82,8 +89,6 @@ movenetw(
 
 \item{transp}{set the transparency of the hillshade raster that is plotted over the DTM (0.5 by default).}
 
-\item{oneplot}{TRUE (default) or FALSE if the user wants or does not want the plots displayed in a single window.}
-
 \item{export}{TRUE or FALSE (default) if the user wants or does not want the LCPs network to be exported as a shapefile, and the LCPs network density as a GeoTiff; the DTM is exported only if it was not provided by the user
 and downloaded by the function from online sources.}
 }
@@ -92,13 +97,23 @@ The function returns a list storing the following components \itemize{
  \item{dtm: }{Digital Terrain Model ('RasterLayer' class); returned only if aquired online}
  \item{LCPs.netw: }{list containing the LCPs ('SpatialLinesDataFrame' class) split by origin}
  \item{LCPs.netw.merged: }{'SpatialLinesDataFrame' corresponding to the merged LCPs}
+ \item{LCPs.netw.neigh: }{list containing the LCPs between neighboring locations ('SpatialLinesDataFrame' class) split by origin}
+ \item{LCPs.netw.merged: }{'SpatialLinesDataFrame' corresponding to the merged LCPs between neighboring locations}
  \item{LCPs.density.count: }{raster ('RasterLayer' class) representing the counts of LCPs on each raster's cell}
- \item{LCPs.density.perc: }{same as the preceding, but re-expressing the counts as percentages)}
+ \item{LCPs.density.perc: }{same as the preceding, but re-expressing the counts as percentages}
+ \item{cost.matrix.min: }{matrix of cost between locations, expressing cost in minutes}
+ \item{cost.matrix.hr: }{matrix of cost between locations, expressing cost in hours}
+ \item{cost.matrix: }{matrix of cost between locations, expressing cost either in energy or abstract cost, depending on the
+ used cost function}
 }
 }
 \description{
-The function provides the facility to calculate LCPs between multiple origins. The result is a network of LCPs connecting
-each origin location to all the others locations. Optionally, a raster representing the density of the LCPs network can be produced.
+The function provides the facility to calculate LCPs between multiple origins.
+Two types of networks are produced: one where each origin location is connected to all the others locations; one where
+only pairs of neighboring locations are connected. In other words, in the latter case, each location is connected to the location that is the
+nearest in terms of walking cost, either in terms of time or energy (or abstract cost), according to the selected cost function.
+Optionally, a raster representing the density of the first type of network can be produced.\cr
+Visit this \href{https://drive.google.com/file/d/1gLDrkZFh1b_glzCEqKdkPrer72JJ9Ffa/view?usp=sharing}{LINK} to access the package's vignette.\cr
 }
 \details{
 Like 'movecost()', the function just requires an input DTM ('RasterLayer' class) and an origin dataset  ('SpatialPointsDataFrame' class).
@@ -108,16 +123,19 @@ see the help documentation of 'movecost()' for further information.\cr
 
 'movenetw()' produces a plot representing the input DTM overlaid by an hillshade raster, whose transparency can be adjusted using
 the 'transp' parameter. On the rendered plot, the LPCs network ('SpatialLinesDataFrame' class) is represented by black lines. Optionally,
-by setting the parameter 'lcp.dens' to TRUE, the function produces a raster representing the density of LCPs. The raster, rendered
-overlaid to an hillshade visualization, expresses the density of LCPs as percentages. The percentages are calculated in relation to the
-maximum number of LCPs passing through the same cell stored in the raster. A density raster expressing counts is NOT rendered BUT is returned by the function.
-The density raster retains the cell size and coordinate system of the input DTM.\cr
+by setting the parameter 'lcp.dens' to TRUE, the function produces a raster representing the density of the LCPs connecting each location to all the
+other locations. The raster, which is rendered overlaid to an hillshade visualization, expresses the density of LCPs as percentages.
+The percentages are calculated in relation to the maximum number of LCPs passing through the same cell stored in the raster.
+A density raster expressing counts is NOT rendered BUT is returned by the function. The density raster retains the cell size and coordinate system of the input DTM.\cr
 
 The function returns a list storing the DTM (only in case this has not been fed into the function but aquired online), a list of LCPs
-split by origin, a SpatialLineDataFrame representing the merged LCPs, and two rasters representing the LCPs network density
-expressed as counts and percentages respectively.
+split by origin, a SpatialLineDataFrame representing the merged LCPs, two rasters representing the LCPs network density
+expressed as counts and percentages respectively, and cost matrices. As for the latter, if the selected cost function defines cost as
+walking time, two matrices are returned, one expressing time in minutes, one in hours (\strong{note} that the values are in decimal format).
+If the selected cost function expresses cost differently (i.e., energy or abstract cost), the two above mentioned cost matrices will be set to NULL,
+and a third cost matrix will store all the pair-wise costs.\cr
 
-The mentioned data can be exported by setting the 'export' parameter to TRUE. The LCPs network (exported as a shapefile)
+The above mentioned data (DTM, LCPs, network density) can be exported by setting the 'export' parameter to TRUE. The LCPs network (exported as a shapefile)
 and the density raster (as a GeoTiff) will bear a suffix indicating the used cost function.\cr
 }
 \examples{

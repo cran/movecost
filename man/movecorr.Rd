@@ -12,9 +12,11 @@ movecorr(
   lab.b = "B",
   cex.labs = 0.8,
   studyplot = NULL,
+  barrier = NULL,
   funct = "t",
   time = "h",
   move = 16,
+  field = 0,
   cogn.slp = FALSE,
   sl.crit = 10,
   W = 70,
@@ -42,6 +44,8 @@ movecorr(
 
 \item{studyplot}{polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see \code{\link{movecost}}); NULL is default.}
 
+\item{barrier}{area where the movement is inhibited (SpatialLineDataFrame or SpatialPolygonDataFrame class) (see \code{\link{movecost}}.}
+
 \item{funct}{cost function to be used (for details on each of the following, see \code{\link{movecost}}):\cr
 
 \strong{-functions expressing cost as walking time-}\cr
@@ -65,6 +69,7 @@ movecorr(
 \strong{-functions expressing abstract cost-}\cr
 \strong{ree} uses the relative energetic expenditure cost function;\cr
 \strong{b} uses the Bellavia's cost function;\cr
+\strong{e} uses the Eastman's cost function;\cr
 
 \strong{-functions expressing cost as metabolic energy expenditure-}\cr
 \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;\cr
@@ -73,12 +78,15 @@ movecorr(
 \strong{hrz} uses the Herzog's metabolic energy expenditure cost function;\cr
 \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
 \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
-\strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function (for all the mentioned cost functions, see Details);\cr}
+\strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function;\cr
+\strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see \code{\link{movecost}});\cr}
 
 \item{time}{time-unit expressed by the accumulated raster if Tobler's and other time-related cost functions are used;
 'h' for hour, 'm' for minutes.}
 
 \item{move}{number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).}
+
+\item{field}{value assigned to the cells coincidinng with the barrier (0 by default) (see \code{\link{movecost}}.}
 
 \item{cogn.slp}{TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see \code{\link{movecost}}).}
 
@@ -119,6 +127,7 @@ The function provides the facility to calculate the least-cost corridor between 
 It just requires an input DTM and at least two point locations ('SpatialPointsDataFrame' class) representing the locations between which the corridor is calculated.
 Under the hood, 'movecorr()' relies on the \code{\link{movecost}} function and, needless to say, implements the same
 cost functions. See the help documentation of 'movecost()' for further details.\cr
+Visit this \href{https://drive.google.com/file/d/1gLDrkZFh1b_glzCEqKdkPrer72JJ9Ffa/view?usp=sharing}{LINK} to access the package's vignette.\cr
 }
 \details{
 If only two locations are provided (one via parameter 'a', one via parameter 'b'),

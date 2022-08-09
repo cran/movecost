@@ -9,10 +9,12 @@ movecost(
   origin,
   destin = NULL,
   studyplot = NULL,
+  barrier = NULL,
   funct = "t",
   time = "h",
   outp = "r",
   move = 16,
+  field = 0,
   cogn.slp = FALSE,
   sl.crit = 10,
   W = 70,
@@ -42,6 +44,8 @@ movecost(
 
 \item{studyplot}{polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see Details); NULL is default.}
 
+\item{barrier}{area where the movement is inhibited (SpatialLineDataFrame or SpatialPolygonDataFrame class).}
+
 \item{funct}{cost function to be used:\cr
 
 \strong{-functions expressing cost as walking time-}\cr
@@ -65,6 +69,7 @@ movecost(
 \strong{-functions expressing abstract cost-}\cr
 \strong{ree} uses the relative energetic expenditure cost function;\cr
 \strong{b} uses the Bellavia's cost function;\cr
+\strong{e} uses the Eastman's cost function;\cr
 
 \strong{-functions expressing cost as metabolic energy expenditure-}\cr
 \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;\cr
@@ -73,7 +78,8 @@ movecost(
 \strong{hrz} uses the Herzog's metabolic energy expenditure cost function;\cr
 \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
 \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
-\strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function (for all the mentioned cost functions, see Details);\cr}
+\strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function;\cr
+\strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see Details);\cr}
 
 \item{time}{time-unit expressed by the accumulated raster and by the isolines if Tobler's and other time-related cost functions are used;
 'h' for hour, 'm' for minutes.}
@@ -81,6 +87,8 @@ movecost(
 \item{outp}{type of output: 'raster' or 'contours' (see Details).}
 
 \item{move}{number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).}
+
+\item{field}{value assigned to the cells coincidinng with the barrier (0 by default).}
 
 \item{cogn.slp}{TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see Details).}
 
@@ -92,7 +100,7 @@ movecost(
 
 \item{N}{coefficient representing ease of movement (1 by default) (see Details).}
 
-\item{V}{speed in m/s (1.2 by default) (used by the Pandolf et al.'s, Pandolf et al.s with correction factor, Van Leusen's, and Ardigo et al.'s cost function; if set to 0, it is internally worked out on the basis of Tobler on-path hiking function; see Details.}
+\item{V}{speed in m/s (1.2 by default) (used by the Pandolf et al.'s, Pandolf et al.s with correction factor, Van Leusen's, and Ardigo et al.'s cost function; if set to 0, it is internally worked out on the basis of Tobler on-path hiking function; see Details).}
 
 \item{z}{zoom level for the elevation data downloaded from online sources (0 to 15; 9 by default) (see Details and \code{\link[elevatr]{get_elev_raster}}).}
 
@@ -134,13 +142,16 @@ The function returns a list storing the following components \itemize{
  \item{dest.loc.w.cost: }{copy of the input destination location(s) dataset with a new variable ('cost') added; if
  the cost is expressed in terms of time, the 'cost' variable will store the time values in decimal numbers, while another variable named
  'cost_hms' will store the time values in sexagesimmal numbers (hours, minutes, seconds)}
+ \item{conductance: }{conductance 'Transitional Layer', returned because internally used by the 'movenetw()' function}
 }
 }
 \description{
 The function provides the facility to calculate the anisotropic accumulated cost of movement around a starting location and to optionally calculate least-cost path(s) toward
 one or multiple destinations. It implements different cost estimations related to human movement across the landscape.
 The function takes as input a Digital Terrain Model ('RasterLayer' class) and a point feature ('SpatialPointsDataFrame' class), the latter representing
-the starting location, i.e. the location from which the accumulated cost is calculated. \cr
+the starting location, i.e. the location from which the accumulated cost is calculated. Besides citing this package,
+you may want to refer to the following journal article: \strong{Alberti (2019) <doi:10.1016/j.softx.2019.100331>}.\cr
+Visit this \href{https://drive.google.com/file/d/1gLDrkZFh1b_glzCEqKdkPrer72JJ9Ffa/view?usp=sharing}{LINK} to access the package's vignette.\cr
 }
 \details{
 If the parameter 'destin' is fed with a dataset representing destination location(s) ('SpatialPointsDataFrame' class), the function also calculates
@@ -166,7 +177,7 @@ The contour lines' interval is set using the parameter 'breaks'; if no value is 
 It is worth reminding the user(s) that all the input layers (i.e., DTM, start location, and destination locations) must use the same projected coordinate system.\cr
 
 
-Cost surface calculation:\cr
+\strong{Cost surface calculation}:\cr
 for the cost-surface and LCPs calculation, 'movecost' builds on functions from Jacob van Etten's
 \href{https://cran.r-project.org/package=gdistance}{gdistance} package.
 Under the hood, 'movecost' calculates the slope as rise over run, following the procedure described
@@ -175,7 +186,29 @@ The number of directions in which cells are connected in the cost calculation ca
 16 (knight and one-cell queen moves) using the 'move' parameter (see 'Arguments').\cr
 
 
-Acquiring online elevation data:\cr
+\strong{Inibition of movement (barrier)}:\cr
+areas where the movement is inhibited can be fed into the analysis via the \code{barrier} parameter; SpatialLineDataFrame or SpatialPolygonDataFrame can be used.
+The barrier is assigned a conductance value of 0 (i.e., movement is inhibited) by default, but the user can assign any other value via the
+\code{field} parameter. Internally, the barrier creation rests on the \code{\link[leastcostpath]{create_barrier_cs}} function
+from the \emph{leastcostpath} package.\cr
+
+To test this facility, consider the following example:\cr
+
+First, we use in-built data to come up with a linear feature (i.e., a LCP) that we will later use as barrier:\cr
+
+result1 <- movecost(volc, destin.loc[1,], destin.loc[4,])\cr
+
+After, we calculate the LCP between two other locations, first not using any barrier (result2), then using the mentioned LCP (from result1)
+as a barrier (result3):\cr
+
+result2 <- movecost(volc, destin.loc[3,], destin.loc[6,], move=8)\cr
+result3 <- movecost(volc, destin.loc[3,], destin.loc[6,], barrier=result1$LCPs, move=8)\cr
+
+As apparent by comparing result2 to result3, when the barrier is used (result3), the LCP does not cross the barrier but is "forced"
+to make a long detour. \strong{Note} that the \code{move} parameter has been set to 8; if set to 16, the LCP will be "able" to jump the barrier.\cr
+
+
+\strong{Acquiring online elevation data}:\cr
 if a DTM is not provided, 'movecost()' will download elevation data from online sources.
 Elevation data will be aquired for the area enclosed  by the  polygon supplied by the 'studyplot' parameter (SpatialPolygonDataFrame class).
 To tap online elevation data, 'movecost' internally builds on the
@@ -204,7 +237,7 @@ To know what is sourced at what zoom level, visit
 https://github.com/tilezen/joerd/blob/master/docs/data-sources.md#what-is-sourced-at-what-zooms. \cr
 
 
-Terrain slope and cognitive slope:\cr
+\strong{Terrain slope and cognitive slope}:\cr
 when it comes to the terrain slope, the function provides the facility to use the so-called 'cognitive slope',
 following Pingel TJ (2013), Modeling Slope as a Contributor to Route Selection in Mountainous Areas, in Cartography and Geographic Information Science, 37(2), 137-148.
 According to Pingel, "Humans tend to overestimate geographic slopes by a surprisingly high margin...This analysis indicates downhill slopes are overestimated
@@ -212,7 +245,7 @@ at approximately 2.3 times the vertical, while uphill slopes are overestimated a
 if the parameter 'cogn.slp' is set to TRUE, positive slope values are preliminarily multiplied by 1.99, while negative slope values are multiplied by 2.31.
 
 
-Terrain factor (N):\cr
+\strong{Terrain factor (N)}:\cr
 virtually all the implemented cost functions (with few exceptions) can take into account a 'terrain factor' (N parameter; 1 by default), which
 represents the easiness/difficulty of moving on different terrain types. According to the type of terrain, the energy spent when walking
 increases. The same holds true for time, which increases because on a loose terrain (for instance) the walking speed decreases.
@@ -269,16 +302,14 @@ factors to be used for cost functions measuring time, the second for functions m
   \item Loose sand = 2.10
 }
 
-Besides citing this package, you may want to refer to the following journal article:
-\strong{Alberti (2019) <doi:10.1016/j.softx.2019.100331>}.\cr
 
 
-Implemented cost functions:\cr
+\strong{Implemented cost functions}:\cr
 note that in what follows \strong{x[adj]} stands for slope as rise/run calculated for adjacent cells:\cr
 
 \strong{Tobler's hiking function (on-path) (speed in kmh)}:\cr
 
-\eqn{6 * exp(-3.5 * abs(x[adj] + 0.05))}\cr
+\eqn{ (6 * exp(-3.5 * abs(x[adj] + 0.05))) * (1/N) }\cr
 
 
 \strong{Tobler's hiking function (off-path) (speed in kmh)}:\cr
@@ -290,7 +321,7 @@ as per Tobler's indication, the off-path walking speed is reduced by 0.6.\cr
 
 \strong{Marquez-Perez et al.'s modified Tobler hiking function (speed in kmh)}:\cr
 
-\eqn{4.8 * exp(-5.3 * abs((x[adj] * 0.7) + 0.03))}\cr
+\eqn{ (4.8 * exp(-5.3 * abs((x[adj] * 0.7) + 0.03))) * (1/N) }\cr
 
 modified version of the Tobler's hiking function as proposed by Joaquin Marquez-Parez, Ismael Vallejo-Villalta & Jose I. Alvarez-Francoso (2017), "Estimated travel time for walking trails in natural areas",
 Geografisk Tidsskrift-Danish Journal of Geography, 117:1, 53-62, DOI: 10.1080/00167223.2017.1316212.\cr
@@ -298,7 +329,7 @@ Geografisk Tidsskrift-Danish Journal of Geography, 117:1, 53-62, DOI: 10.1080/00
 
 \strong{Irmischer-Clarke's modified Tobler hiking function (male, on-path; speed in kmh)}:\cr
 
-\eqn{(0.11 + exp(-(abs(x[adj])*100 + 5)^2 / (2 * 30)^2)) * 3.6}\cr
+\eqn{ ((0.11 + exp(-(abs(x[adj])*100 + 5)^2 / (2 * 30^2))) * 3.6) * (1/N) }\cr
 
 modified version of the Tobler's function as proposed for (male) on-path hiking by Irmischer, I. J., & Clarke, K. C. (2018). Measuring and modeling the speed of human navigation.
 Cartography and Geographic Information Science, 45(2), 177-186. https://doi.org/10.1080/15230406.2017.1292150.
@@ -314,7 +345,7 @@ with the other Tobler-related cost functions; slope is in percent.\cr
 
 \strong{Irmischer-Clarke's modified Tobler hiking function (female, on-path; speed in kmh)}:\cr
 
-\eqn{(0.95 * (0.11 + exp(-(abs(x[adj]) * 100 + 5)^2/(2 * 30^2)))) * 3.6 }\cr
+\eqn{ ((0.95 * (0.11 + exp(-(abs(x[adj]) * 100 + 5)^2/(2 * 30^2)))) * 3.6) * (1/N) }\cr
 
 \strong{Irmischer-Clarke's modified Tobler hiking function (female, off-path; speed in kmh)}:\cr
 
@@ -323,7 +354,7 @@ with the other Tobler-related cost functions; slope is in percent.\cr
 
 \strong{Uriarte Gonzalez's walking-time cost function}:\cr
 
-\eqn{1/ (0.0277 * (abs(x[adj])*100) + 0.6115)}\cr
+\eqn{ 1 / ((0.0277 * (abs(x[adj])*100) + 0.6115) * N) }\cr
 
 proposed by Uriarte Gonzalez;
 \strong{see}: Chapa Brunet, T., Garcia, J., Mayoral Herrera, V., & Uriarte Gonzalez, A. (2008). GIS landscape models for the study of preindustrial settlement patterns in Mediterranean areas.
@@ -336,7 +367,7 @@ when calculating accumulated costs.\cr
 
 \strong{Marin Arroyo's walking-time cost function}:\cr
 
-\eqn{ ifelse((abs(x[adj])*100) < 0, 1 / (0.6 * ((abs(x[adj])*100)/23+1)), 1 / (0.6 * ((abs(x[adj])*100)/11+1)) }\cr
+\eqn{ ifelse((abs(x[adj])*100) < 0, 1 / ((0.6 * ((abs(x[adj])*100)/23+1))*N), 1 / ((0.6 * ((abs(x[adj])*100)/11+1))*N)) }\cr
 
 used by Marin Arroyo A.B. (2009), The use of optimal foraging theory to estimate Late Glacial site catchments areas from a central place:
 the case of eastern Cantabria, Span, in Journal of Anthropological Archaeology 28, 27-36.
@@ -364,7 +395,7 @@ The factor corresponds to the ratio between the flock average speed (1.5 km/h) a
 
 \strong{Garmy, Kaddouri, Rozenblat, and Schneider's hiking function (speed in kmh)}:\cr
 
-\eqn{4 * exp(-0.008 * ((atan(abs(x[adj]))*180/pi)^2))}\cr
+\eqn{ (4 * exp(-0.008 * ((atan(abs(x[adj]))*180/pi)^2))) * (1/N) }\cr
 
 slope in degrees;
 \strong{see}: Herzog, I. (2020). Spatial Analysis Based on Cost Functions. In Gillings M, Haciguzeller P, Lock G (eds), "Archaeological Spatial Analysis. A Methodological Guide.",
@@ -374,7 +405,7 @@ Routledge: New York, 333-358 (with previous references).\cr
 
 \strong{Rees' hiking function (speed in kmh)}:\cr
 
-\eqn{(1 / (0.75 + 0.09 * abs(x[adj]) + 14.6 * (abs(x[adj]))^2)) * 3.6}\cr
+\eqn{ ((1 / (0.75 + 0.09 * abs(x[adj]) + 14.6 * (abs(x[adj]))^2)) * 3.6) * (1/N) }\cr
 
 Rees' slope-dependant cost function; it is originally expressed in terms of time (1/v in Rees' publication);
 here it is the reciprocal of time (i.e. speed) that is used in order to eventually get the reciprocal of speed (i.e. time).
@@ -388,7 +419,7 @@ fitness tracker data to model the relationship between slope and travel rates. A
 
 \strong{Kondo-Seino's modified Tobler hiking function (speed in kmh)}:\cr
 
-\eqn{ ifelse(abs(x[adj]) >= -0.07, 5.1 * exp(-2.25 * abs(x[adj] + 0.07)), 5.1 * exp(-1.5 * abs(x[adj] + 0.07))) }\cr
+\eqn{ ifelse(abs(x[adj]) >= -0.07, (5.1 * exp(-2.25 * abs(x[adj] + 0.07))) * (1/N), (5.1 * exp(-1.5 * abs(x[adj] + 0.07)))) * (1/N) }\cr
 
 Kondo-Seino's modified Tobler hiking function; it expresses walking speed in Kmh; slope as rise/run;
 \strong{see} Kondo Y., Seino Y. (2010). GPS-aided Walking Experiments and Data-driven Travel Cost Modelingon the Historical Road of Nakasendo-Kisoji
@@ -400,7 +431,7 @@ March 22-26 (BAR International Series S2079). Archaeopress, Oxford, 158-165.\cr
 
 \strong{Wheeled-vehicle critical slope cost function}:\cr
 
-\eqn{1 / (1 + ((abs(x[adj])*100) / sl.crit)^2)}\cr
+\eqn{ 1 / ((1 + ((abs(x[adj])*100) / sl.crit)^2) * N) }\cr
 
 where \eqn{sl.crit} (=critical slope, in percent) is "the transition where switchbacks become more effective than direct uphill or downhill paths" and typically is in the range 8-16;
 \strong{see} Herzog, I. (2016). Potential and Limits of Optimal Path Analysis. In A. Bevan & M. Lake (Eds.), Computational Approaches to Archaeological Spaces (pp. 179-211). New York: Routledge. \cr
@@ -409,7 +440,7 @@ where \eqn{sl.crit} (=critical slope, in percent) is "the transition where switc
 
 \strong{Relative energetic expenditure cost function}:\cr
 
-\eqn{1 / (tan((atan(abs(x[adj]))*180/pi)*pi/180) / tan (1*pi/180))}\cr
+\eqn{ 1 / ((tan((atan(abs(x[adj]))*180/pi)*pi/180) / tan (1*pi/180)) * N) }\cr
 
 slope-based cost function expressing change in potential energy expenditure;
 \strong{see} Conolly, J., & Lake, M. (2006). Geographic Information Systems in Archaeology. Cambridge: Cambridge University Press, p. 220;
@@ -429,9 +460,19 @@ Routledge: New York, 333-358 (with previous references).\cr
 
 
 
+\strong{Eastman's cost function}:\cr
+
+\eqn{ 1 / ((0.031*(atan(abs(x[adj]))*180/pi)^2-0.025*(atan(abs(x[adj]))*180/pi)+1)*N) }\cr
+
+proposed by J.R. Eastman, it measures abstract cost; slope in degrees.
+\strong{See}: Vaissie E., Mobility of Paleolithic Populations: Biomechanical Considerations and Spatiotemporal Modelling,
+in PaleoAnthropology 2021 (1): 120-144 (with previous reference to Eastman 1999).\cr
+
+
+
 \strong{Pandolf et al.'s metabolic energy expenditure cost function (in Watts)}:\cr
 
-\eqn{1 / (1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * V^2 + 0.35 * V * (abs(x[adj])*100)))}\cr
+\eqn{ 1 / ((1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * (V^2) + 0.35 * V * (abs(x[adj])*100)))*N) }\cr
 
 where \eqn{W} is the walker's body weight (Kg), \eqn{L} is the carried load (in Kg), \eqn{V} is the velocity in m/s, \eqn{N} is a coefficient representing ease of movement on the terrain (see above).
 \strong{Note} that if \eqn{V} is set to 0 by the user, it is internally worked out on the basis of the Tobler function for on-path hiking; therefore, \eqn{V} will not be
@@ -470,7 +511,7 @@ University of Utah Press.\cr
 
 \strong{Minetti et al.'s metabolic energy cost function (in J/(kg*m))}:\cr
 
-\eqn{ 1 / ((280.5 * abs(x[adj])^5) - (58.7 * abs(x[adj])^4) - (76.8 * abs(x[adj])^3) + (51.9 * abs(x[adj])^2) + (19.6 * abs(x[adj])) + 2.5) }\cr
+\eqn{ 1 / (((280.5 * abs(x[adj])^5) - (58.7 * abs(x[adj])^4) - (76.8 * abs(x[adj])^3) + (51.9 * abs(x[adj])^2) + (19.6 * abs(x[adj])) + 2.5) * N) }\cr
 
 \strong{see} Minetti A.E., Moia C., Roi G.S., Susta D., Ferretti G. (2002), Enery cost of walking and running at extreme uphilland downhill slopes,
 in Journal of Applied Physiology 93, 1039-1046. \strong{Note} that this equation is valid for slopes in the range -0.5/0.5; outside this range,
@@ -483,7 +524,7 @@ replace Minetti et al.'s equation with its 6th degrees polynomial approximation 
 
 \strong{Herzog's metabolic cost function in J/(kg*m)}:\cr
 
-\eqn{1 / ((1337.8 * abs(x[adj])^6) + (278.19 * abs(x[adj])^5) - (517.39 * abs(x[adj])^4) - (78.199 * abs(x[adj])^3) + (93.419 * abs(x[adj])^2) + (19.825 * abs(x[adj])) + 1.64)}\cr
+\eqn{1 / (((1337.8 * abs(x[adj])^6) + (278.19 * abs(x[adj])^5) - (517.39 * abs(x[adj])^4) - (78.199 * abs(x[adj])^3) + (93.419 * abs(x[adj])^2) + (19.825 * abs(x[adj])) + 1.64) * N)  }\cr
 
 \strong{see} Herzog, I. (2016). Potential and Limits of Optimal Path Analysis. In A. Bevan & M. Lake (Eds.), Computational Approaches to Archaeological Spaces (pp. 179-211). New York: Routledge.
 Herzog suggests to use this as a 6th degree polynomial approximation of the Minetti et al's cost function (see above).\cr
@@ -492,7 +533,7 @@ Herzog suggests to use this as a 6th degree polynomial approximation of the Mine
 
 \strong{Van Leusen's metabolic energy expenditure cost function (in Watts)}:\cr
 
-\eqn{1 / (1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * V^2 + 0.35 * V * abs(x[adj])*100) + 10))}\cr
+\eqn{ 1 / ((1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * (V^2) + 0.35 * V * ((abs(x[adj])*100) + 10)))*N) }\cr
 
 which modifies the Pandolf et al.'s equation; \strong{see} Van Leusen, P. M. (2002). Pattern to process: methodological investigations into the formation and interpretation of spatial patterns in archaeological landscapes. University of Groningen.
 \strong{Note} that, as per Herzog, I. (2013). Least-cost Paths - Some Methodological Issues, Internet Archaeology 36 (http://intarch.ac.uk/journal/issue36/index.html) and
@@ -507,7 +548,7 @@ throughout the analysed area, but will vary as function of the slope.\cr
 
 \strong{Llobera-Sluckin's metabolic energy expenditure cost function (in KJ/m)}:\cr
 
-\eqn{1 / (2.635 + (17.37 * abs(x[adj])) + (42.37 * abs(x[adj])^2) - (21.43 * abs(x[adj])^3) + (14.93 * abs(x[adj])^4))}\cr
+\eqn{ 1 / ((2.635 + (17.37 * abs(x[adj])) + (42.37 * abs(x[adj])^2) - (21.43 * abs(x[adj])^3) + (14.93 * abs(x[adj])^4)) * N)  }\cr
 
 for which \strong{see} Llobera M.-Sluckin T.J. (2007). Zigzagging: Theoretical insights on climbing strategies, Journal of Theoretical Biology 249, 206-217.\cr
 
@@ -515,11 +556,22 @@ for which \strong{see} Llobera M.-Sluckin T.J. (2007). Zigzagging: Theoretical i
 
 \strong{Ardigo et al.'s metabolic energy expenditure cost function (in J/(kg*m))}:\cr
 
-\eqn{ 1 / (1.866 * exp(4.911*abs(x[adj])) * V^2 - 3.773 * exp(3.416*abs(x[adj])) * V + (45.71*abs(x[adj]^2) + 18.90*abs(x[adj])) + 4.456) }\cr
+\eqn{ 1 / ((1.866 * exp(4.911*abs(x[adj])) * V^2 - 3.773 * exp(3.416*abs(x[adj])) * V + (45.71*abs(x[adj]^2) + 18.90*abs(x[adj])) + 4.456) * N) }\cr
 
 \strong{see} Ardigo L.P., Saibene F., Minetti A.E. (2003), The optimal locomotion on gradients: walking, running or cycling?, in
 Eur J Appl Physiol 90, 365-371. If \eqn{V} is set to 0 by the user, it is internally worked out on the basis of the Tobler function for on-path hiking; therefore,
 \eqn{V} will not be considered constant throughout the analysed area, but will vary as function of the slope.\cr
+
+
+
+\strong{Hare's metabolic energy expenditure cost function (in cal/km)}:\cr
+
+\eqn{ 1 / ((48+30/(1/(6 * exp(-3.5 * abs(x[adj] + 0.05)))))*N) }\cr
+
+\strong{see} Hare T.S., Using Measures of Cost Distance in the Estimation of Polity Bounrdaries in the Post Classic
+Yautepec valley, Mexico, in Journal of Archaeological Science 31 (2004). Energetic expenditure is expressed in calories per km; walking speed
+is internally worked out from the DTM using the on-path Tobler's hiking function, which is expressed as its reciprocal; walking speed in km/h as per original Tobler's equation
+and as requested by Hare's function.\cr
 
 
 

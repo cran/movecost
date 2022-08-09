@@ -4,6 +4,7 @@
 #' can calculate and render an accumulated cost surface and corresponding isolines around a point location, the user(s) might want to
 #' calculate and plot a boundary (or boundaries) corresponding to a specific walking cost limit around one or more locations,
 #' either in terms of walking time or energy expenditure.\cr
+#' Visit this \href{https://drive.google.com/file/d/1gLDrkZFh1b_glzCEqKdkPrer72JJ9Ffa/view?usp=sharing}{LINK} to access the package's vignette.\cr
 #'
 #' The function just requires an input DTM and a dataset ('SpatialPointsDataFrame' class) containing at least one point location.
 #' If a DTM is not provided, 'movebound()' will download elevation data from online sources (see \code{\link{movecost}} for more details).
@@ -45,6 +46,7 @@
 #' @param dtm Digital Terrain Model (RasterLayer class); if not provided, elevation data will be acquired online for the area enclosed by the 'studyplot' parameter (see \code{\link{movecost}}).
 #' @param origin location(s) around which the boundary(ies) is calculated (SpatialPointsDataFrame class).
 #' @param studyplot polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see \code{\link{movecost}}); NULL is default.
+#' @param barrier area where the movement is inhibited (SpatialLineDataFrame or SpatialPolygonDataFrame class) (see \code{\link{movecost}}.
 #' @param funct cost function to be used (for details on each of the following, see \code{\link{movecost}}):\cr
 #'
 #' \strong{-functions expressing cost as walking time-}\cr
@@ -68,6 +70,7 @@
 #' \strong{-functions expressing abstract cost-}\cr
 #' \strong{ree} uses the relative energetic expenditure cost function;\cr
 #' \strong{b} uses the Bellavia's cost function;\cr
+#' \strong{e} uses the Eastman's cost function;\cr
 #'
 #' \strong{-functions expressing cost as metabolic energy expenditure-}\cr
 #' \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;\cr
@@ -76,10 +79,12 @@
 #' \strong{hrz} uses the Herzog's metabolic energy expenditure cost function;\cr
 #' \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
 #' \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
-#' \strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function (for all the mentioned cost functions, see Details);\cr
+#' \strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function (for all the mentioned cost functions;\cr
+#' \strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see \code{\link{movecost}});\cr
 #' @param time time-unit expressed by the isoline(s) if Tobler's and other time-related cost functions are used;
 #' 'h' for hour, 'm' for minutes.
 #' @param move number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).
+#' @param field value assigned to the cells coincidinng with the barrier (0 by default) (see \code{\link{movecost}}.
 #' @param cont.value cost value represented by the calculated isoline(s) (NULL by default); if no value is supplied, it is set to 1/10 of the range of values of the accumulated cost surface.
 #' @param cogn.slp  TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see \code{\link{movecost}}).
 #' @param sl.crit critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see \code{\link{movecost}}).
@@ -133,7 +138,7 @@
 #' @seealso \code{\link{movecost}}
 #'
 #'
-movebound <- function (dtm=NULL, origin, studyplot=NULL, funct="t", time="h", move=16, cont.value=NULL, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, cont.lab=TRUE, transp=0.5, add.geom=FALSE, export=FALSE){
+movebound <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, funct="t", time="h", move=16, field=0, cont.value=NULL, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, cont.lab=TRUE, transp=0.5, add.geom=FALSE, export=FALSE){
 
   #if no dtm is provided
   if (is.null(dtm)==TRUE) {
@@ -145,7 +150,7 @@ movebound <- function (dtm=NULL, origin, studyplot=NULL, funct="t", time="h", mo
     dtm <- raster::crop(elev.data, studyplot)
   }
 
-  result <- movecost::movecost(dtm=dtm, origin=origin, studyplot=studyplot, funct=funct, time=time, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, graph.out=FALSE)$accumulated.cost.raster
+  result <- movecost::movecost(dtm=dtm, origin=origin, studyplot=studyplot, barrier=barrier, funct=funct, time=time, move=move, field=field, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, graph.out=FALSE)$accumulated.cost.raster
 
   #if no contour value is entered, set it to one tenth of the range of the values of the final accumulated cost surface
   if(is.null(cont.value)==TRUE){
@@ -346,6 +351,22 @@ movebound <- function (dtm=NULL, origin, studyplot=NULL, funct="t", time="h", mo
     } else {
       sub.title <- paste0("Cost based on the Ardigo et al.'s metabolic cost function \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V: ", V)
     }
+  }
+
+  if(funct=="h") {
+
+    #set the labels to be used within the returned plot
+    main.title <-  paste0("Boundary(ies) corresponding to ", cont.value, " cal/km cost limit")
+    sub.title <- paste0("Cost based on the Hare's metabolic cost function \n cost in cal/km \n terrain factor N=", N)
+    legend.cost <- "metabolic cost cal/km"
+  }
+
+  if(funct=="e") {
+
+    #set the labels to be used within the returned plot
+    main.title <- paste0("Boundary(ies) corresponding to ", cont.value, " cost limit")
+    sub.title <- paste0("Cost based on the Eastman's cost function \n terrain factor N=", N)
+    legend.cost <- "cost"
   }
 
   #extract and store the contours as a SpatialLinesDataFrame

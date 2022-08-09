@@ -4,6 +4,7 @@
 #' a cost allocation raster is produced; each cell of the cost allocation raster is given an integer indicating to which origin
 #' a cell is closer in terms of cost. Needless to say, the cost can be conceptualized in terms of either walking time or
 #' energy expenditure, and is function of the terrain slope.\cr
+#' Visit this \href{https://drive.google.com/file/d/1gLDrkZFh1b_glzCEqKdkPrer72JJ9Ffa/view?usp=sharing}{LINK} to access the package's vignette.\cr
 #'
 #' The function requires an input DTM ('RasterLayer' class) and a dataset ('SpatialPointsDataFrame' class) containing the
 #' origin locations. If a DTM is not provided, 'movealloc()' will download elevation data from online sources (see \code{\link{movecost}} for more details).
@@ -48,6 +49,7 @@
 #' \strong{-functions expressing abstract cost-}\cr
 #' \strong{ree} uses the relative energetic expenditure cost function;\cr
 #' \strong{b} uses the Bellavia's cost function;\cr
+#' \strong{e} uses the Eastman's cost function;\cr
 #'
 #' \strong{-functions expressing cost as metabolic energy expenditure-}\cr
 #' \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;\cr
@@ -56,7 +58,8 @@
 #' \strong{hrz} uses the Herzog's metabolic energy expenditure cost function;\cr
 #' \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
 #' \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
-#' \strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function (for all the mentioned cost functions, see Details);\cr
+#' \strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function;\cr
+#' \strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see \code{\link{movecost}});\cr
 #' @param time time-unit expressed by the isoline(s) if Tobler's and other time-related cost functions are used;
 #' 'h' for hour, 'm' for minutes.
 #' @param move number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).
@@ -322,6 +325,20 @@ movealloc <- function (dtm=NULL, origin, studyplot=NULL, funct="t", time="h", mo
     } else {
       sub.title <- paste0("Cost based on the Ardigo et al.'s metabolic energy expenditure cost function \nparameters: W: ", W, "; L: ", L, "; N: ", N, "; V: ", V)
     }
+  }
+
+  if(funct=="h") {
+    main.title.accum.cost <- "Accumulated metabolic cost around origins"
+    main.title.cost.alloc <- "Allocation based on metabolic cost accumulated around origins"
+    sub.title <- paste0("Cost based on the Hare's  metabolic cost function \n cost in cal/km \n terrain factor N=", N)
+    legend.cost <- "metabolic cost cal/km"
+  }
+
+  if(funct=="e") {
+    main.title.accum.cost <- "Accumulated cost around origins"
+    main.title.cost.alloc <- "Allocation based on cost accumulated around origins"
+    sub.title <- paste0("Cost based on the Eastman's cost function \n terrain factor N=", N)
+    legend.cost <- "cost"
   }
 
   #turn the allocation raster into polygons, so to get

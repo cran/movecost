@@ -59,6 +59,7 @@ movealloc(
 \strong{-functions expressing abstract cost-}\cr
 \strong{ree} uses the relative energetic expenditure cost function;\cr
 \strong{b} uses the Bellavia's cost function;\cr
+\strong{e} uses the Eastman's cost function;\cr
 
 \strong{-functions expressing cost as metabolic energy expenditure-}\cr
 \strong{p} uses the Pandolf et al.'s metabolic energy expenditure cost function;\cr
@@ -67,7 +68,8 @@ movealloc(
 \strong{hrz} uses the Herzog's metabolic energy expenditure cost function;\cr
 \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
 \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
-\strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function (for all the mentioned cost functions, see Details);\cr}
+\strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function;\cr
+\strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see \code{\link{movecost}});\cr}
 
 \item{time}{time-unit expressed by the isoline(s) if Tobler's and other time-related cost functions are used;
 'h' for hour, 'm' for minutes.}
@@ -121,6 +123,7 @@ The function provides the facility to carry out a cost allocation analysis. Give
 a cost allocation raster is produced; each cell of the cost allocation raster is given an integer indicating to which origin
 a cell is closer in terms of cost. Needless to say, the cost can be conceptualized in terms of either walking time or
 energy expenditure, and is function of the terrain slope.\cr
+Visit this \href{https://drive.google.com/file/d/1gLDrkZFh1b_glzCEqKdkPrer72JJ9Ffa/view?usp=sharing}{LINK} to access the package's vignette.\cr
 }
 \details{
 The function requires an input DTM ('RasterLayer' class) and a dataset ('SpatialPointsDataFrame' class) containing the

@@ -1,8 +1,13 @@
 # movecost
-vers 1.6
+vers 1.7
 
 
 ## History
+
+`version 1.6`:
+* fix to a projection issue in the in-built 'volc' raster dataset;
+* internal optimizations in the 'movenetw()' function;
+* improvements layout- and content-wise to the functions' help documentation.
 
 `version 1.5`:
 * 'movenetw()': fix to an error in the way the exported GeoTiff files were given a name.
