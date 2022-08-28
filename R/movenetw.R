@@ -7,32 +7,34 @@
 #' Optionally, a raster representing the density of the first type of network can be produced.\cr
 #' Visit this \href{https://drive.google.com/file/d/1gLDrkZFh1b_glzCEqKdkPrer72JJ9Ffa/view?usp=sharing}{LINK} to access the package's vignette.\cr
 #'
-#' Like 'movecost()', the function just requires an input DTM ('RasterLayer' class) and an origin dataset  ('SpatialPointsDataFrame' class).
-#' If a DTM is not provided, 'movenetw()' downloads elevation data from online sources for the area enclosed by the polygon fed via
-#' the 'studyplot' parameter (see \code{\link{movecost}} for more details). Under the hood, movenetw()' relies on 'movecost()' and implements the same cost functions:
-#' see the help documentation of 'movecost()' for further information.\cr
+#' Like \code{movecost()}, the function just requires an input DTM ('RasterLayer' class) and an origin dataset  ('SpatialPointsDataFrame' class).
+#' If a DTM is not provided, \code{movenetw()} downloads elevation data from online sources for the area enclosed by the polygon fed via
+#' the \code{studyplot} parameter (see \code{\link{movecost}} for more details). Under the hood, \code{movenetw()} relies on \code{movecost()} and implements the same cost functions:
+#' see the help documentation of \code{movecost()} for further information.\cr
 #'
-#' 'movenetw()' produces a plot representing the input DTM overlaid by an hillshade raster, whose transparency can be adjusted using
+#' \code{movenetw()} produces a plot representing the input DTM overlaid by a slopeshade raster, whose transparency can be adjusted using
 #' the 'transp' parameter. On the rendered plot, the LPCs network ('SpatialLinesDataFrame' class) is represented by black lines. Optionally,
-#' by setting the parameter 'lcp.dens' to TRUE, the function produces a raster representing the density of the LCPs connecting each location to all the
-#' other locations. The raster, which is rendered overlaid to an hillshade visualization, expresses the density of LCPs as percentages.
+#' by setting the parameter \code{lcp.dens()} to \code{TRUE}, the function produces a raster representing the density of the LCPs connecting each location to all the
+#' other locations. The raster, which is rendered overlaid to a slopeshade visualization, expresses the density of LCPs as percentages.
 #' The percentages are calculated in relation to the maximum number of LCPs passing through the same cell stored in the raster.
 #' A density raster expressing counts is NOT rendered BUT is returned by the function. The density raster retains the cell size and coordinate system of the input DTM.\cr
 #'
-#' The function returns a list storing the DTM (only in case this has not been fed into the function but aquired online), a list of LCPs
+#' The function returns a list storing the DTM (only in case this has not been fed into the function but acquired online), a list of LCPs
 #' split by origin, a SpatialLineDataFrame representing the merged LCPs, two rasters representing the LCPs network density
 #' expressed as counts and percentages respectively, and cost matrices. As for the latter, if the selected cost function defines cost as
 #' walking time, two matrices are returned, one expressing time in minutes, one in hours (\strong{note} that the values are in decimal format).
 #' If the selected cost function expresses cost differently (i.e., energy or abstract cost), the two above mentioned cost matrices will be set to NULL,
 #' and a third cost matrix will store all the pair-wise costs.\cr
 #'
-#' The above mentioned data (DTM, LCPs, network density) can be exported by setting the 'export' parameter to TRUE. The LCPs network (exported as a shapefile)
+#' The above mentioned data (DTM, LCPs, network density) can be exported by setting the \code{export} parameter to \code{TRUE} The LCPs network (exported as a shapefile)
 #' and the density raster (as a GeoTiff) will bear a suffix indicating the used cost function.\cr
 #'
 #' @param dtm Digital Terrain Model (RasterLayer class); if not provided, elevation data will be acquired online for the area enclosed by the 'studyplot' parameter (see \code{\link{movecost}}).
 #' @param origin location(s) around which the boundary(ies) is calculated (SpatialPointsDataFrame class).
-#' @param studyplot polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see \code{\link{movecost}}); NULL is default.
-#' @param barrier area where the movement is inhibited (SpatialLineDataFrame or SpatialPolygonDataFrame class) (see \code{\link{movecost}}.
+#' @param studyplot polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are acquired (see \code{\link{movecost}}); NULL is default.
+#' @param barrier area where the movement is inhibited (SpatialLineDataFrame or SpatialPolygonDataFrame class) (see \code{\link{movecost}}).
+#' @param plot.barrier TRUE or FALSE (default) if the user wants or does not want the barrier to be plotted (see \code{\link{movecost}}).
+#' @param irregular.dtm TRUE or FALSE (default) if the input DTM features irregular margins (see \code{\link{movecost}}).
 #' @param funct cost function to be used (for details on each of the following, see \code{\link{movecost}}):\cr
 #' \strong{-functions expressing cost as walking time-}\cr
 #' \strong{t} (default) uses the on-path Tobler's hiking function;\cr
@@ -48,6 +50,7 @@
 #' \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
 #' \strong{r} uses the Rees' hiking function;\cr
 #' \strong{ks} uses the Kondo-Seino's hiking function;\cr
+#' \strong{trp} uses the Tripcevich's hiking function;\cr
 #'
 #' \strong{-functions for wheeled-vehicles-}\cr
 #' \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
@@ -65,9 +68,9 @@
 #' \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
 #' \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
 #' \strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function;\cr
-#' \strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see \code{\link{movecost}});\cr
+#' \strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see \code{\link{movecost}}).\cr
 #' @param move number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).
-#' @param field value assigned to the cells coincidinng with the barrier (0 by default) (see \code{\link{movecost}}.
+#' @param field value assigned to the cells coinciding with the barrier (0 by default) (see \code{\link{movecost}}.
 #' @param cogn.slp  TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see \code{\link{movecost}}).
 #' @param sl.crit critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see \code{\link{movecost}}).
 #' @param W walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
@@ -76,12 +79,12 @@
 #' @param V speed in m/s (1.2 by default) (used by the Pandolf et al.'s, Pandolf et al.s with correction factor, Van Leusen's, and Ardigo et al.'s cost function; if set to 0, it is internally worked out on the basis of Tobler on-path hiking function (see \code{\link{movecost}}).
 #' @param z zoom level for the elevation data downloaded from online sources (from 0 to 15; 9 by default) (see \code{\link{movecost}} and \code{\link[elevatr]{get_elev_raster}}).
 #' @param lcp.dens TRUE or FALSE (default) if the user wants or does not want the least-cost paths density raster to be produced.
-#' @param transp set the transparency of the hillshade raster that is plotted over the DTM (0.5 by default).
+#' @param transp set the transparency of the slopeshade raster that is plotted over the DTM (0.5 by default).
 #' @param export TRUE or FALSE (default) if the user wants or does not want the LCPs network to be exported as a shapefile, and the LCPs network density as a GeoTiff; the DTM is exported only if it was not provided by the user
 #' and downloaded by the function from online sources.
 #'
 #' @return The function returns a list storing the following components \itemize{
-##'  \item{dtm: }{Digital Terrain Model ('RasterLayer' class); returned only if aquired online}
+##'  \item{dtm: }{Digital Terrain Model ('RasterLayer' class); returned only if acquired online}
 ##'  \item{LCPs.netw: }{list containing the LCPs ('SpatialLinesDataFrame' class) split by origin}
 ##'  \item{LCPs.netw.merged: }{'SpatialLinesDataFrame' corresponding to the merged LCPs}
 ##'  \item{LCPs.netw.neigh: }{list containing the LCPs between neighboring locations ('SpatialLinesDataFrame' class) split by origin}
@@ -96,7 +99,7 @@
 ##'
 #' @keywords movenetw
 #' @export
-#' @importFrom raster raster hillShade terrain rasterize cellStats extend crs
+#' @importFrom raster raster terrain rasterize cellStats extend crs
 #' @importFrom spatstat.geom pixellate
 #' @import maptools
 #' @importFrom sp SpatialLinesDataFrame
@@ -122,7 +125,7 @@
 #' @seealso \code{\link{movecost}}
 #'
 #'
-movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, funct="t", move=16, field=0, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, lcp.dens=FALSE, transp=0.5, export=FALSE){
+movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, plot.barrier=FALSE, irregular.dtm=FALSE, funct="t", move=16, field=0, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, lcp.dens=FALSE, transp=0.5, export=FALSE){
   #if no dtm is provided
   if (is.null(dtm)==TRUE) {
     #get the elvation data using the elevatr's get_elev_raster() function, using the studyplot dataset (SpatialPolygonDataFrame)
@@ -141,7 +144,7 @@ movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, funct="t",
   #use the 'movecost' function to calculate the 'conductance' transitional layer to be used inside the
   #loop that follows. The conductance layer is calculated because it will be used by the gdistance's shortestPath() function
   #to calculate all the pairwise LCPs. Only one origin location suffices to calculate the conductance.
-  conductance.to.use <- movecost(dtm = dtm, origin = origin[1,], barrier=barrier, funct = funct, move = move, field=field, sl.crit = sl.crit, W = W, L = L, N = N, V = V, graph.out = FALSE)$conductance
+  conductance.to.use <- movecost(dtm = dtm, origin = origin[1,], barrier=barrier, irregular.dtm=irregular.dtm, funct = funct, move = move, field=field, sl.crit = sl.crit, W = W, L = L, N = N, V = V, graph.out = FALSE)$conductance
 
   #set the progress bar
   pb <- txtProgressBar(min = 0, max = length(origin), style = 3)
@@ -174,21 +177,24 @@ movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, funct="t",
     #...use the cost.matrix object
     #set the diagolnal to NA
     diag(cost.matrix) <- NA
-    #calculate the minumum cost column-wise
-    min.index.col <- apply(cost.matrix, 2, which.min)
+    #extract the column index of the minimum cost; the search is carried out row-wisely
+    min.index.col <- apply(cost.matrix, 1, which.min)
   } else {
     #if time functions have been used, do the same for the cost.matrix.min
     diag(cost.matrix.min) <- NA
-    min.index.col <- apply(cost.matrix.min, 2, which.min)
+    #extract the column index of the minimum cost; the search is carried out row-wisely
+    min.index.col <- apply(cost.matrix.min, 1, which.min)
   }
 
   #create an empty list to store the computed LCPs among neighboring locations
   paths.netw.neigh <- vector(mode = "list", length = length(origin))
 
+  message(paste0("Wait...processing the LCPs between neighboring locations"))
+
   #set the progress bar
   pb <- txtProgressBar(min = 0, max = length(origin), style = 3)
 
-  #loop through the origins, and calculate the LCP between each origin
+  #loop through the origins and calculate the LCP between each origin
   #and its nearest neighbor, which is represented by the vector called min.index.col created previouly;
   #the LCPs (per each origin) are stored in the previously defined list
   for (i in 1:length(origin)) {
@@ -316,10 +322,12 @@ movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, funct="t",
     sub.title <- paste0("LCPs based on the Eastman's cost function \n terrain factor N=", N)
   }
 
-  #produce the ingredients for the hillshade raster
+  if (funct=="trp") {
+    sub.title <- paste0("LCPs based on the Tripcevich's hiking function \nterrain factor N=", N)
+  }
+
+  #produce the ingredient for the slopeshade raster
   slope <- raster::terrain(dtm, opt = "slope")
-  aspect <- raster::terrain(dtm, opt = "aspect")
-  hill <- raster::hillShade(slope, aspect, angle = 45, direction = 0)
 
   #plots for the LCPs among all locations
   #plot the DTM
@@ -330,9 +338,9 @@ movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, funct="t",
                cex.sub=0.75,
                legend.lab="Elevation (masl)")
 
-  #plot the hillshade
-  raster::plot(hill,
-               col = grey(0:100/100),
+  #plot the slopeshade
+  raster::plot(slope,
+               col = rev(grey(0:100/100)),
                legend = FALSE,
                alpha=transp,
                add=TRUE)
@@ -347,6 +355,10 @@ movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, funct="t",
                 col="red",
                 add=TRUE)
 
+  #if the barrier is provided AND if plot.barrier is TRUE, add the barrier
+  if(is.null(barrier)==FALSE & plot.barrier==TRUE) {
+    raster::plot(barrier, col="blue", add=TRUE)
+  }
 
   if(lcp.dens==TRUE){
     #convert the merged LCPs to a spatstat object
@@ -386,9 +398,9 @@ movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, funct="t",
                  cex.sub=0.75,
                  legend.lab="% of LCPs passing in each raster's cell")
 
-    #plot the hillshade
-    raster::plot(hill,
-                 col = grey(0:100/100),
+    #plot the slopeshade
+    raster::plot(slope,
+                 col = rev(grey(0:100/100)),
                  legend = FALSE,
                  alpha=transp,
                  add=TRUE)
@@ -409,9 +421,9 @@ movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, funct="t",
                cex.sub=0.75,
                legend.lab="Elevation (masl)")
 
-  #plot the hillshade
-  raster::plot(hill,
-               col = grey(0:100/100),
+  #plot the slopeshade
+  raster::plot(slope,
+               col = rev(grey(0:100/100)),
                legend = FALSE,
                alpha=transp,
                add=TRUE)
@@ -425,6 +437,11 @@ movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, funct="t",
                 pch=20,
                 col="red",
                 add=TRUE)
+
+  #if the barrier is provided AND if plot.barrier is TRUE, add the barrier
+  if(is.null(barrier)==FALSE & plot.barrier==TRUE) {
+    raster::plot(barrier, col="blue", add=TRUE)
+  }
 
   #if export is TRUE, export the LCPs network as a shapefile, and the density rasters as geotiff
   if(export==TRUE){
@@ -450,7 +467,7 @@ movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, funct="t",
   if(is.null(studyplot)==TRUE){
     #set dtm to NULL, i.e. there is no DTM to return
     dtm <- NULL
-  } else{
+  } else {
     #otherwise (i.e., if studyplot was not NULL), set the dtm to the downloaded dtm (i.e., there is
     #something to return)
     dtm <- dtm
@@ -461,7 +478,7 @@ movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, funct="t",
     #there are data to return
     pathcounts <- pathcounts
     lcp.density.perc <- lcp.density.perc
-  } else{
+  } else {
     #otherwise there is nothing to return
     pathcounts <- NULL
     lcp.density.perc <- NULL

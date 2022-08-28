@@ -34,7 +34,7 @@ movealloc(
 
 \item{origin}{locations (two at least) in relation to which the cost allocation is carried out (SpatialPointsDataFrame class).}
 
-\item{studyplot}{polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see \code{\link{movecost}}); NULL is default.}
+\item{studyplot}{polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are acquired (see \code{\link{movecost}}); NULL is default.}
 
 \item{funct}{cost function to be used (for details on each of the following, see \code{\link{movecost}}):\cr
 
@@ -52,6 +52,7 @@ movealloc(
 \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
 \strong{r} uses the Rees' hiking function;\cr
 \strong{ks} uses the Kondo-Seino's hiking function;\cr
+\strong{trp} uses the Tripcevich's hiking function;\cr
 
 \strong{-functions for wheeled-vehicles-}\cr
 \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
@@ -69,10 +70,9 @@ movealloc(
 \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
 \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
 \strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function;\cr
-\strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see \code{\link{movecost}});\cr}
+\strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see \code{\link{movecost}}).\cr}
 
-\item{time}{time-unit expressed by the isoline(s) if Tobler's and other time-related cost functions are used;
-'h' for hour, 'm' for minutes.}
+\item{time}{time-unit expressed by the isoline(s) if Tobler's and other time-related cost functions are used; h' for hour, 'm' for minutes.}
 
 \item{move}{number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).}
 
@@ -104,7 +104,7 @@ movealloc(
 
 \item{cex.leg}{set the size of the labels used in the legend displayed in the plotted allocation raster (0.75 by default).}
 
-\item{transp}{set the transparency of the hillshade raster that is plotted over the cost allocation raster (0.5 by default).}
+\item{transp}{set the transparency of the slopeshade raster that is plotted over the cost allocation raster (0.5 by default).}
 
 \item{export}{TRUE or FALSE (default) if the user wants or does not want the output to be exported; if TRUE, the isolines (i.e. the contours) and the allocation boundaries will be exported as a shapefile;
 the cost allocation raster will be exported as 'GeoTiff'; the DTM is exported only if it was not provided by the user and downloaded by the function from online sources; all the exported files (excluding the DTM)
@@ -127,19 +127,19 @@ Visit this \href{https://drive.google.com/file/d/1gLDrkZFh1b_glzCEqKdkPrer72JJ9F
 }
 \details{
 The function requires an input DTM ('RasterLayer' class) and a dataset ('SpatialPointsDataFrame' class) containing the
-origin locations. If a DTM is not provided, 'movealloc()' will download elevation data from online sources (see \code{\link{movecost}} for more details).
-Under the hood, 'movealloc()' relies on the 'movecost()' function and implements the same cost functions:
-see the help documentation of 'movecost()' for further information.\cr
+origin locations. If a DTM is not provided, \code{movealloc()} will download elevation data from online sources (see \code{\link{movecost}} for more details).
+Under the hood, \code{movealloc()} relies on the \code{movecost()} function and implements the same cost functions:
+see the help documentation of \code{movecost()} for further information.\cr
 
-Internally, what 'movealloc()' does is producing an accumulated cost surface around each individual origin location; those
+Internally, what \code{movealloc()} does is producing an accumulated cost surface around each individual origin location; those
 accumulated cost surfaces are then stacked together, and then the function looks at each pixel in the stack of surfaces and
 returns 1 if the first stacked surface has the smallest pixel value, or 2 if the second stacked surface has the smallest pixel value, and so on for bigger stacks.\cr
 
-'movealloc()' produces a plot featuring an hillshade image that is overlaid by the cost allocation raster and by a polygon layer
-where each polygon represents the limits of each allocation zone. A legend can be optionally added to the plot via the 'leg.alloc' parameter (FALSE by default).
+\code{movealloc()} produces a plot featuring a slopeshade image that is overlaid by the cost allocation raster and by a polygon layer
+where each polygon represents the limits of each allocation zone. A legend can be optionally added to the plot via the \code{leg.alloc} parameter (FALSE by default).
 Isolines (i.e., contour lines) around each origin location can be optionally plotted via the 'isolines' parameter (FALSE by default).\cr
 
-The DTM, the cost allocation raster, the cost allocation polygons, and the isolines (if requested by the user by setting the 'isolines' parameter to TRUE), can
+The DTM, the cost allocation raster, the cost allocation polygons, and the isolines (if requested by the user by setting the  \code{isolines} parameter to TRUE), can
 be exported by setting the 'export' parameter to TRUE. All the exported files (excluding the DTM) will bear a suffix corresponding to the cost function selected by the user.
 }
 \examples{

@@ -7,25 +7,25 @@
 #' Visit this \href{https://drive.google.com/file/d/1gLDrkZFh1b_glzCEqKdkPrer72JJ9Ffa/view?usp=sharing}{LINK} to access the package's vignette.\cr
 #'
 #' The function requires an input DTM ('RasterLayer' class) and a dataset ('SpatialPointsDataFrame' class) containing the
-#' origin locations. If a DTM is not provided, 'movealloc()' will download elevation data from online sources (see \code{\link{movecost}} for more details).
-#' Under the hood, 'movealloc()' relies on the 'movecost()' function and implements the same cost functions:
-#' see the help documentation of 'movecost()' for further information.\cr
+#' origin locations. If a DTM is not provided, \code{movealloc()} will download elevation data from online sources (see \code{\link{movecost}} for more details).
+#' Under the hood, \code{movealloc()} relies on the \code{movecost()} function and implements the same cost functions:
+#' see the help documentation of \code{movecost()} for further information.\cr
 #'
-#' Internally, what 'movealloc()' does is producing an accumulated cost surface around each individual origin location; those
+#' Internally, what \code{movealloc()} does is producing an accumulated cost surface around each individual origin location; those
 #' accumulated cost surfaces are then stacked together, and then the function looks at each pixel in the stack of surfaces and
 #' returns 1 if the first stacked surface has the smallest pixel value, or 2 if the second stacked surface has the smallest pixel value, and so on for bigger stacks.\cr
 #'
-#' 'movealloc()' produces a plot featuring an hillshade image that is overlaid by the cost allocation raster and by a polygon layer
-#' where each polygon represents the limits of each allocation zone. A legend can be optionally added to the plot via the 'leg.alloc' parameter (FALSE by default).
+#' \code{movealloc()} produces a plot featuring a slopeshade image that is overlaid by the cost allocation raster and by a polygon layer
+#' where each polygon represents the limits of each allocation zone. A legend can be optionally added to the plot via the \code{leg.alloc} parameter (FALSE by default).
 #' Isolines (i.e., contour lines) around each origin location can be optionally plotted via the 'isolines' parameter (FALSE by default).\cr
 #'
-#' The DTM, the cost allocation raster, the cost allocation polygons, and the isolines (if requested by the user by setting the 'isolines' parameter to TRUE), can
+#' The DTM, the cost allocation raster, the cost allocation polygons, and the isolines (if requested by the user by setting the  \code{isolines} parameter to TRUE), can
 #' be exported by setting the 'export' parameter to TRUE. All the exported files (excluding the DTM) will bear a suffix corresponding to the cost function selected by the user.
 #'
 #'
 #' @param dtm Digital Terrain Model (RasterLayer class); if not provided, elevation data will be acquired online for the area enclosed by the 'studyplot' parameter (see \code{\link{movecost}}).
 #' @param origin locations (two at least) in relation to which the cost allocation is carried out (SpatialPointsDataFrame class).
-#' @param studyplot polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see \code{\link{movecost}}); NULL is default.
+#' @param studyplot polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are acquired (see \code{\link{movecost}}); NULL is default.
 #' @param funct cost function to be used (for details on each of the following, see \code{\link{movecost}}):\cr
 #'
 #' \strong{-functions expressing cost as walking time-}\cr
@@ -42,6 +42,7 @@
 #' \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
 #' \strong{r} uses the Rees' hiking function;\cr
 #' \strong{ks} uses the Kondo-Seino's hiking function;\cr
+#' \strong{trp} uses the Tripcevich's hiking function;\cr
 #'
 #' \strong{-functions for wheeled-vehicles-}\cr
 #' \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
@@ -59,9 +60,8 @@
 #' \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
 #' \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
 #' \strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function;\cr
-#' \strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see \code{\link{movecost}});\cr
-#' @param time time-unit expressed by the isoline(s) if Tobler's and other time-related cost functions are used;
-#' 'h' for hour, 'm' for minutes.
+#' \strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see \code{\link{movecost}}).\cr
+#' @param time time-unit expressed by the isoline(s) if Tobler's and other time-related cost functions are used; h' for hour, 'm' for minutes.
 #' @param move number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).
 #' @param cogn.slp  TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see \code{\link{movecost}}).
 #' @param sl.crit critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see \code{\link{movecost}}).
@@ -77,7 +77,7 @@
 #' @param leg.alloc if set to TRUE, display the legend in the plotted cost allocation raster; FALSE by default.
 #' @param leg.pos set the position of the legend in the plotted cost allocation raster; 'topright' by default (other options: "bottomright", "bottom", "bottomleft", "left", "topleft", "top", "topright", "right", "center").
 #' @param cex.leg set the size of the labels used in the legend displayed in the plotted allocation raster (0.75 by default).
-#' @param transp set the transparency of the hillshade raster that is plotted over the cost allocation raster (0.5 by default).
+#' @param transp set the transparency of the slopeshade raster that is plotted over the cost allocation raster (0.5 by default).
 #' @param export TRUE or FALSE (default) if the user wants or does not want the output to be exported; if TRUE, the isolines (i.e. the contours) and the allocation boundaries will be exported as a shapefile;
 #' the cost allocation raster will be exported as 'GeoTiff'; the DTM is exported only if it was not provided by the user and downloaded by the function from online sources; all the exported files (excluding the DTM)
 #' will bear a suffix corresponding to the cost function selected by the user.
@@ -91,7 +91,7 @@
 ##'
 #' @keywords movealloc
 #' @export
-#' @importFrom raster ncell mask crop stack cellStats raster hillShade terrain which.min
+#' @importFrom raster ncell mask crop stack cellStats raster terrain which.min
 #' @importFrom elevatr get_elev_raster
 #' @importFrom grDevices terrain.colors topo.colors grey
 #' @importFrom graphics legend
@@ -341,15 +341,20 @@ movealloc <- function (dtm=NULL, origin, studyplot=NULL, funct="t", time="h", mo
     legend.cost <- "cost"
   }
 
+  if (funct=="trp") {
+    main.title.accum.cost <- paste0("Accumulated walking-time cost (in ", time, ") around origins")
+    main.title.cost.alloc <- paste0("Cost allocation based on walking-time (in ", time, ") around origins")
+    sub.title <- paste0("Walking-time based on the Tripcevich's hiking function \nterrain factor N=", N)
+    legend.cost <- paste0("walking-time (", time,")")
+  }
+
   #turn the allocation raster into polygons, so to get
   #boundaries to be used for subsequent plotting;
   #the cells storing the same integer are dissolved
   alloc.boundaries <- raster::rasterToPolygons(cost_alloc, dissolve=TRUE)
 
-  #create the ingredients for the hillshade raster to be plotted
+  #create the ingredient for the slopeshade raster to be plotted
   slope <- raster::terrain(dtm, opt = "slope")
-  aspect <- raster::terrain(dtm, opt = "aspect")
-  hill <- raster::hillShade(slope, aspect, angle = 45, direction = 0)
 
   #plot the cost allocation raster
   raster::plot(cost_alloc,
@@ -368,9 +373,9 @@ movealloc <- function (dtm=NULL, origin, studyplot=NULL, funct="t", time="h", mo
            cex=cex.leg)
   }
 
-  #plot the hillshade raster
-  raster::plot(hill,
-               col = grey(0:100/100),
+  #plot the slopeshade raster
+  raster::plot(slope,
+               col = rev(grey(0:100/100)),
                legend = FALSE,
                alpha=transp,
                add=TRUE)

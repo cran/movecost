@@ -10,6 +10,8 @@ movecost(
   destin = NULL,
   studyplot = NULL,
   barrier = NULL,
+  plot.barrier = FALSE,
+  irregular.dtm = FALSE,
   funct = "t",
   time = "h",
   outp = "r",
@@ -42,9 +44,13 @@ movecost(
 
 \item{destin}{location(s) to which least-cost path(s) is calculated (SpatialPointsDataFrame class).}
 
-\item{studyplot}{polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see Details); NULL is default.}
+\item{studyplot}{polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are acquired (see Details); NULL is default.}
 
 \item{barrier}{area where the movement is inhibited (SpatialLineDataFrame or SpatialPolygonDataFrame class).}
+
+\item{plot.barrier}{TRUE or FALSE (default) if the user wants or does not want the barrier to be plotted (in blue).}
+
+\item{irregular.dtm}{TRUE or FALSE (default) if the input DTM features irregular margins (Details).}
 
 \item{funct}{cost function to be used:\cr
 
@@ -62,6 +68,7 @@ movecost(
 \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
 \strong{r} uses the Rees' hiking function;\cr
 \strong{ks} uses the Kondo-Seino's hiking function;\cr
+\strong{trp} uses the Tripcevich's hiking function;\cr
 
 \strong{-functions for wheeled-vehicles-}\cr
 \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
@@ -79,16 +86,15 @@ movecost(
 \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
 \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
 \strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function;\cr
-\strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see Details);\cr}
+\strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see Details).\cr}
 
-\item{time}{time-unit expressed by the accumulated raster and by the isolines if Tobler's and other time-related cost functions are used;
-'h' for hour, 'm' for minutes.}
+\item{time}{time-unit expressed by the accumulated raster and by the isolines if Tobler's and other time-related cost functions are used; 'h' for hour, 'm' for minutes.}
 
 \item{outp}{type of output: 'raster' or 'contours' (see Details).}
 
 \item{move}{number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).}
 
-\item{field}{value assigned to the cells coincidinng with the barrier (0 by default).}
+\item{field}{value assigned to the cells coinciding with the barrier (0 by default).}
 
 \item{cogn.slp}{TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see Details).}
 
@@ -120,7 +126,7 @@ movecost(
 
 \item{graph.out}{TRUE (default) or FALSE if the user wants or does not want a graphical output to be generated.}
 
-\item{transp}{set the transparency of the hillshade raster that is plotted over the rendered plots (0.5 by default).}
+\item{transp}{set the transparency of the slopeshade raster that is plotted over the rendered plots (0.5 by default).}
 
 \item{oneplot}{TRUE (default) or FALSE if the user wants or does not want the plots displayed in a single window.}
 
@@ -142,7 +148,7 @@ The function returns a list storing the following components \itemize{
  \item{dest.loc.w.cost: }{copy of the input destination location(s) dataset with a new variable ('cost') added; if
  the cost is expressed in terms of time, the 'cost' variable will store the time values in decimal numbers, while another variable named
  'cost_hms' will store the time values in sexagesimmal numbers (hours, minutes, seconds)}
- \item{conductance: }{conductance 'Transitional Layer', returned because internally used by the 'movenetw()' function}
+ \item{conductance: }{conductance 'Transitional Layer', returned because internally used by the \code{movenetw()} function}
 }
 }
 \description{
@@ -150,43 +156,44 @@ The function provides the facility to calculate the anisotropic accumulated cost
 one or multiple destinations. It implements different cost estimations related to human movement across the landscape.
 The function takes as input a Digital Terrain Model ('RasterLayer' class) and a point feature ('SpatialPointsDataFrame' class), the latter representing
 the starting location, i.e. the location from which the accumulated cost is calculated. Besides citing this package,
-you may want to refer to the following journal article: \strong{Alberti (2019) <doi:10.1016/j.softx.2019.100331>}.\cr
+you may want to refer to the following journal article, where an earlier version of the
+package is described: \strong{Alberti (2019) <doi:10.1016/j.softx.2019.100331>}.\cr
 Visit this \href{https://drive.google.com/file/d/1gLDrkZFh1b_glzCEqKdkPrer72JJ9Ffa/view?usp=sharing}{LINK} to access the package's vignette.\cr
 }
 \details{
-If the parameter 'destin' is fed with a dataset representing destination location(s) ('SpatialPointsDataFrame' class), the function also calculates
+If the parameter \code{destin} is fed with a dataset representing destination location(s) ('SpatialPointsDataFrame' class), the function also calculates
 least-cost path(s) plotted on the input DTM; the length of each path is saved under the variable 'length' stored in the 'LCPs' dataset ('SpatialLines' class) returned by the function.
 In the produced plot, the red dot(s) representing the destination location(s) are labelled with numeric values representing
 the cost value at the location(s). \cr
 
 The cost value is also appended to the updated destination locations dataset returned by the function, which
-stores a new variable labelled 'cost'. If the cost is expressed in terms of walking time, the labels accompaining each destinaton location will
+stores a new variable labelled \code{cost}. If the cost is expressed in terms of walking time, the labels accompaining each destinaton location will
 express time in sexagesimal numbers (hours, minutes, seconds). In this case, the variable 'cost' appended to the returned destination location datset
-will store the time figures in decimal numbers, while another variable named 'cost_hms' will store the corresponding value in sexagesimal numbers.
-When interpreting the time values stored in the 'cost' variable, the user may want to bear in mind the selected time unit (see right below).\cr
+will store the time figures in decimal numbers, while another variable named \code{cost_hms} will store the corresponding value in sexagesimal numbers.
+When interpreting the time values stored in the \code{cost} variable, the user may want to bear in mind the selected time unit (see right below).\cr
 
-When using cost functions expressing cost in terms of time, the time unit can be selected by the user setting the 'time' parameter to 'h' (hours) or to 'm' (minutes).\cr
+When using cost functions expressing cost in terms of time, the time unit can be selected by the user setting the \code{time} parameter to \code{h} (hours) or to \code{m} (minutes).\cr
 
-In general, the user can also select which type of visualization the function has to produce; this is achieved setting the 'outp' parameter to either 'r' (=raster)
-or to 'c' (=contours). The former will produce a raster with a colour scale and contour lines representing the accumulated cost surface; the latter parameter will only
+In general, the user can also select which type of visualization the function has to produce; this is achieved setting the \code{outp} parameter to either \code{r} (=raster)
+or to \code{c} (=contours). The former will produce a raster with a colour scale and contour lines representing the accumulated cost surface; the latter parameter will only
 produce contour lines.\cr
 
-The contour lines' interval is set using the parameter 'breaks'; if no value is passed to the parameter, the interval will be set by default to
+The contour lines' interval is set using the \code{breaks} parameter; if no value is passed to the parameter, the interval will be set by default to
 1/10 of the range of values of the accumulated cost surface.\cr
 
 It is worth reminding the user(s) that all the input layers (i.e., DTM, start location, and destination locations) must use the same projected coordinate system.\cr
 
 
 \strong{Cost surface calculation}:\cr
-for the cost-surface and LCPs calculation, 'movecost' builds on functions from Jacob van Etten's
+for the cost-surface and LCPs calculation, \code{movecost()} builds on functions from Jacob van Etten's
 \href{https://cran.r-project.org/package=gdistance}{gdistance} package.
-Under the hood, 'movecost' calculates the slope as rise over run, following the procedure described
+Under the hood, \code{movecost()} calculates the slope as rise over run, following the procedure described
 by van Etten, "R Package gdistance: Distances and Routes on Geographical Grids" in Journal of Statistical Software 76(13), 2017, pp. 14-15.
 The number of directions in which cells are connected in the cost calculation can be set to 4 (rook's case), 8 (queen's case), or
-16 (knight and one-cell queen moves) using the 'move' parameter (see 'Arguments').\cr
+16 (knight and one-cell queen moves) using the \code{move} parameter (see 'Arguments').\cr
 
 
-\strong{Inibition of movement (barrier)}:\cr
+\strong{Inhibition of movement (barrier)}:\cr
 areas where the movement is inhibited can be fed into the analysis via the \code{barrier} parameter; SpatialLineDataFrame or SpatialPolygonDataFrame can be used.
 The barrier is assigned a conductance value of 0 (i.e., movement is inhibited) by default, but the user can assign any other value via the
 \code{field} parameter. Internally, the barrier creation rests on the \code{\link[leastcostpath]{create_barrier_cs}} function
@@ -202,19 +209,46 @@ After, we calculate the LCP between two other locations, first not using any bar
 as a barrier (result3):\cr
 
 result2 <- movecost(volc, destin.loc[3,], destin.loc[6,], move=8)\cr
-result3 <- movecost(volc, destin.loc[3,], destin.loc[6,], barrier=result1$LCPs, move=8)\cr
+result3 <- movecost(volc, destin.loc[3,], destin.loc[6,], barrier=result1$LCPs, plot.barrier=TRUE, move=8)\cr
 
 As apparent by comparing result2 to result3, when the barrier is used (result3), the LCP does not cross the barrier but is "forced"
-to make a long detour. \strong{Note} that the \code{move} parameter has been set to 8; if set to 16, the LCP will be "able" to jump the barrier.\cr
+to make a long detour. In result3, the barrier is plotted as a blue line. \strong{Note} that the \code{move} parameter has been set to 8; if set to 16, the LCP will be "able" to jump the barrier.\cr
+
+
+\strong{DTM featuring irregular margins}:\cr
+if the input DTM features irregular margins, e.g a coastline with gulfs and/or inlets where cells corresponding to the sea are given NoData,
+the user is to set the \code{irregular.dtm} parameter to TRUE; this will prevent the LCPs to cross the sea. Internally, what \code{movecost()} does is
+to generate a polygon vector layer from the DTM and to use the polygon as a mask to create a Transitional Layer via the
+\code{\link[leastcostpath]{create_barrier_cs}} function from the \emph{leastcostpath} package. In the mask Transitional Layer those parts
+corresponding to the terrain are given a conductance value equal to 1, while everything else (i.e., the parts corresponding to the sea) are given 0 conductance.
+The mask Transitional Layer is then internally multiplied by the conductance transitional layer representing the cost of movement
+(according to the user-selected function). This will set to 0 the conductance values of those parts of the study area that do not correspond to the terrain,
+while keeping unaltered the conductance of those parts that do coincide with the terrain.\cr
+
+As a case in point, let's consider the two following examples (using some in-build datasets):\cr
+
+resultA <- movecost(malta_dtm_40, origin=springs[5,], destin=springs[15,], irregular.dtm=FALSE, oneplot=FALSE)\cr
+
+resultB <- movecost(malta_dtm_40, origin=springs[5,], destin=springs[15,], irregular.dtm=TRUE, oneplot=FALSE)\cr
+
+As you can see, in the first case, the LCP between the two locations cross the sea, while in the second case the LCP follows
+the coastline. One can also appreciate the difference between the two returned conductance transitional layers:\cr
+
+plot(raster::raster(resultA$conductance))\cr
+
+plot(raster::raster(resultB$conductance))\cr
+
+It is apparent that in the second layer the sea area has been given 0 conductance, while keeping the rest unchanged. If the input DTM does not feature irregular margins (like, for instance, the built-in \code{volc} DTM), the user
+may safely leave the \code{irregular.dtm} parameter set to FALSE (which is the default value).\cr
 
 
 \strong{Acquiring online elevation data}:\cr
-if a DTM is not provided, 'movecost()' will download elevation data from online sources.
-Elevation data will be aquired for the area enclosed  by the  polygon supplied by the 'studyplot' parameter (SpatialPolygonDataFrame class).
-To tap online elevation data, 'movecost' internally builds on the
+if a DTM is not provided,\code{movecost()}' will download elevation data from online sources.
+Elevation data will be acquired for the area enclosed  by the  polygon supplied by the \code{studyplot} parameter (SpatialPolygonDataFrame class).
+To tap online elevation data, \code{movecost()}' internally builds on the
 \code{\link[elevatr]{get_elev_raster}} function from the \emph{elevatr} package.\cr
 
-The zoom level of the downloaded DTM (i.e., its resolution) is controlled by the parameter 'z', which is
+The zoom level of the downloaded DTM (i.e., its resolution) is controlled by the parameter \code{z}, which is
 set to 9 by default (a trade off between resolution and download time).\cr
 
 To test this facility, the user may want to try the following code, that will generate a least-cost surface and least-cost paths
@@ -242,11 +276,11 @@ when it comes to the terrain slope, the function provides the facility to use th
 following Pingel TJ (2013), Modeling Slope as a Contributor to Route Selection in Mountainous Areas, in Cartography and Geographic Information Science, 37(2), 137-148.
 According to Pingel, "Humans tend to overestimate geographic slopes by a surprisingly high margin...This analysis indicates downhill slopes are overestimated
 at approximately 2.3 times the vertical, while uphill slopes are overestimated at 2 times the vertical.". As a result,
-if the parameter 'cogn.slp' is set to TRUE, positive slope values are preliminarily multiplied by 1.99, while negative slope values are multiplied by 2.31.
+if the parameter \code{cogn.slp} is set to \code{TRUE}, positive slope values are preliminarily multiplied by 1.99, while negative slope values are multiplied by 2.31.
 
 
 \strong{Terrain factor (N)}:\cr
-virtually all the implemented cost functions (with few exceptions) can take into account a 'terrain factor' (N parameter; 1 by default), which
+virtually all the implemented cost functions (with few exceptions) can take into account a 'terrain factor' (\code{N} parameter; 1 by default), which
 represents the easiness/difficulty of moving on different terrain types. According to the type of terrain, the energy spent when walking
 increases. The same holds true for time, which increases because on a loose terrain (for instance) the walking speed decreases.
 While a terrain factor is 'natively' part of the Van Leusen's, Pandolf et al.'s, and Bellavia's cost function,
@@ -257,11 +291,7 @@ As for the latter two, they already natively feature a terrain factor. Therefore
 Needless to say, if we use a terrain factor of 1.67 with the Tobler's (on-path) hiking function, the results
 will be equal to those obtained using the Tobler's off-path function (the reciprocal of 1.67, i.e. 0.60, is in fact
 natively used by the Tobler's function for off-path hiking). In fact, compare the results of the following two runs
-of 'movecost()' (first some data are loaded):\cr
-
-volc <- raster::raster(system.file("external/maungawhau.grd", package="gdistance"))\cr
-data(volc.loc)\cr
-data(destin.loc)\cr
+of  \code{movecost()} (using in-built datasets):\cr
 
 result1 <- movecost(dtm=volc, origin=volc.loc, destin=destin.loc, breaks=0.05, funct="t", N=1.67)\cr
 result2 <- movecost(dtm=volc, origin=volc.loc, destin=destin.loc, breaks=0.05, funct="tofp")\cr
@@ -426,6 +456,19 @@ Kondo-Seino's modified Tobler hiking function; it expresses walking speed in Kmh
 (Central Highland Japan), in: Frischer B., Webb Crawford J., Koller D. (eds.), Making History Interactive.
 Computer Applications and Quantitative Methods in Archaeology (CAA). Proceedings of the 37th International Conference, Williamsburg, Virginia, United States of America,
 March 22-26 (BAR International Series S2079). Archaeopress, Oxford, 158-165.\cr
+
+
+
+\strong{Tripcevich hiking function (speed in kmh)}:\cr
+
+\eqn{ ((4.028*46^2)/(((atan(abs(x[adj]))*180/pi)+4.127)^2+46^2))*(1/N) }\cr
+
+Tripcevich's hiking function; it expresses walking speed in Kmh; slope is originally expressed in degrees;
+\strong{see} Tripcevich N (2008). Estimating Llama caravan travel speeds: ethno-archaeological fieldwork with a Peruvian salt caravan.
+Trabajo presentado el la inauguracionn del Centre for Spatial Studies, University of California, Santa Barbara.
+See also: Lucero G, Marsh EJ, Castro S (2014), Rutas prehistoricas en lo NO de San Juan: una propuesta macroregional desde los sistemas
+de information geografica, in Cortegoso V, Duran V, Gasco Alejandra (eds), Arqueologia de ambientes de altura de Mendoza y San
+Juan (Argentina), EDIUNC, pp. 275-305.\cr
 
 
 
@@ -620,6 +663,6 @@ results <- movecost(dtm=volc, origin=volc.loc, destin=destin.loc[2,], move=8, re
 
 }
 \seealso{
-\code{\link[elevatr]{get_elev_raster}}, \code{\link{movecorr}}, \code{\link{movebound}}, \code{\link{movealloc}},  \code{\link{movecomp}}, \code{\link{movenetw}}
+\code{\link[elevatr]{get_elev_raster}}, \code{\link{movecorr}}, \code{\link{movebound}}, \code{\link{movealloc}},  \code{\link{movecomp}}, \code{\link{movenetw}}, \code{\link{moverank}}
 }
 \keyword{movecost}

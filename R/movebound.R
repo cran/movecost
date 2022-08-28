@@ -7,9 +7,9 @@
 #' Visit this \href{https://drive.google.com/file/d/1gLDrkZFh1b_glzCEqKdkPrer72JJ9Ffa/view?usp=sharing}{LINK} to access the package's vignette.\cr
 #'
 #' The function just requires an input DTM and a dataset ('SpatialPointsDataFrame' class) containing at least one point location.
-#' If a DTM is not provided, 'movebound()' will download elevation data from online sources (see \code{\link{movecost}} for more details).
-#' Under the hood, 'movebound()' relies on the 'movecost()' function and implements the same
-#' cost functions: see the help documentation of 'movecost()' for further information.\cr
+#' If a DTM is not provided, \code{movebound()} will download elevation data from online sources (see \code{\link{movecost}} for more details).
+#' Under the hood, \code{movebound()} relies on the \code{movecost()} function and implements the same
+#' cost functions: see the help documentation of \code{movecost()} for further information.\cr
 #'
 #' The following example uses in-built datasets and calculates 45-minute boundaries around three locations close to Mt Etna (Sicily, Italy), using the
 #' Tobler's off-path hiking function (note: elevation data are acquired online for the area enclosed by the polygon fed via the
@@ -17,7 +17,7 @@
 #'
 #' result <- movebound(origin=Etna_end_location, cont.value=45, time="m", cont.lab = TRUE, funct="tofp", studyplot = Etna_boundary, add.geom=TRUE)\cr
 #'
-#' Note that by setting the parameter 'add.geom' to TRUE, the function calculates the perimeter and the area enclosed by the boundary represented by each
+#' Note that by setting the parameter \code{add.geom} to \code{TRUE}, the function calculates the perimeter and the area enclosed by the boundary represented by each
 #' calculated isoline. Needless to say, the unit of measure is the one used by the input layers' coordinate system. The value(s) of the perimeter and area
 #' will be appended as two new variables to a copy of the input 'origin' dataset. The said geometries (perimeter, area) can only be calculated if the
 #' isolines are "complete" and not truncated (i.e., if they do not meet the end of the study area for instance). Therefore, before using this option,
@@ -37,16 +37,17 @@
 #' which gives\cr
 #' 17.857994 20.428575  9.172688 \cr
 #'
-#' 'movebound()' produces a plot representing the input DTM overlaid by an hillshade raster, whose transparency can be adjusted using
+#' \code{movebound()} produces a plot representing the input DTM overlaid by a slopeshade raster, whose transparency can be adjusted using
 #' the 'transp' parameter. On the rendered plot, the calculated isoline(s) is displayed and the label(s) representing the cost limit can be
 #' activated or deactivated using the 'cont.lab' parameter. The function also returns the isoline(s) ('SpatialLinesDataFrame' class) corresponding
 #' to the selected accumulated cost limit and the copy of the 'origin' dataset (storing information about the boundaries' geometry) (see 'Value' below).
-#' The isoline(s) and the copy of the 'origin' dataset can be exported as shapefile by setting the 'export' parameter to TRUE. \cr
+#' The isoline(s) and the copy of the 'origin' dataset can be exported as shapefile by setting the \code{export} parameter to \code{TRUE}. \cr
 #'
 #' @param dtm Digital Terrain Model (RasterLayer class); if not provided, elevation data will be acquired online for the area enclosed by the 'studyplot' parameter (see \code{\link{movecost}}).
 #' @param origin location(s) around which the boundary(ies) is calculated (SpatialPointsDataFrame class).
-#' @param studyplot polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see \code{\link{movecost}}); NULL is default.
+#' @param studyplot polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are acquired (see \code{\link{movecost}}); NULL is default.
 #' @param barrier area where the movement is inhibited (SpatialLineDataFrame or SpatialPolygonDataFrame class) (see \code{\link{movecost}}.
+#' @param plot.barrier TRUE or FALSE (default) if the user wants or does not want the barrier to be plotted (see \code{\link{movecost}}).
 #' @param funct cost function to be used (for details on each of the following, see \code{\link{movecost}}):\cr
 #'
 #' \strong{-functions expressing cost as walking time-}\cr
@@ -63,6 +64,7 @@
 #' \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
 #' \strong{r} uses the Rees' hiking function;\cr
 #' \strong{ks} uses the Kondo-Seino's hiking function;\cr
+#' \strong{trp} uses the Tripcevich's hiking function;\cr
 #'
 #' \strong{-functions for wheeled-vehicles-}\cr
 #' \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
@@ -80,9 +82,8 @@
 #' \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
 #' \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
 #' \strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function (for all the mentioned cost functions;\cr
-#' \strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see \code{\link{movecost}});\cr
-#' @param time time-unit expressed by the isoline(s) if Tobler's and other time-related cost functions are used;
-#' 'h' for hour, 'm' for minutes.
+#' \strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see \code{\link{movecost}}).\cr
+#' @param time time-unit expressed by the isoline(s) if Tobler's and other time-related cost functions are used; h' for hour, 'm' for minutes.
 #' @param move number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).
 #' @param field value assigned to the cells coincidinng with the barrier (0 by default) (see \code{\link{movecost}}.
 #' @param cont.value cost value represented by the calculated isoline(s) (NULL by default); if no value is supplied, it is set to 1/10 of the range of values of the accumulated cost surface.
@@ -94,7 +95,7 @@
 #' @param V speed in m/s (1.2 by default) (used by the Pandolf et al.'s, Pandolf et al.s with correction factor, Van Leusen's, and Ardigo et al.'s cost function; if set to 0, it is internally worked out on the basis of Tobler on-path hiking function (see \code{\link{movecost}}).
 #' @param z zoom level for the elevation data downloaded from online sources (from 0 to 15; 9 by default) (see \code{\link{movecost}} and \code{\link[elevatr]{get_elev_raster}}).
 #' @param cont.lab TRUE (default) or FALSE if the usuer wants or does not want labels to be attached to the isolines.
-#' @param transp set the transparency of the hillshade raster that is plotted over the DTM (0.5 by default).
+#' @param transp set the transparency of the slopeshade raster that is plotted over the DTM (0.5 by default).
 #' @param add.geom TRUE or FALSE (default) if the user wants or does not want the perimeter and area enclosed by each isolines to be calculated (see Details).
 #' @param export TRUE or FALSE (default) if the user wants or does not want the isoline(s) and the copy of the input 'origin' dataset (storing boundaries' geometry information)
 #'  to be exported; if TRUE, they will be exported as a shapefile; the exported file will bear a suffix corresponding to the cost function selected by the user.
@@ -109,7 +110,7 @@
 ##'
 #' @keywords movebound
 #' @export
-#' @importFrom raster ncell mask crop stack cellStats raster hillShade terrain crs
+#' @importFrom raster ncell mask crop stack cellStats raster terrain crs
 #' @importFrom elevatr get_elev_raster
 #' @importFrom grDevices terrain.colors topo.colors grey
 #' @importFrom rgeos gLength gArea
@@ -138,7 +139,7 @@
 #' @seealso \code{\link{movecost}}
 #'
 #'
-movebound <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, funct="t", time="h", move=16, field=0, cont.value=NULL, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, cont.lab=TRUE, transp=0.5, add.geom=FALSE, export=FALSE){
+movebound <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, plot.barrier=FALSE, funct="t", time="h", move=16, field=0, cont.value=NULL, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, cont.lab=TRUE, transp=0.5, add.geom=FALSE, export=FALSE){
 
   #if no dtm is provided
   if (is.null(dtm)==TRUE) {
@@ -369,6 +370,14 @@ movebound <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, funct="t"
     legend.cost <- "cost"
   }
 
+  if (funct=="trp") {
+
+    #set the labels to be used within the returned plot
+    main.title <- paste0("Boundary(ies) corresponding to ", cont.value, time, " walking limit")
+    sub.title <- paste0("Walking-time based on the Tripcevich's hiking function \n terrain factor N=", N)
+    legend.cost <- paste0("walking-time (", time,")")
+  }
+
   #extract and store the contours as a SpatialLinesDataFrame
   isolines <- raster::rasterToContour(result, levels=cont.value)
 
@@ -405,10 +414,8 @@ movebound <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, funct="t"
     origin_w_geom$area <- contour_area
   }
 
-  #produce the ingredients for the hillshade raster
+  #produce the ingredient for the slopeshade raster
   slope <- raster::terrain(dtm, opt = "slope")
-  aspect <- raster::terrain(dtm, opt = "aspect")
-  hill <- raster::hillShade(slope, aspect, angle = 45, direction = 0)
 
   #plot the DTM
   raster::plot(dtm,
@@ -418,9 +425,9 @@ movebound <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, funct="t"
                cex.sub=0.75,
                legend.lab="Elevation (masl)")
 
-  #plot the hillshade
-  raster::plot(hill,
-               col = grey(0:100/100),
+  #plot the slopeshade
+  raster::plot(slope,
+               col = rev(grey(0:100/100)),
                legend = FALSE,
                alpha=transp,
                add=TRUE)
@@ -435,6 +442,11 @@ movebound <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, funct="t"
                   add=TRUE,
                   levels=cont.value,
                   drawlabels = cont.lab)
+
+  #if the barrier is provided AND if plot.barrier is TRUE, add the barrier
+  if(is.null(barrier)==FALSE & plot.barrier==TRUE) {
+    raster::plot(barrier, col="blue", add=TRUE)
+  }
 
   #if add.geom is TRUE...
   if(add.geom==TRUE) {

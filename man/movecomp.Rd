@@ -10,7 +10,10 @@ movecomp(
   destin,
   studyplot = NULL,
   barrier = NULL,
+  plot.barrier = FALSE,
+  irregular.dtm = FALSE,
   choice,
+  time = "h",
   move = 16,
   field = 0,
   cogn.slp = FALSE,
@@ -22,8 +25,9 @@ movecomp(
   z = 9,
   return.base = FALSE,
   leg.pos = "topright",
-  cex.leg = 0.75,
+  leg.cex = 0.75,
   transp = 0.5,
+  add.chart = FALSE,
   oneplot = TRUE,
   export = FALSE
 )
@@ -35,9 +39,13 @@ movecomp(
 
 \item{destin}{location(s) to which least-cost path(s) is calculated (SpatialPointsDataFrame class).}
 
-\item{studyplot}{polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see \code{\link{movecost}}); NULL is default.}
+\item{studyplot}{polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are acquired (see \code{\link{movecost}}); NULL is default.}
 
-\item{barrier}{area where the movement is inhibited (SpatialLineDataFrame or SpatialPolygonDataFrame class) (see \code{\link{movecost}}.}
+\item{barrier}{area where the movement is inhibited (SpatialLineDataFrame or SpatialPolygonDataFrame class) (see \code{\link{movecost}}).}
+
+\item{plot.barrier}{TRUE or FALSE (default) if the user wants or does not want the barrier to be plotted (see \code{\link{movecost}}).}
+
+\item{irregular.dtm}{TRUE or FALSE (default) if the input DTM features irregular margins (see \code{\link{movecost}}).}
 
 \item{choice}{character vector indicating the cost functions to be compared (for details on each of the following, see \code{\link{movecost}}):\cr
 
@@ -55,6 +63,7 @@ movecomp(
 \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
 \strong{r} uses the Rees' hiking function;\cr
 \strong{ks} uses the Kondo-Seino's hiking function;\cr
+\strong{trp} uses the Tripcevich's hiking function;\cr
 
 \strong{-functions for wheeled-vehicles-}\cr
 \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
@@ -72,11 +81,13 @@ movecomp(
 \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
 \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
 \strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function;\cr
-\strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see \code{\link{movecost}});\cr}
+\strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see \code{\link{movecost}}).\cr}
+
+\item{time}{time-unit to be used if Tobler's and other time-related cost functions are used; h' for hour, 'm' for minutes;}
 
 \item{move}{number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).}
 
-\item{field}{value assigned to the cells coincidinng with the barrier (0 by default) (see \code{\link{movecost}}.}
+\item{field}{value assigned to the cells coinciding with the barrier (0 by default) (see \code{\link{movecost}}.}
 
 \item{cogn.slp}{TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see \code{\link{movecost}}).}
 
@@ -96,9 +107,11 @@ movecomp(
 
 \item{leg.pos}{set the position of the legend in the plotted cost allocation raster; 'topright' by default (other options: "bottomright", "bottom", "bottomleft", "left", "topleft", "top", "topright", "right", "center").}
 
-\item{cex.leg}{set the size of the labels used in the legend displayed in the rendered plot (0.75 by default).}
+\item{leg.cex}{set the size of the labels used in the legend displayed in the rendered plot (0.75 by default).}
 
-\item{transp}{set the transparency of the hillshade raster that is plotted over the DTM (0.5 by default).}
+\item{transp}{set the transparency of the slopeshade raster that is plotted over the DTM (0.5 by default).}
+
+\item{add.chart}{TRUE or FALSE (default) is the user wants or does not want boxplots visualising LCPs length/cost vs cost function to be rendered.}
 
 \item{oneplot}{TRUE (default) or FALSE if the user wants or does not want the plots displayed in a single window.}
 
@@ -107,9 +120,10 @@ and downloaded by the function from online sources.}
 }
 \value{
 The function returns a list storing the following components \itemize{
- \item{dtm: }{Digital Terrain Model ('RasterLayer' class); returned only if aquired online}
- \item{LCPs: }{estimated least-cost paths ('SpatialLinesDataFrame' class)}
- \item{LCPs.back: }{estimated least-cost paths back to the origin ('SpatialLinesDataFrame' class)}
+ \item{dtm: }{Digital Terrain Model ('RasterLayer' class); returned only if acquired online}
+ \item{LCPs: }{estimated least-cost paths ('SpatialLinesDataFrame' class); three variables are stored: 'length', 'cost', and
+ 'funct'.}
+ \item{LCPs.back: }{estimated least-cost paths back to the origin ('SpatialLinesDataFrame' class); three variables are stored; see above.}
 }
 }
 \description{
@@ -120,27 +134,29 @@ Limits of the Limes. Modelling Demography, Economy and Transport on the Edge of 
 Visit this \href{https://drive.google.com/file/d/1gLDrkZFh1b_glzCEqKdkPrer72JJ9Ffa/view?usp=sharing}{LINK} to access the package's vignette.\cr
 }
 \details{
-Like 'movecost()', the function just requires an input DTM ('RasterLayer' class), and an origin and destination dataset  ('SpatialPointsDataFrame' class).
-The cost functions to be used have to be entered into 'movecomp()' via a character vector fed via the 'choice' parameter (see the examples below).
-If a DTM is not provided, 'movecomp()' downloads elevation data from online sources for the area enclosed by the polygon fed via
-the 'studyplot' parameter (see \code{\link{movecost}} for more details). Under the hood, movecomp()' relies on 'movecost()' and implements the same cost functions:
-see the help documentation of 'movecost()' for further information.\cr
+Like \code{movecost()}, the function just requires an input DTM ('RasterLayer' class), and an origin and destination dataset  ('SpatialPointsDataFrame' class).
+The cost functions to be used have to be entered into 'movecomp()' via a character vector fed via the \code{choice} parameter (see the examples below).
+If a DTM is not provided, \code{movecomp()} downloads elevation data from online sources for the area enclosed by the polygon fed via
+the \code{studyplot} parameter (see \code{\link{movecost}} for more details). Under the hood, \code{movecomp()} relies on \code{movecost()} and implements the same cost functions:
+see the help documentation of \code{movecost()} for further information.\cr
 
-'movecomp()' produces a plot representing the input DTM overlaid by an hillshade raster, whose transparency can be adjusted using
+\code{movecomp()} produces a plot representing the input DTM overlaid by a slopeshade raster, whose transparency can be adjusted using
 the 'transp' parameter. On the rendered plot, the LPCs ('SpatialLinesDataFrame' class) generated by the different input cost functions are given a different line type; a legend
 indicates which line type corresponds to which cost function. LCPs back to the origin can be calculated (and plotted) setting the
-parameter 'return.base' to TRUE.\cr
+parameter \code{return.base} to \code{TRUE}.\cr
 
-The function returns the LCPs and (if requested by the user) the LCPs back to the origin. If the DTM has been aquired online, it will be returned as well.
-The LCPs (and the LCPs back to the origin) will store two attributes: the length of each path and an abbreviation corresponding to the cost function used to
-generate each LCPs. This might prove handy if the user wants to compare the distribution of the length of groups of LCPs generate by different cost functions
-(see the example in the 'Examples' section further down).
-The mentioned data can be exported by setting the 'export' parameter to TRUE.\cr
+The function returns the LCPs and (if requested by the user) the LCPs back to the origin. If the DTM has been acquired online, it will be returned as well.
+The LCPs (and the LCPs back to the origin) will store three variables: the length of each path, the cost of each path, and an abbreviation corresponding to the cost function used to
+generate the LCPs. The mentioned data can be exported by setting the \code{export} parameter to \code{TRUE}.\cr
+
+If the users want to compare the distribution of the length of the LCPs generate by different cost functions,
+it suffices to set the \code{add.chart} parameter to \code{TRUE}. Two charts featuring boxplots will be rendered:
+one plotting the distribution of the LCPs length by cost function; one portaying the distribution of the cost by cost function.\cr
 
 The following example uses in-built datasets to compare the LCPs generated using two cost functions: the Tobler hiking function , the
 wheeled vehicle cost function, and the Pantolf. et al's cost function with correction factor.
 LCPs back to the origin location will be calculated as well. The origin and destination locations are close to Mt Etna (Sicily, Italy).
-Note that elevation data are acquired online for the area enclosed by the polygon fed via the studyplot' parameter:\cr
+Note that elevation data are acquired online for the area enclosed by the polygon fed via the \code{studyplot} parameter:\cr
 
 result <- movecomp(origin=Etna_start_location, destin=Etna_end_location, choice=c("t", "wcs", "pcf"), studyplot = Etna_boundary, return.base=TRUE)\cr
 }
@@ -153,13 +169,14 @@ data(volc)
 data(destin.loc)
 
 
-# compare the LCPs generated using the Tobler hiking function (for on-path walk)
-# and the wheeled vehicle cost function
+# compare the LCPs generated using different walking-time cost functions (time in minutes)
 
-result <- movecomp(dtm=volc, origin=volc.loc, destin=destin.loc, choice=c("t", "wcs"), move=16)
+result <- movecomp(volc, volc.loc, destin.loc, choice=c("t", "ug", "gkrs"), time="m", move=8)
 
-#the distribution of the length of the LCPs can be easily compared using boxplots for instance:
-boxplot(result$LCPs$length ~ result$LCPs$funct, xlab="cost function", ylab="length (meter)")
+# the distribution of the length and cost of the LCPs by cost function can be easily compared
+# using the 'add.chart' parameter:
+#result <- movecomp(volc, volc.loc, destin.loc, choice=c("t", "ug", "gkrs"), time="m",
+#move=8, add.chart=T)
 
 
 }

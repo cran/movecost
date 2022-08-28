@@ -1,13 +1,11 @@
-# movecost 1.7:
+# movecost 1.8:
 
-* Hare's metabolic cost function and Eastman's abstract cost function added (the number of implemented cost functions is now 25);
-* facility to take into account barriers (i.e., areas where the movement is inhibited) added to all the functions ('movealloc()' excluded);
-* 'movecost()' now returns the conductance TransitionalLayer; this is instrumental to the internal optimisation of the 'movenetw()' function;
-* the 'movenetw()' now also calculates LCPs network between pairs of neighboring locations;
-* the 'movenetw()' function now returns a matrix reporting the cost incurred when moving between all the locations pair-wisely;
-* internal optimisation of the 'movenetw()' function, which is now about 3 times faster than in ver.1.6;
-* 'oneplot' parameter dropped from the 'movenetw()' function;
-* fix to an error to the export facility in the 'movenetw()' function;
-* fixes, improvements, and updates to the help documentation;
-* link to the package's vignette added to the help documentation of all the implemented functions.
-
+* 'moverank()' function added;
+* facility to prevent LCPs to cross NoData areas (i.e., areas corresponding to the sea) added (controlled by the 'irregular.dtm' parameter);
+* facility to plot the distribution of the length and cost of LCPs produced by different cost function added
+to  'movecomp()' (controlled by the 'add.chart' parameter);
+* the 'LCPs' and 'LCPs.back' data returned by the 'movecomp()' function now store the cost associated to each path (the variable is labelled 'cost');
+* fix to an error to the calculation of the closest location in the 'movenetw()' function; the error was affecting the rendered plot;
+* 'malta_dtm_40' and 'springs' datasets added;
+* in all the rendered plots, for visulisation purposes, the hillshade raster has been replaced by a slopeshade raster;
+* updates, amendements, and improvements to the help documentation.

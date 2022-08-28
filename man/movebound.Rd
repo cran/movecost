@@ -9,6 +9,7 @@ movebound(
   origin,
   studyplot = NULL,
   barrier = NULL,
+  plot.barrier = FALSE,
   funct = "t",
   time = "h",
   move = 16,
@@ -32,9 +33,11 @@ movebound(
 
 \item{origin}{location(s) around which the boundary(ies) is calculated (SpatialPointsDataFrame class).}
 
-\item{studyplot}{polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are aquired (see \code{\link{movecost}}); NULL is default.}
+\item{studyplot}{polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are acquired (see \code{\link{movecost}}); NULL is default.}
 
 \item{barrier}{area where the movement is inhibited (SpatialLineDataFrame or SpatialPolygonDataFrame class) (see \code{\link{movecost}}.}
+
+\item{plot.barrier}{TRUE or FALSE (default) if the user wants or does not want the barrier to be plotted (see \code{\link{movecost}}).}
 
 \item{funct}{cost function to be used (for details on each of the following, see \code{\link{movecost}}):\cr
 
@@ -52,6 +55,7 @@ movebound(
 \strong{gkrs} uses the Garmy, Kaddouri, Rozenblat, and Schneider's hiking function;\cr
 \strong{r} uses the Rees' hiking function;\cr
 \strong{ks} uses the Kondo-Seino's hiking function;\cr
+\strong{trp} uses the Tripcevich's hiking function;\cr
 
 \strong{-functions for wheeled-vehicles-}\cr
 \strong{wcs} uses the wheeled-vehicle critical slope cost function;\cr
@@ -69,10 +73,9 @@ movebound(
 \strong{vl} uses the Van Leusen's metabolic energy expenditure cost function;\cr
 \strong{ls} uses the Llobera-Sluckin's metabolic energy expenditure cost function;\cr
 \strong{a} uses the Ardigo et al.'s metabolic energy expenditure cost function (for all the mentioned cost functions;\cr
-\strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see \code{\link{movecost}});\cr}
+\strong{h} uses the Hare's metabolic energy expenditure cost function (for all the mentioned cost functions, see \code{\link{movecost}}).\cr}
 
-\item{time}{time-unit expressed by the isoline(s) if Tobler's and other time-related cost functions are used;
-'h' for hour, 'm' for minutes.}
+\item{time}{time-unit expressed by the isoline(s) if Tobler's and other time-related cost functions are used; h' for hour, 'm' for minutes.}
 
 \item{move}{number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).}
 
@@ -96,7 +99,7 @@ movebound(
 
 \item{cont.lab}{TRUE (default) or FALSE if the usuer wants or does not want labels to be attached to the isolines.}
 
-\item{transp}{set the transparency of the hillshade raster that is plotted over the DTM (0.5 by default).}
+\item{transp}{set the transparency of the slopeshade raster that is plotted over the DTM (0.5 by default).}
 
 \item{add.geom}{TRUE or FALSE (default) if the user wants or does not want the perimeter and area enclosed by each isolines to be calculated (see Details).}
 
@@ -121,9 +124,9 @@ Visit this \href{https://drive.google.com/file/d/1gLDrkZFh1b_glzCEqKdkPrer72JJ9F
 }
 \details{
 The function just requires an input DTM and a dataset ('SpatialPointsDataFrame' class) containing at least one point location.
-If a DTM is not provided, 'movebound()' will download elevation data from online sources (see \code{\link{movecost}} for more details).
-Under the hood, 'movebound()' relies on the 'movecost()' function and implements the same
-cost functions: see the help documentation of 'movecost()' for further information.\cr
+If a DTM is not provided, \code{movebound()} will download elevation data from online sources (see \code{\link{movecost}} for more details).
+Under the hood, \code{movebound()} relies on the \code{movecost()} function and implements the same
+cost functions: see the help documentation of \code{movecost()} for further information.\cr
 
 The following example uses in-built datasets and calculates 45-minute boundaries around three locations close to Mt Etna (Sicily, Italy), using the
 Tobler's off-path hiking function (note: elevation data are acquired online for the area enclosed by the polygon fed via the
@@ -131,7 +134,7 @@ Tobler's off-path hiking function (note: elevation data are acquired online for 
 
 result <- movebound(origin=Etna_end_location, cont.value=45, time="m", cont.lab = TRUE, funct="tofp", studyplot = Etna_boundary, add.geom=TRUE)\cr
 
-Note that by setting the parameter 'add.geom' to TRUE, the function calculates the perimeter and the area enclosed by the boundary represented by each
+Note that by setting the parameter \code{add.geom} to \code{TRUE}, the function calculates the perimeter and the area enclosed by the boundary represented by each
 calculated isoline. Needless to say, the unit of measure is the one used by the input layers' coordinate system. The value(s) of the perimeter and area
 will be appended as two new variables to a copy of the input 'origin' dataset. The said geometries (perimeter, area) can only be calculated if the
 isolines are "complete" and not truncated (i.e., if they do not meet the end of the study area for instance). Therefore, before using this option,
@@ -151,11 +154,11 @@ result$origin_w_isolines_geom$area/1000000 \cr
 which gives\cr
 17.857994 20.428575  9.172688 \cr
 
-'movebound()' produces a plot representing the input DTM overlaid by an hillshade raster, whose transparency can be adjusted using
+\code{movebound()} produces a plot representing the input DTM overlaid by a slopeshade raster, whose transparency can be adjusted using
 the 'transp' parameter. On the rendered plot, the calculated isoline(s) is displayed and the label(s) representing the cost limit can be
 activated or deactivated using the 'cont.lab' parameter. The function also returns the isoline(s) ('SpatialLinesDataFrame' class) corresponding
 to the selected accumulated cost limit and the copy of the 'origin' dataset (storing information about the boundaries' geometry) (see 'Value' below).
-The isoline(s) and the copy of the 'origin' dataset can be exported as shapefile by setting the 'export' parameter to TRUE. \cr
+The isoline(s) and the copy of the 'origin' dataset can be exported as shapefile by setting the \code{export} parameter to \code{TRUE}. \cr
 }
 \examples{
 # load a sample Digital Terrain Model
