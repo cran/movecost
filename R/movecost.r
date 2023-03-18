@@ -560,6 +560,7 @@
 #' @keywords movecost
 #' @export
 #' @importFrom raster ncell mask crop raster terrain focal
+#' @importFrom terra writeVector vect
 #' @importFrom elevatr get_elev_raster
 #' @importFrom chron times
 #' @importFrom grDevices terrain.colors topo.colors grey
@@ -567,6 +568,7 @@
 #' @importFrom leastcostpath create_barrier_cs
 #' @importFrom terra as.polygons
 #' @importFrom stats na.omit
+#' @importFrom sf st_length st_as_sf
 #'
 #'
 #' @examples
@@ -1281,11 +1283,11 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, barrier=NUL
     }
 
     #calculate the length of the least-cost paths and store the values by appending them to a new variable of the sPath object
-    sPath$length <- rgeos::gLength(sPath, byid=TRUE)
+    sPath$length <- sf::st_length(st_as_sf(sPath), by_element=TRUE)
 
     #same as above if the LCPs back to the origin had been calculated
     if(return.base==TRUE){
-      sPath.back$length <- rgeos::gLength(sPath.back, byid=TRUE)
+      sPath.back$length <- sf::st_length(st_as_sf(sPath.back), by_element=TRUE)
     }
 
     #extract the cost from the accum_final to the destination location(s), appending the data to a new column
@@ -1328,11 +1330,11 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, barrier=NUL
 
     #if export is TRUE, export the LPCs and the destinatin locations with cost as a shapefile
     if(export==TRUE){
-      rgdal::writeOGR(sPath, ".", paste0("LCPs_", funct), driver="ESRI Shapefile")
-      rgdal::writeOGR(destin, ".", paste0("dest_loc_w_cost_", funct), driver="ESRI Shapefile")
+      terra::writeVector(vect(sPath), filename=paste0("LCPs_", funct), filetype="ESRI Shapefile")
+      terra::writeVector(vect(destin), filename=paste0("dest_loc_w_cost_", funct), filetype="ESRI Shapefile")
       #same as above if the LCPs back to the origin had been calculated
       if(return.base==TRUE){
-        rgdal::writeOGR(sPath.back, ".", paste0("LCPs_back_", funct), driver="ESRI Shapefile")
+        terra::writeVector(vect(sPath.back), filename=paste0("LCPs_back_", funct), filetype="ESRI Shapefile")
       }
     }
 
@@ -1347,7 +1349,7 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, barrier=NUL
   if(export==TRUE){
     raster::writeRaster(accum_final, paste0("accum_cost_surf_", funct), format="GTiff")
     raster::writeRaster(cost.surface.to.export, paste0("cost_surf_", funct), format="GTiff")
-    rgdal::writeOGR(isolines, ".", paste0("isolines_", funct), driver="ESRI Shapefile")
+    terra::writeVector(vect(isolines), filename=paste0("isolines_", funct), filetype="ESRI Shapefile")
   }
 
   #if no DTM was provided (i.e., if 'studyplot' is not NULL), export the downloaded DTM as a raster file

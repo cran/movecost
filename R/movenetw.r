@@ -13,8 +13,10 @@
 #' see the help documentation of \code{movecost()} for further information.\cr
 #'
 #' \code{movenetw()} produces a plot representing the input DTM overlaid by a slopeshade raster, whose transparency can be adjusted using
-#' the 'transp' parameter. On the rendered plot, the LPCs network ('SpatialLinesDataFrame' class) is represented by black lines. Optionally,
-#' by setting the parameter \code{lcp.dens()} to \code{TRUE}, the function produces a raster representing the density of the LCPs connecting each location to all the
+#' the \code{transp} parameter. On the rendered plot, the LPCs network ('SpatialLinesDataFrame' class) is represented by black lines.
+#' To calculate the network connecting all the locations, the user may want to set the \code{netw.type} parameter to \code{allpairs} (which is the default value).
+#' If the user wants to calculate the network connecting neighbouring locations, the \code{netw.type} parameter is to be set to \code{neigh}.
+#' Optionally, by setting the \code{lcp.dens} parameter to \code{TRUE}, the function produces a raster representing the density of the LCPs connecting each location to all the
 #' other locations. The raster, which is rendered overlaid to a slopeshade visualization, expresses the density of LCPs as percentages.
 #' The percentages are calculated in relation to the maximum number of LCPs passing through the same cell stored in the raster.
 #' A density raster expressing counts is NOT rendered BUT is returned by the function. The density raster retains the cell size and coordinate system of the input DTM.\cr
@@ -26,11 +28,12 @@
 #' If the selected cost function expresses cost differently (i.e., energy or abstract cost), the two above mentioned cost matrices will be set to NULL,
 #' and a third cost matrix will store all the pair-wise costs.\cr
 #'
-#' The above mentioned data (DTM, LCPs, network density) can be exported by setting the \code{export} parameter to \code{TRUE} The LCPs network (exported as a shapefile)
+#' The above mentioned data (DTM, LCPs, network density) can be exported by setting the \code{export} parameter to \code{TRUE}. The LCPs network (exported as a shapefile)
 #' and the density raster (as a GeoTiff) will bear a suffix indicating the used cost function.\cr
 #'
 #' @param dtm Digital Terrain Model (RasterLayer class); if not provided, elevation data will be acquired online for the area enclosed by the 'studyplot' parameter (see \code{\link{movecost}}).
-#' @param origin location(s) around which the boundary(ies) is calculated (SpatialPointsDataFrame class).
+#' @param origin locations from which the network of least-cost paths is calculated (SpatialPointsDataFrame class).
+#' @param netw.type type of network to be calculated: 'allpairs' (default) or 'neigh' (see 'Details').
 #' @param studyplot polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are acquired (see \code{\link{movecost}}); NULL is default.
 #' @param barrier area where the movement is inhibited (SpatialLineDataFrame or SpatialPolygonDataFrame class) (see \code{\link{movecost}}).
 #' @param plot.barrier TRUE or FALSE (default) if the user wants or does not want the barrier to be plotted (see \code{\link{movecost}}).
@@ -100,8 +103,7 @@
 #' @keywords movenetw
 #' @export
 #' @importFrom raster raster terrain rasterize cellStats extend crs
-#' @importFrom spatstat.geom pixellate
-#' @import maptools
+#' @importFrom terra writeVector vect rast rasterizeGeom
 #' @importFrom sp SpatialLinesDataFrame
 #' @importFrom elevatr get_elev_raster
 #' @importFrom grDevices terrain.colors topo.colors grey
@@ -116,16 +118,16 @@
 #' data(destin.loc)
 #'
 #'
-#' # calculate the least-cost path network using the Tobler's hiking
-#' # function (for on-path walking)
+#' # calculate the least-cost path network between neighboring locations
+#' # using the Tobler's hiking function (for on-path walking)
 #'
-#' result <- movenetw(dtm=volc, origin=destin.loc[c(1,2,4),], move=8, funct="t")
+#' result <- movenetw(dtm=volc, origin=destin.loc, move=8, funct="t", netw.type="neigh")
 #'
 #'
 #' @seealso \code{\link{movecost}}
 #'
 #'
-movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, plot.barrier=FALSE, irregular.dtm=FALSE, funct="t", move=16, field=0, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, lcp.dens=FALSE, transp=0.5, export=FALSE){
+movenetw <- function (dtm=NULL, origin, netw.type="allpairs", studyplot=NULL, barrier=NULL, plot.barrier=FALSE, irregular.dtm=FALSE, funct="t", move=16, field=0, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, lcp.dens=FALSE, transp=0.5, export=FALSE){
   #if no dtm is provided
   if (is.null(dtm)==TRUE) {
     #get the elvation data using the elevatr's get_elev_raster() function, using the studyplot dataset (SpatialPolygonDataFrame)
@@ -136,23 +138,32 @@ movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, plot.barri
     dtm <- raster::crop(elev.data, studyplot)
   }
 
-  #create an empty list to store the computed LCPs
-  paths.netw <- vector(mode = "list", length = length(origin))
-
-  message(paste0("Wait...processing ", length(origin)*(length(origin)-1), " LCPs..."))
-
   #use the 'movecost' function to calculate the 'conductance' transitional layer to be used inside the
-  #loop that follows. The conductance layer is calculated because it will be used by the gdistance's shortestPath() function
-  #to calculate all the pairwise LCPs. Only one origin location suffices to calculate the conductance.
+  #loop that follows. The conductance layer is calculated because it will be used later on
+  # by the gdistance's shortestPath() and costDistance() functions.
+  # Only one origin location suffices to calculate the conductance.
+  message("Wait...calculating the conductance...")
   conductance.to.use <- movecost(dtm = dtm, origin = origin[1,], barrier=barrier, irregular.dtm=irregular.dtm, funct = funct, move = move, field=field, sl.crit = sl.crit, W = W, L = L, N = N, V = V, graph.out = FALSE)$conductance
 
-  #set the progress bar
-  pb <- txtProgressBar(min = 0, max = length(origin), style = 3)
+  if (netw.type=="allpairs") {
+    #create an empty list to store the computed LCPs
+    paths.netw <- vector(mode = "list", length = length(origin))
 
-  #loop through the origins and store the LCPs (per each origin) in the previously defined list
-  for (i in 1:length(origin)) {
-    paths.netw[[i]] <- gdistance::shortestPath(conductance.to.use, sp::coordinates(origin[i,]), sp::coordinates(origin[-i,]), output="SpatialLines")
-    setTxtProgressBar(pb, i)
+    message(paste0("Wait...processing ", length(origin)*(length(origin)-1), " LCPs..."))
+
+    #set the progress bar
+    pb <- txtProgressBar(min = 0, max = length(origin), style = 3)
+
+    #loop through the origins and store the LCPs (per each origin) in the previously defined list
+    for (i in 1:length(origin)) {
+      paths.netw[[i]] <- gdistance::shortestPath(conductance.to.use, sp::coordinates(origin[i,]), sp::coordinates(origin[-i,]), output="SpatialLines")
+      setTxtProgressBar(pb, i)
+    }
+    #merge the LCPs
+    paths.netw.merged<- do.call(rbind, paths.netw)
+    #set to NULL variables that would be have been populated if netw.type was equal to 'neigh'
+    paths.netw.neigh <- NULL
+    paths.netw.neigh.merged <- NULL
   }
 
   #if a walking-time cost function has been selected...
@@ -169,41 +180,42 @@ movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, plot.barri
     cost.matrix <- as.matrix(gdistance::costDistance(conductance.to.use, sp::coordinates(origin)))
   }
 
-  #merge the LCPs
-  paths.netw.merged<- do.call(rbind, paths.netw)
+  if (netw.type=="neigh") {
+    #if either the cost matrix in minutes or in hours is NULL (i.e., if energy functions have been used)...
+    if(is.null(cost.matrix.min)==TRUE | is.null(cost.matrix.hr==TRUE)) {
+      #...use the cost.matrix object
+      #set the diagolnal to NA
+      diag(cost.matrix) <- NA
+      #extract the column index of the minimum cost; the search is carried out row-wisely
+      min.index.col <- apply(cost.matrix, 1, which.min)
+    } else {
+      #if time functions have been used, do the same for the cost.matrix.min
+      diag(cost.matrix.min) <- NA
+      #extract the column index of the minimum cost; the search is carried out row-wisely
+      min.index.col <- apply(cost.matrix.min, 1, which.min)
+    }
 
-  #if either the cost matrix in minutes or in hours is NULL (i.e., if energy functions have been used)...
-  if(is.null(cost.matrix.min)==TRUE | is.null(cost.matrix.hr==TRUE)) {
-    #...use the cost.matrix object
-    #set the diagolnal to NA
-    diag(cost.matrix) <- NA
-    #extract the column index of the minimum cost; the search is carried out row-wisely
-    min.index.col <- apply(cost.matrix, 1, which.min)
-  } else {
-    #if time functions have been used, do the same for the cost.matrix.min
-    diag(cost.matrix.min) <- NA
-    #extract the column index of the minimum cost; the search is carried out row-wisely
-    min.index.col <- apply(cost.matrix.min, 1, which.min)
+    #create an empty list to store the computed LCPs among neighboring locations
+    paths.netw.neigh <- vector(mode = "list", length = length(origin))
+
+    message(paste0("Wait...processing the LCPs between neighboring locations..."))
+
+    #set the progress bar
+    pb <- txtProgressBar(min = 0, max = length(origin), style = 3)
+
+    #loop through the origins and calculate the LCP between each origin
+    #and its nearest neighbor, which is represented by the vector called min.index.col created previouly;
+    #the LCPs (per each origin) are stored in the previously defined list
+    for (i in 1:length(origin)) {
+      paths.netw.neigh[[i]] <- gdistance::shortestPath(conductance.to.use, sp::coordinates(origin[i,]), sp::coordinates(origin[min.index.col[i],]), output="SpatialLines")
+      setTxtProgressBar(pb, i)
+    }
+    #merge the LCPs between neigbhoring locations
+    paths.netw.neigh.merged <- do.call(rbind, paths.netw.neigh)
+    #set to NULL variables that would be have been populated if netw.type was equal to 'neigh'
+    paths.netw <- NULL
+    paths.netw.merged <- NULL
   }
-
-  #create an empty list to store the computed LCPs among neighboring locations
-  paths.netw.neigh <- vector(mode = "list", length = length(origin))
-
-  message(paste0("Wait...processing the LCPs between neighboring locations"))
-
-  #set the progress bar
-  pb <- txtProgressBar(min = 0, max = length(origin), style = 3)
-
-  #loop through the origins and calculate the LCP between each origin
-  #and its nearest neighbor, which is represented by the vector called min.index.col created previouly;
-  #the LCPs (per each origin) are stored in the previously defined list
-  for (i in 1:length(origin)) {
-    paths.netw.neigh[[i]] <- gdistance::shortestPath(conductance.to.use, sp::coordinates(origin[i,]), sp::coordinates(origin[min.index.col[i],]), output="SpatialLines")
-    setTxtProgressBar(pb, i)
-  }
-
-  #merge the LCPs between neigbhoring locations
-  paths.netw.neigh.merged <- do.call(rbind, paths.netw.neigh)
 
   #define different types of cost functions and set the appropriate text to be used for subsequent plotting
   if (funct=="t") {
@@ -329,74 +341,15 @@ movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, plot.barri
   #produce the ingredient for the slopeshade raster
   slope <- raster::terrain(dtm, opt = "slope")
 
-  #plots for the LCPs among all locations
-  #plot the DTM
-  raster::plot(dtm,
-               main="Network of least-cost paths between multiple origins",
-               sub=sub.title,
-               cex.main=0.95,
-               cex.sub=0.75,
-               legend.lab="Elevation (masl)")
-
-  #plot the slopeshade
-  raster::plot(slope,
-               col = rev(grey(0:100/100)),
-               legend = FALSE,
-               alpha=transp,
-               add=TRUE)
-
-  #add the path network
-  raster:: plot(paths.netw.merged,
-                add=TRUE)
-
-  #add the origin(s)
-  raster:: plot(origin,
-                pch=20,
-                col="red",
-                add=TRUE)
-
-  #if the barrier is provided AND if plot.barrier is TRUE, add the barrier
-  if(is.null(barrier)==FALSE & plot.barrier==TRUE) {
-    raster::plot(barrier, col="blue", add=TRUE)
-  }
-
-  if(lcp.dens==TRUE){
-    #convert the merged LCPs to a spatstat object
-    #using the as() function out of maptool package
-    merged.lines.obj <- as(paths.netw.merged, "psp")
-
-    #extract the resolution of the DTM, to be used for the eps parameter in 'pixellate'
-    dtm.resolution <- raster::res(dtm)[1]
-
-    #create a pixel image that counts the LCPs
-    #the spatstat's parameter eps define the window determining the pixel resolution;
-    #this is used so that the count raster will retain the dtm resolution
-    lcps_count <- spatstat.geom::pixellate(merged.lines.obj, eps= dtm.resolution, what="number")
-
-    #convert the spatstat's pixel image to a raster
-    pathcounts <- raster::raster(lcps_count)
-
-    #convert the path counts to percentage
-    lcp.density.perc <- pathcounts / max(pathcounts[]) * 100
-
-    #since the density rasters (produced by the spatstat's pixellate function)
-    #has an extent equal to the extent of the LCPs (and not of the input DTM)
-    #use the raster's 'extend' function to enlarge the extent of the density rasters
-    #to the extent of the DTM, and set the new cells' value to 0
-    pathcounts <-raster::extend(pathcounts, dtm, value=0)
-    lcp.density.perc <-raster::extend(lcp.density.perc, dtm, value=0)
-
-    #assign the crs of the dtm to the density rasters
-    raster::crs(pathcounts) <- raster::crs(dtm)
-    raster::crs(lcp.density.perc) <- raster::crs(dtm)
-
+  if (netw.type=="allpairs") {
+    #plots for the LCPs among all locations
     #plot the DTM
-    raster::plot(lcp.density.perc,
-                 main="Density of least-cost paths between multiple origins",
+    raster::plot(dtm,
+                 main="Network of least-cost paths between multiple origins",
                  sub=sub.title,
                  cex.main=0.95,
                  cex.sub=0.75,
-                 legend.lab="% of LCPs passing in each raster's cell")
+                 legend.lab="Elevation (masl)")
 
     #plot the slopeshade
     raster::plot(slope,
@@ -405,56 +358,109 @@ movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, plot.barri
                  alpha=transp,
                  add=TRUE)
 
+    #add the path network
+    raster:: plot(paths.netw.merged,
+                  add=TRUE)
+
     #add the origin(s)
     raster:: plot(origin,
                   pch=20,
                   col="red",
                   add=TRUE)
+
+    #if the barrier is provided AND if plot.barrier is TRUE, add the barrier
+    if(is.null(barrier)==FALSE & plot.barrier==TRUE) {
+      raster::plot(barrier, col="blue", add=TRUE)
+    }
+
+    if(lcp.dens==TRUE){
+      #convert the merged LCPs to a terra's SpatVector object
+      merged.lines.obj <- terra::vect(paths.netw.merged)
+
+      #convert the dtm to a terra's SpatRaster object
+      dtm.spatrast <- terra::rast(dtm)
+
+      #use the terra's function to count how many paths cross a cell
+      lcps_count <- terra::rasterizeGeom(merged.lines.obj, dtm.spatrast, fun="crosses")
+
+      #convert the path counts to percentage
+      lcp.density.perc <- lcps_count / max(lcps_count[]) * 100
+
+      #convert the lcps_count and lcp.density.perc from terra's SpatRaster to raster's Raster object class
+      lcps_count <- raster::raster(lcps_count)
+      lcp.density.perc <- raster::raster(lcp.density.perc)
+
+      #plot the DTM
+      raster::plot(lcp.density.perc,
+                   main="Density of least-cost paths between multiple origins",
+                   sub=sub.title,
+                   cex.main=0.95,
+                   cex.sub=0.75,
+                   legend.lab="% of LCPs passing in each raster's cell")
+
+      #plot the slopeshade
+      raster::plot(slope,
+                   col = rev(grey(0:100/100)),
+                   legend = FALSE,
+                   alpha=transp,
+                   add=TRUE)
+
+      #add the origin(s)
+      raster:: plot(origin,
+                    pch=20,
+                    col="red",
+                    add=TRUE)
+    }
   }
 
-  #plots for the LCPs among neighboring locations
-  #plot the DTM
-  raster::plot(dtm,
-               main="Network of least-cost paths between neighboring locations",
-               sub=sub.title,
-               cex.main=0.95,
-               cex.sub=0.75,
-               legend.lab="Elevation (masl)")
+  if (netw.type=="neigh") {
+    #plots for the LCPs among neighboring locations
+    #plot the DTM
+    raster::plot(dtm,
+                 main="Network of least-cost paths between neighboring locations",
+                 sub=sub.title,
+                 cex.main=0.95,
+                 cex.sub=0.75,
+                 legend.lab="Elevation (masl)")
 
-  #plot the slopeshade
-  raster::plot(slope,
-               col = rev(grey(0:100/100)),
-               legend = FALSE,
-               alpha=transp,
-               add=TRUE)
+    #plot the slopeshade
+    raster::plot(slope,
+                 col = rev(grey(0:100/100)),
+                 legend = FALSE,
+                 alpha=transp,
+                 add=TRUE)
 
-  #add the path network
-  raster:: plot(paths.netw.neigh.merged,
-                add=TRUE)
+    #add the path network
+    raster:: plot(paths.netw.neigh.merged,
+                  add=TRUE)
 
-  #add the origin(s)
-  raster:: plot(origin,
-                pch=20,
-                col="red",
-                add=TRUE)
+    #add the origin(s)
+    raster:: plot(origin,
+                  pch=20,
+                  col="red",
+                  add=TRUE)
 
-  #if the barrier is provided AND if plot.barrier is TRUE, add the barrier
-  if(is.null(barrier)==FALSE & plot.barrier==TRUE) {
-    raster::plot(barrier, col="blue", add=TRUE)
+    #if the barrier is provided AND if plot.barrier is TRUE, add the barrier
+    if(is.null(barrier)==FALSE & plot.barrier==TRUE) {
+      raster::plot(barrier, col="blue", add=TRUE)
+    }
   }
 
   #if export is TRUE, export the LCPs network as a shapefile, and the density rasters as geotiff
   if(export==TRUE){
     #convert the merged LCPs network from SpatialLine to SpatialLineDataFrame via the 'SpatialLinesDataFrame()' function
-    #this is needed by 'writeOGR()'
-    paths.netw.merged.SPLDF <- sp::SpatialLinesDataFrame(paths.netw.merged, data.frame(id=1:length(paths.netw.merged)), match.ID = F)
-    paths.netw.neigh.merged.SPLDF <- sp::SpatialLinesDataFrame(paths.netw.neigh.merged, data.frame(id=1:length(paths.netw.neigh.merged)), match.ID = F)
-    #export relevant data
-    rgdal::writeOGR(paths.netw.merged.SPLDF, ".", paste0("LCPs.netw.merged_", funct), driver="ESRI Shapefile")
-    rgdal::writeOGR(paths.netw.neigh.merged.SPLDF, ".", paste0("LCPs.netw.neigh.merged_", funct), driver="ESRI Shapefile")
-    if(lcp.dens==TRUE){
-    raster::writeRaster(pathcounts, paste0("LCPs_density_count_", funct), format="GTiff")
-    raster::writeRaster(lcp.density.perc, paste0("LCPs_density_perc_", funct), format="GTiff")
+    #this is needed by 'writeOGR()', and export relevant data
+    if (netw.type=="allpairs") {
+      paths.netw.merged.SPLDF <- sp::SpatialLinesDataFrame(paths.netw.merged, data.frame(id=1:length(paths.netw.merged)), match.ID = F)
+      terra::writeVector(vect(paths.netw.merged.SPLDF), filename=paste0("LCPs.netw.merged_", funct), filetype="ESRI Shapefile")
+    }
+    if (netw.type=="neigh") {
+      paths.netw.neigh.merged.SPLDF <- sp::SpatialLinesDataFrame(paths.netw.neigh.merged, data.frame(id=1:length(paths.netw.neigh.merged)), match.ID = F)
+      terra::writeVector(vect(paths.netw.neigh.merged.SPLDF), filename=paste0("LCPs.netw.neigh.merged_", funct), filetype="ESRI Shapefile")
+    }
+    if(lcp.dens==TRUE & netw.type=="allpairs"){
+      raster::writeRaster(lcps_count, paste0("LCPs_density_count_", funct), format="GTiff")
+      raster::writeRaster(lcp.density.perc, paste0("LCPs_density_perc_", funct), format="GTiff")
     }
   }
 
@@ -474,13 +480,13 @@ movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, plot.barri
   }
 
   #if the user set lcp.dens to TRUE
-  if(lcp.dens==TRUE){
+  if(lcp.dens==TRUE & netw.type=="allpairs"){
     #there are data to return
-    pathcounts <- pathcounts
+    lcps_count <- lcps_count
     lcp.density.perc <- lcp.density.perc
   } else {
     #otherwise there is nothing to return
-    pathcounts <- NULL
+    lcps_count <- NULL
     lcp.density.perc <- NULL
   }
 
@@ -489,7 +495,7 @@ movenetw <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, plot.barri
                   "LCPs.netw.merged"=paths.netw.merged,
                   "LCPs.netw.neigh"=paths.netw.neigh,
                   "LCPs.netw.neigh.merged"=paths.netw.neigh.merged,
-                  "LCPs.density.count"=pathcounts,
+                  "LCPs.density.count"=lcps_count,
                   "LCPs.density.perc"=lcp.density.perc,
                   "cost.matrix.min"=cost.matrix.min,
                   "cost.matrix.hrs"=cost.matrix.hr,

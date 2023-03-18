@@ -134,6 +134,7 @@
 #' @keywords movecorr
 #' @export
 #' @importFrom raster ncell mask crop stack cellStats raster terrain
+#' @importFrom terra writeVector vect
 #' @importFrom elevatr get_elev_raster
 #' @importFrom graphics layout par
 #' @importFrom utils combn setTxtProgressBar txtProgressBar
@@ -523,9 +524,8 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
     raster::writeRaster(res.corridor, paste0("LCcorridor_", funct), format="GTiff")
     raster::writeRaster(res.a$accumulated.cost.raster, paste0("Accum_cost_surf_a_", funct), format="GTiff")
     raster::writeRaster(res.b$accumulated.cost.raster, paste0("Accum_cost_surf_b_", funct), format="GTiff")
-    rgdal::writeOGR(res.a$LCPs, ".", paste0("lcp_a_to_b_", funct), driver="ESRI Shapefile")
-    rgdal::writeOGR(res.b$LCPs, ".", paste0("lcp_b_to_a_", funct), driver="ESRI Shapefile")
-
+    terra::writeVector(vect(res.a$LCPs), filename=paste0("lcp_a_to_b_", funct), filetype="ESRI Shapefile")
+    terra::writeVector(vect(res.b$LCPs), filename=paste0("lcp_b_to_a_", funct), filetype="ESRI Shapefile")
     }
 
   #if export is TRUE & if the input dataset 'a' was containing more than 2 features

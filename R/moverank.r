@@ -1,7 +1,7 @@
 #' R function for calculating sub-optimal least-cost paths bewteen an origin and a destination location
 #'
 #' The function provides the facility to calculate the LCP between an origin and a destination location and (more importantly) to
-#' work out the first six sub-optimal LCPs between those locations. The underlying idea is the following: given two locations, we can
+#' work out the first five sub-optimal LCPs between those locations. The underlying idea is the following: given two locations, we can
 #' calculate the least-costly path between them; but, if we disregard that LCP, what path would be the second least costly?
 #' And if we in turn disregard those first two, what the third least costly path would be? The same reasoning holds for all the subsequent n-th LCPs. Under the hood,
 #' \code{moverank()} rests on \code{\link{movecost}} and implements the same cost functions. See the help documentation of \code{movecost()} for further details.\cr
@@ -27,8 +27,8 @@
 #' the LCPs as shapefile layer. The LCPs and the least-cost corridor files will be given a suffix indicating which cost function has been used.\cr
 #'
 #' @param dtm Digital Terrain Model (RasterLayer class); if not provided, elevation data will be acquired online for the area enclosed by the 'studyplot' parameter (see \code{\link{movecost}}).
-#' @param origin first location from which the least-cost corridor is calculated (SpatialPointsDataFrame class); if it contains more than two locations, see the 'Description' section above.
-#' @param destin second location from which the least-cost corridor is calculated (SpatialPointsDataFrame class); if parameter 'a' stores more than two locations, this parameter is disregarded; see the 'Description' section above.
+#' @param origin location from which least-cost path(s) is calculated (SpatialPointsDataFrame class).
+#' @param destin location(s) to which least-cost path(s) is calculated (SpatialPointsDataFrame class).
 #' @param studyplot polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are acquired (see \code{\link{movecost}}); NULL is default.
 #' @param barrier area where the movement is inhibited (SpatialLineDataFrame or SpatialPolygonDataFrame class) (see \code{\link{movecost}}).
 #' @param plot.barrier TRUE or FALSE (default) if the user wants or does not want the barrier to be plotted (see \code{\link{movecost}}).
@@ -96,6 +96,7 @@
 #' @keywords moverank
 #' @export
 #' @importFrom raster crop raster terrain
+#' @importFrom terra writeVector vect
 #' @importFrom elevatr get_elev_raster
 #' @importFrom grDevices grey
 #' @importFrom graphics symbols text
@@ -499,7 +500,7 @@ moverank <- function (dtm=NULL, origin, destin, studyplot=NULL, barrier=NULL, pl
 
   #if export is TRUE, export the LCPs as a shapefile
   if(export==TRUE){
-    rgdal::writeOGR(merged.lcps, ".", paste0("LCPs_", funct), driver="ESRI Shapefile")
+    terra::writeVector(vect(merged.lcps), filename=paste0("LCPs_", funct), filetype="ESRI Shapefile")
   }
 
 

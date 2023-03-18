@@ -34,7 +34,7 @@
 #'
 #'
 #' @param dtm Digital Terrain Model (RasterLayer class); if not provided, elevation data will be acquired online for the area enclosed by the 'studyplot' parameter (see \code{\link{movecost}}).
-#' @param origin location(s) around which the boundary(ies) is calculated (SpatialPointsDataFrame class).
+#' @param origin location from which least-cost path(s) is calculated (SpatialPointsDataFrame class).
 #' @param destin location(s) to which least-cost path(s) is calculated (SpatialPointsDataFrame class).
 #' @param studyplot polygon (SpatialPolygonDataFrame class) representing the study area for which online elevation data are acquired (see \code{\link{movecost}}); NULL is default.
 #' @param barrier area where the movement is inhibited (SpatialLineDataFrame or SpatialPolygonDataFrame class) (see \code{\link{movecost}}).
@@ -104,6 +104,7 @@
 #' @keywords movecomp
 #' @export
 #' @importFrom raster ncell raster terrain
+#' @importFrom terra writeVector vect
 #' @importFrom elevatr get_elev_raster
 #' @importFrom grDevices terrain.colors topo.colors grey
 #' @importFrom graphics boxplot
@@ -325,12 +326,12 @@ movecomp <- function (dtm=NULL, origin, destin, studyplot=NULL, barrier=NULL, pl
 
   #if export is TRUE, export the LCPs as a shapefile
   if(export==TRUE){
-    rgdal::writeOGR(merged.paths, ".", "LCPs", driver="ESRI Shapefile")
+    terra::writeVector(vect(merged.paths), filename="LCPs", filetype="ESRI Shapefile")
   }
 
   #if export is TRUE and return.base is also TRUE, export the LCPs back to the origin as a shapefile
   if(export==TRUE & return.base==TRUE){
-    rgdal::writeOGR(merged.paths.back, ".", "LCPs_back", driver="ESRI Shapefile")
+    terra::writeVector(vect(merged.paths.back), filename="LCPs_back", filetype="ESRI Shapefile")
   }
 
   #if no DTM was provided (i.e., if 'studyplot' is not NULL), export the downloaded DTM as a raster file

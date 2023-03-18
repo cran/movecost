@@ -92,6 +92,7 @@
 #' @keywords movealloc
 #' @export
 #' @importFrom raster ncell mask crop stack cellStats raster terrain which.min
+#' @importFrom terra writeVector vect
 #' @importFrom elevatr get_elev_raster
 #' @importFrom grDevices terrain.colors topo.colors grey
 #' @importFrom graphics legend
@@ -419,12 +420,12 @@ movealloc <- function (dtm=NULL, origin, studyplot=NULL, funct="t", time="h", mo
   #if export is TRUE, export the cost allocation raster and the allocation polygons
   if(export==TRUE){
     raster::writeRaster(cost_alloc, paste0("cost_alloc_raster_", funct), format="GTiff")
-    rgdal::writeOGR(alloc.boundaries, ".", paste0("alloc_boundaries_", funct), driver="ESRI Shapefile")
+    terra::writeVector(vect(alloc.boundaries), filename=paste0("alloc_boundaries_", funct), filetype="ESRI Shapefile")
   }
 
   #if export is TRUE and the isolines is TRUE, export the isolines
   if(export==TRUE & isolines==TRUE){
-    rgdal::writeOGR(acc_cost_all_orig$isolines, ".", paste0("isolines_", funct), driver="ESRI Shapefile")
+    terra::writeVector(vect(acc_cost_all_orig$isolines), filename=paste0("isolines_", funct), filetype="ESRI Shapefile")
   }
 
   #if isolines is FALSE
@@ -446,3 +447,4 @@ movealloc <- function (dtm=NULL, origin, studyplot=NULL, funct="t", time="h", mo
 
   return(result)
 }
+

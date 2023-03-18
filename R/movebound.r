@@ -17,9 +17,9 @@
 #'
 #' result <- movebound(origin=Etna_end_location, cont.value=45, time="m", cont.lab = TRUE, funct="tofp", studyplot = Etna_boundary, add.geom=TRUE)\cr
 #'
-#' Note that by setting the parameter \code{add.geom} to \code{TRUE}, the function calculates the perimeter and the area enclosed by the boundary represented by each
-#' calculated isoline. Needless to say, the unit of measure is the one used by the input layers' coordinate system. The value(s) of the perimeter and area
-#' will be appended as two new variables to a copy of the input 'origin' dataset. The said geometries (perimeter, area) can only be calculated if the
+#' Note that by setting the parameter \code{add.geom} to \code{TRUE}, the function calculates the area enclosed by the boundary represented by each
+#' calculated isoline. Needless to say, the unit of measure is the one used by the input layers' coordinate system. The value(s) of the area
+#' will be appended as a new variables to a copy of the input 'origin' dataset. The area can only be calculated if the
 #' isolines are "complete" and not truncated (i.e., if they do not meet the end of the study area for instance). Therefore, before using this option,
 #' the user may want to be sure that all the isolines are actual loops.\cr
 #'
@@ -96,7 +96,7 @@
 #' @param z zoom level for the elevation data downloaded from online sources (from 0 to 15; 9 by default) (see \code{\link{movecost}} and \code{\link[elevatr]{get_elev_raster}}).
 #' @param cont.lab TRUE (default) or FALSE if the usuer wants or does not want labels to be attached to the isolines.
 #' @param transp set the transparency of the slopeshade raster that is plotted over the DTM (0.5 by default).
-#' @param add.geom TRUE or FALSE (default) if the user wants or does not want the perimeter and area enclosed by each isolines to be calculated (see Details).
+#' @param add.geom TRUE or FALSE (default) if the user wants or does not want the area enclosed by each isolines to be calculated (see Details).
 #' @param export TRUE or FALSE (default) if the user wants or does not want the isoline(s) and the copy of the input 'origin' dataset (storing boundaries' geometry information)
 #'  to be exported; if TRUE, they will be exported as a shapefile; the exported file will bear a suffix corresponding to the cost function selected by the user.
 #'  The DTM is exported only if it was not provided by the user and downloaded by the function from online sources.
@@ -104,16 +104,17 @@
 #' @return The function returns a list storing the following components \itemize{
 ##'  \item{dtm: }{Digital Terrain Model ('RasterLayer' class)}
 ##'  \item{isolines: }{contour line(s) representing the selected cost limit ('SpatialLinesDataFrame' class)}
-##'  \item{origin_w_isolines_geom: }{copy of the input origin location(s) dataset with two new variables ('perimeter' and 'area') storing the
-##'  perimeter and area values of the boundary calculated around each location}
+##'  \item{origin_w_isolines_geom: }{copy of the input origin location(s) dataset with a new variable ('area') storing the
+##'    area values of the boundary calculated around each location}
 ##' }
 ##'
 #' @keywords movebound
 #' @export
 #' @importFrom raster ncell mask crop stack cellStats raster terrain crs
+#' @importFrom terra writeVector vect
 #' @importFrom elevatr get_elev_raster
 #' @importFrom grDevices terrain.colors topo.colors grey
-#' @importFrom rgeos gLength gArea
+#' @importFrom sf st_area st_as_sf
 #'
 #' @examples
 #' # load a sample Digital Terrain Model
@@ -388,27 +389,22 @@ movebound <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, plot.barr
 
     #create two empty vectors where isolines' geometry will be stored
     contour_area <- as.numeric()
-    contour_perimeter <- as.numeric()
 
     #loop through the number of origin (i.e., the number of extraced isolines)
     for (i in 1:length(origin)) {
-      #trasform the isolines into 'sp' polygon objects that can be read by the rgeos' functions
+      #trasform the isolines into 'sp' polygon objects that will be read by some sf's functions later on
       p <- sp::Polygon(contour_coord[[1]][[i]])
       ps <- sp::Polygons(list(p),1)
       sps <- sp::SpatialPolygons(list(ps))
 
       #give the polygons the coordinate system of the input dtm
-      raster::crs(sps) <- raster::crs(dtm)
+      #raster::crs(sps) <- raster::crs(dtm)
 
-      #use functions out from rgeos to calculate the area and perimeter of the isolines
-      contour_area[i] <- rgeos::gArea(sps)
-      contour_perimeter[i] <- rgeos::gLength(sps)
+      #use functions out from sf to calculate the area and perimeter of the isolines
+      contour_area[i] <- sf::st_area(st_as_sf(sps))
     }
     #create a copy of the 'origin' dataset
     origin_w_geom <- origin
-
-    #append the perimeter values into the newly created 'perimeter' field
-    origin_w_geom$perimeter <- contour_perimeter
 
     #the same as above for the area values
     origin_w_geom$area <- contour_area
@@ -459,9 +455,9 @@ movebound <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, plot.barr
 
   #if export is TRUE, export the isolines and the copy of the origin dataset as shapefiles
   if(export==TRUE){
-    rgdal::writeOGR(isolines, ".", paste0("isolines_", funct), driver="ESRI Shapefile")
+    terra::writeVector(vect(isolines), filename=paste0("isolines_", funct), filetype="ESRI Shapefile")
     if(is.null(origin_w_geom)==FALSE){
-      rgdal::writeOGR(origin_w_geom, ".", paste0("origin_w_geom_", funct), driver="ESRI Shapefile")
+      terra::writeVector(vect(origin_w_geom), filename=paste0("origin_w_geom_", funct), filetype="ESRI Shapefile")
     }
   }
 
