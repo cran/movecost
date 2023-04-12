@@ -43,8 +43,8 @@
 #' \strong{Inhibition of movement (barrier)}:\cr
 #' areas where the movement is inhibited can be fed into the analysis via the \code{barrier} parameter; SpatialLineDataFrame or SpatialPolygonDataFrame can be used.
 #' The barrier is assigned a conductance value of 0 (i.e., movement is inhibited) by default, but the user can assign any other value via the
-#' \code{field} parameter. Internally, the barrier creation rests on the \code{\link[leastcostpath]{create_barrier_cs}} function
-#' from the \emph{leastcostpath} package.\cr
+#' \code{field} parameter. Internally, the barrier creation rests on the internal \code{create_barrier_cs} function, which relies on the same function
+#' out of an earlier version of the \emph{leastcostpath} package.\cr
 #'
 #' To test this facility, consider the following example:\cr
 #'
@@ -66,9 +66,9 @@
 #' if the input DTM features irregular margins, e.g a coastline with gulfs and/or inlets where cells corresponding to the sea are given NoData,
 #' the user is to set the \code{irregular.dtm} parameter to TRUE; this will prevent the LCPs to cross the sea. Internally, what \code{movecost()} does is
 #' to generate a polygon vector layer from the DTM and to use the polygon as a mask to create a Transitional Layer via the
-#' \code{\link[leastcostpath]{create_barrier_cs}} function from the \emph{leastcostpath} package. In the mask Transitional Layer those parts
-#' corresponding to the terrain are given a conductance value equal to 1, while everything else (i.e., the parts corresponding to the sea) are given 0 conductance.
-#' The mask Transitional Layer is then internally multiplied by the conductance transitional layer representing the cost of movement
+#' internal \code{create_barrier_cs} function, which relies on the same function out of an earlier version from the \emph{leastcostpath} package.
+#' In the mask Transitional Layer those parts corresponding to the terrain are given a conductance value equal to 1, while everything else (i.e., the parts corresponding to the sea)
+#' are given 0 conductance. The mask Transitional Layer is then internally multiplied by the conductance transitional layer representing the cost of movement
 #' (according to the user-selected function). This will set to 0 the conductance values of those parts of the study area that do not correspond to the terrain,
 #' while keeping unaltered the conductance of those parts that do coincide with the terrain.\cr
 #'
@@ -81,12 +81,13 @@
 #' As you can see, in the first case, the LCP between the two locations cross the sea, while in the second case the LCP follows
 #' the coastline. One can also appreciate the difference between the two returned conductance transitional layers:\cr
 #'
-#' plot(raster::raster(resultA$conductance))\cr
+#' raster::plot(raster::raster(resultA$conductance))\cr
 #'
-#' plot(raster::raster(resultB$conductance))\cr
+#' raster::plot(raster::raster(resultB$conductance))\cr
 #'
-#' It is apparent that in the second layer the sea area has been given 0 conductance, while keeping the rest unchanged. If the input DTM does not feature irregular margins (like, for instance, the built-in \code{volc} DTM), the user
-#' may safely leave the \code{irregular.dtm} parameter set to FALSE (which is the default value).\cr
+#' It is apparent that in the second layer the sea area has been given 0 conductance, while keeping the rest unchanged. If the input DTM does not feature
+#' irregular margins (like, for instance, the built-in \code{volc} DTM), the user may safely leave the \code{irregular.dtm} parameter set to FALSE
+#' (which is the default value).\cr
 #'
 #'
 #' \strong{Acquiring online elevation data}:\cr
@@ -565,7 +566,6 @@
 #' @importFrom chron times
 #' @importFrom grDevices terrain.colors topo.colors grey
 #' @importFrom graphics layout par
-#' @importFrom leastcostpath create_barrier_cs
 #' @importFrom terra as.polygons
 #' @importFrom stats na.omit
 #' @importFrom sf st_length st_as_sf
@@ -1033,7 +1033,7 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, barrier=NUL
       #substitute the values of the copy with a single value, omitting the NA cells
       dtm.copy[na.omit(dtm.copy)] <- 1
 
-      #run a 3x3 mean filter to remove possible in-land NoData value because they would prevent the following
+      #run a 3x3 mean filter to remove possible in-land NoData value because they would prevent the subsequent
       #step from running
       dtm.copy <- raster::focal(dtm.copy, w=matrix(1/9,nrow=3,ncol=3))
 
@@ -1043,12 +1043,12 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, barrier=NUL
       mask.polyg <- terra::as.polygons(as(dtm.copy, "SpatRaster"), dissolve=TRUE)
 
       #turn the SpatVector format (returned by terra::as.polygons()) into a SpatialPolygonDataFrame that will be fed into
-      #leastcostpath::create_barrier_cs
+      #create_barrier_cs
       mask.polyg<-as(mask.polyg, "Spatial")
 
       #create a Transitional Layer where the masked area is given 1, while the other parts are given 0;
       #thus all which is not terrain will be given 0 conductance
-      mask.TL <- leastcostpath::create_barrier_cs(dtm.copy, mask.polyg, neighbours = move, field=1, background = 0)
+      mask.TL <- create_barrier_cs(dtm.copy, mask.polyg, neighbours = move, field=1, background = 0)
 
       #use map algebra to "combine" the two Transitional Layers
       Conductance <- Conductance*mask.TL
@@ -1057,7 +1057,7 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, barrier=NUL
     #if the 'barrier' parameter in not NULL...
     if (is.null(barrier)==FALSE) {
       #...create a barrier transitional layers via the 'create_barrier_cs' function
-      barrier.TL <- leastcostpath::create_barrier_cs(dtm, barrier, neighbours=move, field=field)
+      barrier.TL <- create_barrier_cs(dtm, barrier, neighbours=move, field=field)
       #use map algebra to "incorporate" the barrier to the conductance layer
       Conductance <- Conductance*barrier.TL
     }
@@ -1098,12 +1098,12 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, barrier=NUL
       mask.polyg <- terra::as.polygons(as(dtm.copy, "SpatRaster"), dissolve=TRUE)
 
       #turn the SpatVector format (returned by terra::as.polygons()) into a SpatialPolygonDataFrame that will be fed into
-      #leastcostpath::create_barrier_cs
+      #create_barrier_cs
       mask.polyg<-as(mask.polyg, "Spatial")
 
       #create a Transitional Layer where the masked area is given 1, while the other parts are given 0;
       #thus all which is not terrain will be given 0 conductance
-      mask.TL <- leastcostpath::create_barrier_cs(dtm.copy, mask.polyg, neighbours = move, field=1, background = 0)
+      mask.TL <- create_barrier_cs(dtm.copy, mask.polyg, neighbours = move, field=1, background = 0)
 
       #use map algebra to "combine" the two Transitional Layers
       Conductance <- Conductance*mask.TL
@@ -1112,7 +1112,7 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, barrier=NUL
     #if the 'barrier' parameter in not NULL...
     if (is.null(barrier)==FALSE) {
       #...create a barrier transitional layers via the 'create_barrier_cs' function
-      barrier.TL <- leastcostpath::create_barrier_cs(dtm, barrier, neighbours=move, field=field)
+      barrier.TL <- create_barrier_cs(dtm, barrier, neighbours=move, field=field)
       #use map algebra to "incorporate" the barrier to the conductance layer
       Conductance <- Conductance*barrier.TL
     }

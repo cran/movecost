@@ -196,8 +196,8 @@ The number of directions in which cells are connected in the cost calculation ca
 \strong{Inhibition of movement (barrier)}:\cr
 areas where the movement is inhibited can be fed into the analysis via the \code{barrier} parameter; SpatialLineDataFrame or SpatialPolygonDataFrame can be used.
 The barrier is assigned a conductance value of 0 (i.e., movement is inhibited) by default, but the user can assign any other value via the
-\code{field} parameter. Internally, the barrier creation rests on the \code{\link[leastcostpath]{create_barrier_cs}} function
-from the \emph{leastcostpath} package.\cr
+\code{field} parameter. Internally, the barrier creation rests on the internal \code{create_barrier_cs} function, which relies on the same function
+out of an earlier version of the \emph{leastcostpath} package.\cr
 
 To test this facility, consider the following example:\cr
 
@@ -219,9 +219,9 @@ to make a long detour. In result3, the barrier is plotted as a blue line. \stron
 if the input DTM features irregular margins, e.g a coastline with gulfs and/or inlets where cells corresponding to the sea are given NoData,
 the user is to set the \code{irregular.dtm} parameter to TRUE; this will prevent the LCPs to cross the sea. Internally, what \code{movecost()} does is
 to generate a polygon vector layer from the DTM and to use the polygon as a mask to create a Transitional Layer via the
-\code{\link[leastcostpath]{create_barrier_cs}} function from the \emph{leastcostpath} package. In the mask Transitional Layer those parts
-corresponding to the terrain are given a conductance value equal to 1, while everything else (i.e., the parts corresponding to the sea) are given 0 conductance.
-The mask Transitional Layer is then internally multiplied by the conductance transitional layer representing the cost of movement
+internal \code{create_barrier_cs} function, which relies on the same function out of an earlier version from the \emph{leastcostpath} package.
+In the mask Transitional Layer those parts corresponding to the terrain are given a conductance value equal to 1, while everything else (i.e., the parts corresponding to the sea)
+are given 0 conductance. The mask Transitional Layer is then internally multiplied by the conductance transitional layer representing the cost of movement
 (according to the user-selected function). This will set to 0 the conductance values of those parts of the study area that do not correspond to the terrain,
 while keeping unaltered the conductance of those parts that do coincide with the terrain.\cr
 
@@ -234,12 +234,13 @@ resultB <- movecost(malta_dtm_40, origin=springs[5,], destin=springs[15,], irreg
 As you can see, in the first case, the LCP between the two locations cross the sea, while in the second case the LCP follows
 the coastline. One can also appreciate the difference between the two returned conductance transitional layers:\cr
 
-plot(raster::raster(resultA$conductance))\cr
+raster::plot(raster::raster(resultA$conductance))\cr
 
-plot(raster::raster(resultB$conductance))\cr
+raster::plot(raster::raster(resultB$conductance))\cr
 
-It is apparent that in the second layer the sea area has been given 0 conductance, while keeping the rest unchanged. If the input DTM does not feature irregular margins (like, for instance, the built-in \code{volc} DTM), the user
-may safely leave the \code{irregular.dtm} parameter set to FALSE (which is the default value).\cr
+It is apparent that in the second layer the sea area has been given 0 conductance, while keeping the rest unchanged. If the input DTM does not feature
+irregular margins (like, for instance, the built-in \code{volc} DTM), the user may safely leave the \code{irregular.dtm} parameter set to FALSE
+(which is the default value).\cr
 
 
 \strong{Acquiring online elevation data}:\cr

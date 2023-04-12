@@ -1,8 +1,13 @@
 # movecost
-vers 1.9
+vers 2.0
 
 
 ## History
+
+`version 1.9`:
+* the 'netw.type' parameter added to 'movenetw()' to allow the users to select which type of network will be calculated;
+* amendments to the help documentation of the 'origin' and 'destination' parameters in the 'movebound()', 'movecomp()', 'movenetw()', and 'moverank()' functions;
+* the dependence on the following packages has been dropped: rgdal, maptools, rgeos, spatstat.geom
 
 `version 1.8`:
 * 'moverank()' function added;
