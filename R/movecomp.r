@@ -94,11 +94,12 @@
 #' @param export TRUE or FALSE (default) if the user wants or does not want the LCPs to be exported as a shapefile; the DTM is exported only if it was not provided by the user
 #' and downloaded by the function from online sources.
 #'
-#' @return The function returns a list storing the following components \itemize{
-##'  \item{dtm: }{Digital Terrain Model ('RasterLayer' class); returned only if acquired online}
-##'  \item{LCPs: }{estimated least-cost paths ('SpatialLinesDataFrame' class); three variables are stored: 'length', 'cost', and
-##'  'funct'.}
-##'  \item{LCPs.back: }{estimated least-cost paths back to the origin ('SpatialLinesDataFrame' class); three variables are stored; see above.}
+#' @return The function returns a list storing the following components
+#' \itemize{
+##'  \item dtm: Digital Terrain Model ('RasterLayer' class); returned only if acquired online
+##'  \item LCPs: estimated least-cost paths ('SpatialLinesDataFrame' class); three variables are stored: 'length', 'cost', and
+##'  'funct'.
+##'  \item LCPs.back: estimated least-cost paths back to the origin ('SpatialLinesDataFrame' class); three variables are stored; see above.
 ##' }
 ##'
 #' @keywords movecomp

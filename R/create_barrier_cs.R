@@ -14,7 +14,7 @@
 #' @param raster RasterLayer (raster package). The Resolution, Extent, and Spatial Reference System of the provided RasterLayer is used when creating the resultant Barrier Cost Surface.
 #' @param barrier Spatial* (sp package) or RasterLayer (raster package). Area within the landscape that movement is inhibited.
 #' @param neighbours Number of directions used in the Least Cost Path calculation.
-#' @param fields Value assigned to cells that coincide with the barrier Spatial* or RasterLayer object. Default is numeric value 0.
+#' @param field Value assigned to cells that coincide with the barrier Spatial* or RasterLayer object. Default is numeric value 0.
 #' @param background Value assigned to cells that do not coincide with the Spatial* or RasterLayer object. Default is numeric value 1.
 #'
 #' @return

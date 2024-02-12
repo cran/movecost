@@ -13,9 +13,9 @@ create_barrier_cs(raster, barrier, neighbours = 16, field = 0, background = 1)
 
 \item{neighbours}{Number of directions used in the Least Cost Path calculation.}
 
-\item{background}{Value assigned to cells that do not coincide with the Spatial* or RasterLayer object. Default is numeric value 1.}
+\item{field}{Value assigned to cells that coincide with the barrier Spatial* or RasterLayer object. Default is numeric value 0.}
 
-\item{fields}{Value assigned to cells that coincide with the barrier Spatial* or RasterLayer object. Default is numeric value 0.}
+\item{background}{Value assigned to cells that do not coincide with the Spatial* or RasterLayer object. Default is numeric value 1.}
 }
 \value{
 TransitionLayer (gdistance package) numerically expressing the barriers to movement in the landscape.

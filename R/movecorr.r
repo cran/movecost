@@ -120,15 +120,16 @@
 #' and the accumulated cost surface around a and b are exported as a GeoTiff file, while the two LCPs (from a to b, and from b to a) as individual shapefiles. If multiple locations are analysed, only the
 #' least-cost corridor (and the DTM if originally not provided) will be exported. All the exported files (excluding the DTM) will bear a suffix corresponding to the cost function selected by the user.
 #'
-#' @return The function returns a list storing the following components \itemize{
-##'  \item{dtm: }{Digital Terrain Model ('RasterLayer' class)}
-##'  \item{lc.corridor: }{raster of the least-cost corridor ('RasterLayer' class); if more than two locations are analysed, this raster is the sum of all the corridors between all the pairs of locations}
-##'  \item{lcp_a_to_b: }{least-cost past from a to b ('SpatialLinesDataFrame' class); returned only when the corridor is calculated between two locations}
-##'  \item{lcp_b_to_a: }{least-cost past from b to a ('SpatialLinesDataFrame' class); returned only when the corridor is calculated between two locations}
-##'  \item{accum_cost_surf_a: }{accumulated cost-surface around a ('RasterLayer' class); returned only when the corridor is calculated between two locations}
-##'  \item{accum_cost_surf_b: }{accumulated cost-surface around b ('RasterLayer' class); returned only when the corridor is calculated between two locations}
-##'  \item{corridors: }{list of rasters ('RasterLayer' class) representing the least-cost corridor between all the unique pairs of locations; returned only when more than two locations are analysed}
-##'  \item{locations.matrix: }{matrix whose columns indicate the identifiers for all the unique pairs of locations for which each corridor is calculated; returned only when more than two locations are analysed}
+#' @return The function returns a list storing the following components
+#' \itemize{
+##'  \item dtm: Digital Terrain Model ('RasterLayer' class)
+##'  \item lc.corridor: raster of the least-cost corridor ('RasterLayer' class); if more than two locations are analysed, this raster is the sum of all the corridors between all the pairs of locations
+##'  \item lcp_a_to_b: least-cost past from a to b ('SpatialLinesDataFrame' class); returned only when the corridor is calculated between two locations
+##'  \item lcp_b_to_a: least-cost past from b to a ('SpatialLinesDataFrame' class); returned only when the corridor is calculated between two locations
+##'  \item accum_cost_surf_a: accumulated cost-surface around a ('RasterLayer' class); returned only when the corridor is calculated between two locations
+##'  \item accum_cost_surf_b: accumulated cost-surface around b ('RasterLayer' class); returned only when the corridor is calculated between two locations
+##'  \item corridors: list of rasters ('RasterLayer' class) representing the least-cost corridor between all the unique pairs of locations; returned only when more than two locations are analysed
+##'  \item locations.matrix: matrix whose columns indicate the identifiers for all the unique pairs of locations for which each corridor is calculated; returned only when more than two locations are analysed
 ##' }
 ##'
 #' @keywords movecorr

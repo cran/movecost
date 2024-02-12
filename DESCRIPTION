@@ -2,7 +2,7 @@ Package: movecost
 Title: Calculation of Slope-Dependant Accumulated Cost Surface,
         Least-Cost Paths, Least-Cost Corridors, Least-Cost Networks
         Related to Human Movement Across the Landscape
-Version: 2.0
+Version: 2.1
 Authors@R: person("Gianmarco", "Alberti", email = "gianmarcoalberti@gmail.com", role = c("aut", "cre"))
 Description: Provides the facility to calculate non-isotropic accumulated cost surface, least-cost paths, least-cost corridors, least-cost networks using a number of human-movement-related cost functions that can be selected by the user. It just requires a Digital Terrain Model, a start location and (optionally) destination locations. See Alberti (2019) <doi:10.1016/j.softx.2019.100331>.
 Depends: R (>= 4.0.0)
@@ -14,8 +14,8 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.3
 NeedsCompilation: no
-Packaged: 2023-04-12 07:05:48 UTC; gianmarcoalberti
+Packaged: 2024-02-12 17:03:47 UTC; gianmarcoalberti
 Author: Gianmarco Alberti [aut, cre]
 Maintainer: Gianmarco Alberti <gianmarcoalberti@gmail.com>
 Repository: CRAN
-Date/Publication: 2023-04-12 09:20:07 UTC
+Date/Publication: 2024-02-12 18:30:02 UTC

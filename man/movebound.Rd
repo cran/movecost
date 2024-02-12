@@ -108,11 +108,12 @@ to be exported; if TRUE, they will be exported as a shapefile; the exported file
 The DTM is exported only if it was not provided by the user and downloaded by the function from online sources.}
 }
 \value{
-The function returns a list storing the following components \itemize{
- \item{dtm: }{Digital Terrain Model ('RasterLayer' class)}
- \item{isolines: }{contour line(s) representing the selected cost limit ('SpatialLinesDataFrame' class)}
- \item{origin_w_isolines_geom: }{copy of the input origin location(s) dataset with a new variable ('area') storing the
-   area values of the boundary calculated around each location}
+The function returns a list storing the following components
+\itemize{
+ \item dtm: Digital Terrain Model ('RasterLayer' class)
+ \item isolines: contour line(s) representing the selected cost limit ('SpatialLinesDataFrame' class)
+ \item origin_w_isolines_geom: copy of the input origin location(s) dataset with a new variable ('area') storing the
+   area values of the boundary calculated around each location
 }
 }
 \description{

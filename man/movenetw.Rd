@@ -103,18 +103,19 @@ movenetw(
 and downloaded by the function from online sources.}
 }
 \value{
-The function returns a list storing the following components \itemize{
- \item{dtm: }{Digital Terrain Model ('RasterLayer' class); returned only if acquired online}
- \item{LCPs.netw: }{list containing the LCPs ('SpatialLinesDataFrame' class) split by origin}
- \item{LCPs.netw.merged: }{'SpatialLinesDataFrame' corresponding to the merged LCPs}
- \item{LCPs.netw.neigh: }{list containing the LCPs between neighboring locations ('SpatialLinesDataFrame' class) split by origin}
- \item{LCPs.netw.merged: }{'SpatialLinesDataFrame' corresponding to the merged LCPs between neighboring locations}
- \item{LCPs.density.count: }{raster ('RasterLayer' class) representing the counts of LCPs on each raster's cell}
- \item{LCPs.density.perc: }{same as the preceding, but re-expressing the counts as percentages}
- \item{cost.matrix.min: }{matrix of cost between locations, expressing cost in minutes}
- \item{cost.matrix.hr: }{matrix of cost between locations, expressing cost in hours}
- \item{cost.matrix: }{matrix of cost between locations, expressing cost either in energy or abstract cost, depending on the
- used cost function}
+The function returns a list storing the following components
+\itemize{
+ \item dtm: Digital Terrain Model ('RasterLayer' class); returned only if acquired online
+ \item LCPs.netw: list containing the LCPs ('SpatialLinesDataFrame' class) split by origin
+ \item LCPs.netw.merged: 'SpatialLinesDataFrame' corresponding to the merged LCPs
+ \item LCPs.netw.neigh: list containing the LCPs between neighboring locations ('SpatialLinesDataFrame' class) split by origin
+ \item LCPs.netw.merged: 'SpatialLinesDataFrame' corresponding to the merged LCPs between neighboring locations
+ \item LCPs.density.count: raster ('RasterLayer' class) representing the counts of LCPs on each raster's cell
+ \item LCPs.density.perc: same as the preceding, but re-expressing the counts as percentages
+ \item cost.matrix.min: matrix of cost between locations, expressing cost in minutes
+ \item cost.matrix.hr: matrix of cost between locations, expressing cost in hours
+ \item cost.matrix: matrix of cost between locations, expressing cost either in energy or abstract cost, depending on the
+ used cost function
 }
 }
 \description{

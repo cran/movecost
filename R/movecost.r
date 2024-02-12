@@ -542,19 +542,20 @@
 #' are exported as shapefile; all the exported files (excluding the DTM) will bear a suffix corresponding to the cost function selected by the user.
 #' Note that the DTM is exported only if it was not provided by the user and downloaded by the function from online sources.
 #'
-#' @return The function returns a list storing the following components \itemize{
-##'  \item{dtm: }{Digital Terrain Model ('RasterLayer' class)}
-##'  \item{cost.surface: }{raster representing the cost-surface ('RasterLayer' class)}
-##'  \item{accumulated.cost.raster: }{raster representing the accumualted cost ('RasterLayer' class)}
-##'  \item{isolines: }{contour lines derived from the accumulated cost surface ('SpatialLinesDataFrame' class)}
-##'  \item{LCPs: }{estimated least-cost paths ('SpatialLinesDataFrame' class)}
-##'  \item{LCPs.back: }{estimated least-cost paths back to the origin ('SpatialLinesDataFrame' class)}
-##'  \item{LCPs$length: }{length of each least-cost path (units depend on the unit used in the input DTM)}
-##'  \item{LCPs.back$length: }{length of each least-cost path back to the origin (units depend on the unit used in the input DTM)}
-##'  \item{dest.loc.w.cost: }{copy of the input destination location(s) dataset with a new variable ('cost') added; if
+#' @return The function returns a list storing the following components
+#' \itemize{
+##'  \item dtm: Digital Terrain Model ('RasterLayer' class)
+##'  \item cost.surface: raster representing the cost-surface ('RasterLayer' class)
+##'  \item accumulated.cost.raster: raster representing the accumualted cost ('RasterLayer' class)
+##'  \item isolines: contour lines derived from the accumulated cost surface ('SpatialLinesDataFrame' class)
+##'  \item LCPs: estimated least-cost paths ('SpatialLinesDataFrame' class)
+##'  \item LCPs.back: estimated least-cost paths back to the origin ('SpatialLinesDataFrame' class)
+##'  \item LCPs$length: length of each least-cost path (units depend on the unit used in the input DTM)
+##'  \item LCPs.back$length: length of each least-cost path back to the origin (units depend on the unit used in the input DTM)
+##'  \item dest.loc.w.cost: copy of the input destination location(s) dataset with a new variable ('cost') added; if
 ##'  the cost is expressed in terms of time, the 'cost' variable will store the time values in decimal numbers, while another variable named
-##'  'cost_hms' will store the time values in sexagesimmal numbers (hours, minutes, seconds)}
-##'  \item{conductance: }{conductance 'Transitional Layer', returned because internally used by the \code{movenetw()} function}
+##'  'cost_hms' will store the time values in sexagesimmal numbers (hours, minutes, seconds)
+##'  \item conductance: conductance 'Transitional Layer', returned because internally used by the \code{movenetw()} function
 ##' }
 ##'
 ##'

@@ -111,11 +111,12 @@ the cost allocation raster will be exported as 'GeoTiff'; the DTM is exported on
 will bear a suffix corresponding to the cost function selected by the user.}
 }
 \value{
-The function returns a list storing the following components \itemize{
- \item{dtm: }{Digital Terrain Model ('RasterLayer' class)}
- \item{cost.allocation.raster: }{raster of the cost allocation ('RasterLayer' class)}
- \item{isolines: }{contour lines representing the accumulated cost around the origins ('SpatialLinesDataFrame' class); returned if the 'isolines' parameter is set to TRUE}
- \item{alloc.boundaries: }{polygons representing the allocation zones ('SpatialPolygonsDataFrame' class)}
+The function returns a list storing the following components
+\itemize{
+ \item dtm: Digital Terrain Model ('RasterLayer' class)
+ \item cost.allocation.raster: raster of the cost allocation ('RasterLayer' class)
+ \item isolines: contour lines representing the accumulated cost around the origins ('SpatialLinesDataFrame' class); returned if the 'isolines' parameter is set to TRUE
+ \item alloc.boundaries: polygons representing the allocation zones ('SpatialPolygonsDataFrame' class)
 }
 }
 \description{

@@ -87,10 +87,11 @@
 #' @param export TRUE or FALSE (default) if the user wants or does not want the output to be exported; if TRUE, the least-cost corridor and the DTM (if not provided by the user but acquired online)
 #' are expoerted as a GeoTiff file, while the LCPs as a shapefile layer. All the exported files (excluding the DTM) will bear a suffix corresponding to the cost function selected by the user.
 #'
-#' @return The function returns a list storing the following components \itemize{
-##'  \item{dtm: }{Digital Terrain Model ('RasterLayer' class); returned only if not provided by the user and acquired online instead}
-##'  \item{LCPs: }{least-cost paths ('SpatialLinesDataFrame' class) ranked from 1 (optimal) to 6 (sub-optimal LCPs)}
-##'  \item{lc.corr: }{least-cost corridor between the origin and destination location ('RasterLayer' class); returned if the \code{use.corr} parameter is set to \code{TRUE}}
+#' @return The function returns a list storing the following components
+#' \itemize{
+##'  \item dtm: Digital Terrain Model ('RasterLayer' class); returned only if not provided by the user and acquired online instead
+##'  \item LCPs: least-cost paths ('SpatialLinesDataFrame' class) ranked from 1 (optimal) to 6 (sub-optimal LCPs)
+##'  \item lc.corr: least-cost corridor between the origin and destination location ('RasterLayer' class); returned if the \code{use.corr} parameter is set to \code{TRUE}
 ##' }
 ##'
 #' @keywords moverank

@@ -119,11 +119,12 @@ movecomp(
 and downloaded by the function from online sources.}
 }
 \value{
-The function returns a list storing the following components \itemize{
- \item{dtm: }{Digital Terrain Model ('RasterLayer' class); returned only if acquired online}
- \item{LCPs: }{estimated least-cost paths ('SpatialLinesDataFrame' class); three variables are stored: 'length', 'cost', and
- 'funct'.}
- \item{LCPs.back: }{estimated least-cost paths back to the origin ('SpatialLinesDataFrame' class); three variables are stored; see above.}
+The function returns a list storing the following components
+\itemize{
+ \item dtm: Digital Terrain Model ('RasterLayer' class); returned only if acquired online
+ \item LCPs: estimated least-cost paths ('SpatialLinesDataFrame' class); three variables are stored: 'length', 'cost', and
+ 'funct'.
+ \item LCPs.back: estimated least-cost paths back to the origin ('SpatialLinesDataFrame' class); three variables are stored; see above.
 }
 }
 \description{
