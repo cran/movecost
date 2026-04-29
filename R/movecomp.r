@@ -79,6 +79,7 @@
 #' @param move number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).
 #' @param field value assigned to the cells coinciding with the barrier (0 by default) (see \code{\link{movecost}}.
 #' @param cogn.slp  TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see \code{\link{movecost}}).
+#' @param topo.dist TRUE or FALSE (default) if the user wants the cost calculation to use topographic (surface) distance rather than planar distance (see \code{\link{movecost}}).
 #' @param sl.crit critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see \code{\link{movecost}}).
 #' @param W walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
 #' @param L carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
@@ -132,7 +133,7 @@
 #' @seealso \code{\link{movecost}}
 #'
 #'
-movecomp <- function (dtm=NULL, origin, destin, studyplot=NULL, barrier=NULL, plot.barrier=FALSE, irregular.dtm=FALSE, choice, time="h", move=16, field=0, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, return.base=FALSE, leg.pos="topright", leg.cex=0.75, transp=0.5, add.chart=FALSE, oneplot=TRUE, export=FALSE){
+movecomp <- function (dtm=NULL, origin, destin, studyplot=NULL, barrier=NULL, plot.barrier=FALSE, irregular.dtm=FALSE, choice, time="h", move=16, field=0, cogn.slp=FALSE, topo.dist=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, return.base=FALSE, leg.pos="topright", leg.cex=0.75, transp=0.5, add.chart=FALSE, oneplot=TRUE, export=FALSE){
 
   #if no dtm is provided
   if (is.null(dtm)==TRUE) {
@@ -155,7 +156,7 @@ movecomp <- function (dtm=NULL, origin, destin, studyplot=NULL, barrier=NULL, pl
   #also, at each loop, store the corresponding function's cost and abbreviation in the newly created 'cost' and 'funct' field
   for (i in 1:n) {
     message(paste0("Wait...calculating the LCP(s) on the basis of '", choice[i],"' function"))
-    output.data <- movecost::movecost(dtm=dtm, origin=origin, destin=destin, barrier=barrier, irregular.dtm=irregular.dtm, funct=choice[i], time=time, move=move, field=field, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
+    output.data <- movecost::movecost(dtm=dtm, origin=origin, destin=destin, barrier=barrier, irregular.dtm=irregular.dtm, funct=choice[i], time=time, move=move, field=field, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
     lcp.paths[[i]] <- output.data$LCPs
     lcp.paths[[i]]$cost <- output.data$dest.loc.w.cost$cost
     lcp.paths[[i]]$funct <- choice[i]
@@ -177,7 +178,7 @@ movecomp <- function (dtm=NULL, origin, destin, studyplot=NULL, barrier=NULL, pl
     for (i in 1:n) {
       message(paste0("Wait...calculating the LCP(s) back to the origin on the basis of '", choice[i],"' function"))
       for (j in 1:length(destin)) {
-        output.data <- movecost::movecost(dtm=dtm, origin=destin[j,], destin=origin, barrier=barrier, irregular.dtm=irregular.dtm, funct=choice[i], time=time, move=move, field=field, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=TRUE, graph.out=FALSE)
+        output.data <- movecost::movecost(dtm=dtm, origin=destin[j,], destin=origin, barrier=barrier, irregular.dtm=irregular.dtm, funct=choice[i], time=time, move=move, field=field, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=TRUE, graph.out=FALSE)
         lcp.paths.back[[j]] <- output.data$LCPs
         lcp.paths.back[[j]]$cost <- output.data$dest.loc.w.cost$cost
         lcp.paths.back[[j]]$funct <- choice[i]

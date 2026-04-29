@@ -107,6 +107,7 @@
 #' @param move number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).
 #' @param field value assigned to the cells coinciding with the barrier (0 by default) (see \code{\link{movecost}}.
 #' @param cogn.slp  TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see \code{\link{movecost}}).
+#' @param topo.dist TRUE or FALSE (default) if the user wants the cost calculation to use topographic (surface) distance rather than planar distance (see \code{\link{movecost}}).
 #' @param sl.crit critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see \code{\link{movecost}}).
 #' @param W walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
 #' @param L carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
@@ -166,7 +167,7 @@
 #' @seealso \code{\link{movecost}}
 #'
 #'
-movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyplot=NULL, barrier=NULL, plot.barrier=FALSE, irregular.dtm=FALSE, funct="t", time="h", move=16, field=0, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, rescale=FALSE, transp=0.5, graph.out=TRUE, export=FALSE){
+movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyplot=NULL, barrier=NULL, plot.barrier=FALSE, irregular.dtm=FALSE, funct="t", time="h", move=16, field=0, cogn.slp=FALSE, topo.dist=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, rescale=FALSE, transp=0.5, graph.out=TRUE, export=FALSE){
 
   #if no dtm is provided
   if (is.null(dtm)==TRUE) {
@@ -182,10 +183,10 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
   if (length(a) < 2) {
 
   #calculate the accum cost surface and LCP around and from point a
-  res.a <- movecost::movecost(dtm=dtm, origin=a, destin=b, studyplot=studyplot, barrier=barrier, irregular.dtm=irregular.dtm, funct=funct, time=time, move=move, field=field, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
+  res.a <- movecost::movecost(dtm=dtm, origin=a, destin=b, studyplot=studyplot, barrier=barrier, irregular.dtm=irregular.dtm, funct=funct, time=time, move=move, field=field, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
 
   #calculate the accum cost surface and LCP around and from point b
-  res.b <- movecost::movecost(dtm=dtm, origin=b, destin=a, studyplot=studyplot, barrier=barrier, irregular.dtm=irregular.dtm, funct=funct, time=time, move=move, field=field, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
+  res.b <- movecost::movecost(dtm=dtm, origin=b, destin=a, studyplot=studyplot, barrier=barrier, irregular.dtm=irregular.dtm, funct=funct, time=time, move=move, field=field, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
 
   #combine the 2 accumulated cost surfaces obtained at the preceding steps
   res.corridor <- res.a$accumulated.cost.raster + res.b$accumulated.cost.raster
@@ -211,8 +212,8 @@ movecorr <- function (dtm=NULL, a, b, lab.a="A", lab.b="B", cex.labs=0.8, studyp
     #loop through all the locations to calculate the accumulated cost surfaces
     #and store them in the list
     for (i in 1:(ncol(pairw.list))) {
-      acc.cost.srf.a <- movecost::movecost(dtm=dtm, origin=a[pairw.list[,i][1],], studyplot=studyplot, barrier=barrier, irregular.dtm=irregular.dtm, funct=funct, time=time, move=move, field=field, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, return.base=FALSE, graph.out=FALSE)$accumulated.cost.raster
-      acc.cost.srf.b <- movecost::movecost(dtm=dtm, origin=a[pairw.list[,i][2],], studyplot=studyplot, barrier=barrier, irregular.dtm=irregular.dtm, funct=funct, time=time, move=move, field=field, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, return.base=FALSE, graph.out=FALSE)$accumulated.cost.raster
+      acc.cost.srf.a <- movecost::movecost(dtm=dtm, origin=a[pairw.list[,i][1],], studyplot=studyplot, barrier=barrier, irregular.dtm=irregular.dtm, funct=funct, time=time, move=move, field=field, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, return.base=FALSE, graph.out=FALSE)$accumulated.cost.raster
+      acc.cost.srf.b <- movecost::movecost(dtm=dtm, origin=a[pairw.list[,i][2],], studyplot=studyplot, barrier=barrier, irregular.dtm=irregular.dtm, funct=funct, time=time, move=move, field=field, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, return.base=FALSE, graph.out=FALSE)$accumulated.cost.raster
       corridors[[i]] <- acc.cost.srf.a + acc.cost.srf.b
       setTxtProgressBar(pb, i)
     }

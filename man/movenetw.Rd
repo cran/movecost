@@ -16,6 +16,7 @@ movenetw(
   move = 16,
   field = 0,
   cogn.slp = FALSE,
+  topo.dist = FALSE,
   sl.crit = 10,
   W = 70,
   L = 0,
@@ -82,6 +83,8 @@ movenetw(
 \item{field}{value assigned to the cells coinciding with the barrier (0 by default) (see \code{\link{movecost}}.}
 
 \item{cogn.slp}{TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see \code{\link{movecost}}).}
+
+\item{topo.dist}{TRUE or FALSE (default) if the user wants the cost calculation to use topographic (surface) distance rather than planar distance (see \code{\link{movecost}}).}
 
 \item{sl.crit}{critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see \code{\link{movecost}}).}
 

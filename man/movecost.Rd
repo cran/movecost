@@ -18,6 +18,7 @@ movecost(
   move = 16,
   field = 0,
   cogn.slp = FALSE,
+  topo.dist = FALSE,
   sl.crit = 10,
   W = 70,
   L = 0,
@@ -97,6 +98,8 @@ movecost(
 \item{field}{value assigned to the cells coinciding with the barrier (0 by default).}
 
 \item{cogn.slp}{TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see Details).}
+
+\item{topo.dist}{TRUE or FALSE (default) if the user wants the cost calculation to use topographic (surface) distance rather than planar distance. When TRUE, distances are corrected by the factor sqrt(1 + slope^2), accounting for the actual terrain surface. This is recommended for accurate walking-time estimates in rugged terrain (see Details).}
 
 \item{sl.crit}{critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see Details).}
 
@@ -279,6 +282,39 @@ following Pingel TJ (2013), Modeling Slope as a Contributor to Route Selection i
 According to Pingel, "Humans tend to overestimate geographic slopes by a surprisingly high margin...This analysis indicates downhill slopes are overestimated
 at approximately 2.3 times the vertical, while uphill slopes are overestimated at 2 times the vertical.". As a result,
 if the parameter \code{cogn.slp} is set to \code{TRUE}, positive slope values are preliminarily multiplied by 1.99, while negative slope values are multiplied by 2.31.
+
+
+\strong{Topographic (surface) distance}:\cr
+by default, \code{movecost()} calculates cost based on planar distance, which is the horizontal distance
+between cell centres as projected onto a flat plane. This approach ignores the additional distance
+incurred when traversing sloped terrain. When the parameter \code{topo.dist} is set to \code{TRUE},
+the function accounts for the actual surface distance travelled over the terrain.\cr
+
+The surface distance correction is calculated as: surface distance = planar distance * sqrt(1 + slope^2),
+where slope is expressed as rise/run (gradient). For example, on a 30% slope the surface distance
+increases by approximately 4.4%, while on a 50% slope it increases by approximately 11.8%.\cr
+
+\strong{Applicability to different cost functions}:\cr
+while the \code{topo.dist} parameter can be used with any cost function, its methodological
+appropriateness varies:\cr
+\itemize{
+  \item \strong{Recommended} for time-based hiking functions (\code{t}, \code{tofp}, \code{mp},
+  \code{icmonp}, \code{icmoffp}, \code{icfonp}, \code{icfoffp}, \code{gkrs}, \code{r}, \code{ks},
+  \code{ug}, \code{ma}, \code{alb}, \code{trp}): walking time logically depends on the actual
+  distance travelled over the terrain surface, making the correction clearly appropriate.
+  \item \strong{Use with caution} for metabolic energy expenditure functions (\code{p}, \code{pcf},
+  \code{vl}, \code{m}, \code{hrz}, \code{ls}, \code{a}, \code{h}): these equations were typically
+  derived from empirical studies that measured distance as planar (horizontal) distance. Applying
+  surface distance correction changes the model's original basis and may or may not improve accuracy.
+  Users should consider whether the original studies accounted for surface distance in their derivations.
+  \item \strong{Context-dependent} for abstract cost functions (\code{ree}, \code{b}, \code{e}, \code{wcs}):
+  these are theoretical constructs where appropriateness depends on whether the user conceptualises
+  cost as relating to actual surface traversal or to horizontal displacement.
+}
+
+In general, \code{topo.dist=TRUE} is most beneficial for analyses in mountainous or highly dissected
+terrain where slopes frequently exceed 20-30%. In gently undulating landscapes, the
+differences between planar and surface distance are negligible.\cr
 
 
 \strong{Terrain factor (N)}:\cr

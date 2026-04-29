@@ -16,6 +16,7 @@ movebound(
   field = 0,
   cont.value = NULL,
   cogn.slp = FALSE,
+  topo.dist = FALSE,
   sl.crit = 10,
   W = 70,
   L = 0,
@@ -84,6 +85,8 @@ movebound(
 \item{cont.value}{cost value represented by the calculated isoline(s) (NULL by default); if no value is supplied, it is set to 1/10 of the range of values of the accumulated cost surface.}
 
 \item{cogn.slp}{TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see \code{\link{movecost}}).}
+
+\item{topo.dist}{TRUE or FALSE (default) if the user wants the cost calculation to use topographic (surface) distance rather than planar distance (see \code{\link{movecost}}).}
 
 \item{sl.crit}{critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see \code{\link{movecost}}).}
 

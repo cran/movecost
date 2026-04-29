@@ -72,6 +72,7 @@
 #' @param lcp.n number of LCPs rendered in the output plot (min=1, max=6; 3 by default; the 1st LCP is the optimal one, while the LCPs from the 2nd to the 6th are the sub-optimal ones).
 #' @param move number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).
 #' @param cogn.slp  TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see \code{\link{movecost}}).
+#' @param topo.dist TRUE or FALSE (default) if the user wants the cost calculation to use topographic (surface) distance rather than planar distance (see \code{\link{movecost}}).
 #' @param sl.crit critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see \code{\link{movecost}}).
 #' @param W walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
 #' @param L carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
@@ -116,7 +117,7 @@
 #' @seealso \code{\link{movecost}}
 #'
 #'
-moverank <- function (dtm=NULL, origin, destin, studyplot=NULL, barrier=NULL, plot.barrier=FALSE, irregular.dtm=FALSE, funct="t", time="h", lcp.n=3, move=16, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, use.corr=FALSE, leg.pos="topright", leg.cex=0.55, add.chart=FALSE, bubble.cex=0.50, transp=0.5, export=FALSE){
+moverank <- function (dtm=NULL, origin, destin, studyplot=NULL, barrier=NULL, plot.barrier=FALSE, irregular.dtm=FALSE, funct="t", time="h", lcp.n=3, move=16, cogn.slp=FALSE, topo.dist=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, use.corr=FALSE, leg.pos="topright", leg.cex=0.55, add.chart=FALSE, bubble.cex=0.50, transp=0.5, export=FALSE){
 
   #if no dtm is provided
   if (is.null(dtm)==TRUE) {
@@ -155,7 +156,7 @@ moverank <- function (dtm=NULL, origin, destin, studyplot=NULL, barrier=NULL, pl
     message("Wait...calculating the optimal LCP...")
 
     #calculate the optimal LCP; if a barrier is provided, pass the barrier to the 'movecost()' function
-    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=barrier, irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
+    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=barrier, irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
     result[[1]] <- output.data$LCPs
     result[[1]]$rank <- 1
     result[[1]]$cost <- output.data$dest.loc.w.cost$cost
@@ -164,7 +165,7 @@ moverank <- function (dtm=NULL, origin, destin, studyplot=NULL, barrier=NULL, pl
 
     #calculate the 2nd (sub-optimal) LCP using the previous 1st (optimal) LCP as barrier;
     #note that the first slot of the barrier.copy list is used.
-    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=barrier.copy[[1]]+result[[1]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
+    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=barrier.copy[[1]]+result[[1]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
     result[[2]] <- output.data$LCPs
     result[[2]]$rank <- 2
     result[[2]]$cost <- output.data$dest.loc.w.cost$cost
@@ -173,7 +174,7 @@ moverank <- function (dtm=NULL, origin, destin, studyplot=NULL, barrier=NULL, pl
 
     #same as above, using the 1st and 2nd LCPs as barriers...
     #note that the second slot of the barrier.copy list is used.
-    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=barrier.copy[[2]]+result[[1]]+result[[2]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
+    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=barrier.copy[[2]]+result[[1]]+result[[2]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
     result[[3]] <- output.data$LCPs
     result[[3]]$rank <- 3
     result[[3]]$cost <- output.data$dest.loc.w.cost$cost
@@ -182,21 +183,21 @@ moverank <- function (dtm=NULL, origin, destin, studyplot=NULL, barrier=NULL, pl
 
     #same as above, using the 1st, 2nd, and 3rd LCPs as barriers...
     #note that the third slot of the barrier.copy list is used.
-    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=barrier.copy[[3]]+result[[1]]+result[[2]]+result[[3]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
+    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=barrier.copy[[3]]+result[[1]]+result[[2]]+result[[3]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
     result[[4]] <- output.data$LCPs
     result[[4]]$rank <- 4
     result[[4]]$cost <- output.data$dest.loc.w.cost$cost
 
     message("Wait...calculating sub-optimal LCP...4/5")
 
-    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=barrier.copy[[4]]+result[[1]]+result[[2]]+result[[3]]+result[[4]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
+    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=barrier.copy[[4]]+result[[1]]+result[[2]]+result[[3]]+result[[4]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
     result[[5]] <- output.data$LCPs
     result[[5]]$rank <- 5
     result[[5]]$cost <- output.data$dest.loc.w.cost$cost
 
     message("Wait...calculating sub-optimal LCP...5/5")
 
-    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=barrier.copy[[5]]+result[[1]]+result[[2]]+result[[3]]+result[[4]]+result[[5]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
+    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=barrier.copy[[5]]+result[[1]]+result[[2]]+result[[3]]+result[[4]]+result[[5]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
     result[[6]] <- output.data$LCPs
     result[[6]]$rank <- 6
     result[[6]]$cost <- output.data$dest.loc.w.cost$cost
@@ -208,7 +209,7 @@ moverank <- function (dtm=NULL, origin, destin, studyplot=NULL, barrier=NULL, pl
     message("Wait...calculating the optimal LCP...")
 
     #calculate the optimal LCP
-    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=NULL, irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
+    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=NULL, irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
     result[[1]] <- output.data$LCPs
     result[[1]]$rank <- 1
     result[[1]]$cost <- output.data$dest.loc.w.cost$cost
@@ -216,35 +217,35 @@ moverank <- function (dtm=NULL, origin, destin, studyplot=NULL, barrier=NULL, pl
     message("Wait...calculating sub-optimal LCP...1/5")
 
     #calculate the 2nd (sub-optimal) LCP using the previous 1st (optimal) LCP as barrier;
-    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=result[[1]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
+    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=result[[1]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
     result[[2]] <- output.data$LCPs
     result[[2]]$rank <- 2
     result[[2]]$cost <- output.data$dest.loc.w.cost$cost
 
     message("Wait...calculating sub-optimal LCP...2/5")
 
-    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=result[[1]]+result[[2]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
+    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=result[[1]]+result[[2]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
     result[[3]] <- output.data$LCPs
     result[[3]]$rank <- 3
     result[[3]]$cost <- output.data$dest.loc.w.cost$cost
 
     message("Wait...calculating sub-optimal LCP...3/5")
 
-    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=result[[1]]+result[[2]]+result[[3]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
+    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=result[[1]]+result[[2]]+result[[3]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
     result[[4]] <- output.data$LCPs
     result[[4]]$rank <- 4
     result[[4]]$cost <- output.data$dest.loc.w.cost$cost
 
     message("Wait...calculating sub-optimal LCP...4/5")
 
-    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=result[[1]]+result[[2]]+result[[3]]+result[[4]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
+    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=result[[1]]+result[[2]]+result[[3]]+result[[4]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
     result[[5]] <- output.data$LCPs
     result[[5]]$rank <- 5
     result[[5]]$cost <- output.data$dest.loc.w.cost$cost
 
     message("Wait...calculating sub-optimal LCP...5/5")
 
-    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=result[[1]]+result[[2]]+result[[3]]+result[[4]]+result[[5]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
+    output.data <- movecost(dtm=dtm, origin=origin, destin=destin, barrier=result[[1]]+result[[2]]+result[[3]]+result[[4]]+result[[5]], irregular.dtm=irregular.dtm, funct=funct, time=time, field=field, move=move, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
     result[[6]] <- output.data$LCPs
     result[[6]]$rank <- 6
     result[[6]]$cost <- output.data$dest.loc.w.cost$cost
@@ -441,7 +442,7 @@ moverank <- function (dtm=NULL, origin, destin, studyplot=NULL, barrier=NULL, pl
   } else {
     #...otherwise calculate the least-cost corridor...
     message("Wait...calculating the least-cost corridor")
-    lc.corr <- movecorr(dtm=dtm, a=origin, b=destin, funct=funct, time=time, move=move, barrier=barrier, irregular.dtm=irregular.dtm, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, transp=transp, graph.out = FALSE)$lc.corridor
+    lc.corr <- movecorr(dtm=dtm, a=origin, b=destin, funct=funct, time=time, move=move, barrier=barrier, irregular.dtm=irregular.dtm, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, transp=transp, graph.out = FALSE)$lc.corridor
     #...and plot it
     raster::plot(lc.corr,
                  main="Least-cost corridor with ranked Least-Cost Paths",

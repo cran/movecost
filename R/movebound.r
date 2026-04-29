@@ -88,6 +88,7 @@
 #' @param field value assigned to the cells coincidinng with the barrier (0 by default) (see \code{\link{movecost}}.
 #' @param cont.value cost value represented by the calculated isoline(s) (NULL by default); if no value is supplied, it is set to 1/10 of the range of values of the accumulated cost surface.
 #' @param cogn.slp  TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see \code{\link{movecost}}).
+#' @param topo.dist TRUE or FALSE (default) if the user wants the cost calculation to use topographic (surface) distance rather than planar distance (see \code{\link{movecost}}).
 #' @param sl.crit critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see \code{\link{movecost}}).
 #' @param W walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
 #' @param L carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
@@ -141,7 +142,7 @@
 #' @seealso \code{\link{movecost}}
 #'
 #'
-movebound <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, plot.barrier=FALSE, funct="t", time="h", move=16, field=0, cont.value=NULL, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, cont.lab=TRUE, transp=0.5, add.geom=FALSE, export=FALSE){
+movebound <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, plot.barrier=FALSE, funct="t", time="h", move=16, field=0, cont.value=NULL, cogn.slp=FALSE, topo.dist=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, cont.lab=TRUE, transp=0.5, add.geom=FALSE, export=FALSE){
 
   #if no dtm is provided
   if (is.null(dtm)==TRUE) {
@@ -153,7 +154,7 @@ movebound <- function (dtm=NULL, origin, studyplot=NULL, barrier=NULL, plot.barr
     dtm <- raster::crop(elev.data, studyplot)
   }
 
-  result <- movecost::movecost(dtm=dtm, origin=origin, studyplot=studyplot, barrier=barrier, funct=funct, time=time, move=move, field=field, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, graph.out=FALSE)$accumulated.cost.raster
+  result <- movecost::movecost(dtm=dtm, origin=origin, studyplot=studyplot, barrier=barrier, funct=funct, time=time, move=move, field=field, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, graph.out=FALSE)$accumulated.cost.raster
 
   #if no contour value is entered, set it to one tenth of the range of the values of the final accumulated cost surface
   if(is.null(cont.value)==TRUE){

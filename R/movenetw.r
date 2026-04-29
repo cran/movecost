@@ -75,6 +75,7 @@
 #' @param move number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).
 #' @param field value assigned to the cells coinciding with the barrier (0 by default) (see \code{\link{movecost}}.
 #' @param cogn.slp  TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see \code{\link{movecost}}).
+#' @param topo.dist TRUE or FALSE (default) if the user wants the cost calculation to use topographic (surface) distance rather than planar distance (see \code{\link{movecost}}).
 #' @param sl.crit critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see \code{\link{movecost}}).
 #' @param W walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
 #' @param L carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
@@ -128,7 +129,7 @@
 #' @seealso \code{\link{movecost}}
 #'
 #'
-movenetw <- function (dtm=NULL, origin, netw.type="allpairs", studyplot=NULL, barrier=NULL, plot.barrier=FALSE, irregular.dtm=FALSE, funct="t", move=16, field=0, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, lcp.dens=FALSE, transp=0.5, export=FALSE){
+movenetw <- function (dtm=NULL, origin, netw.type="allpairs", studyplot=NULL, barrier=NULL, plot.barrier=FALSE, irregular.dtm=FALSE, funct="t", move=16, field=0, cogn.slp=FALSE, topo.dist=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, lcp.dens=FALSE, transp=0.5, export=FALSE){
   #if no dtm is provided
   if (is.null(dtm)==TRUE) {
     #get the elvation data using the elevatr's get_elev_raster() function, using the studyplot dataset (SpatialPolygonDataFrame)
@@ -144,7 +145,7 @@ movenetw <- function (dtm=NULL, origin, netw.type="allpairs", studyplot=NULL, ba
   # by the gdistance's shortestPath() and costDistance() functions.
   # Only one origin location suffices to calculate the conductance.
   message("Wait...calculating the conductance...")
-  conductance.to.use <- movecost(dtm = dtm, origin = origin[1,], barrier=barrier, irregular.dtm=irregular.dtm, funct = funct, move = move, field=field, sl.crit = sl.crit, W = W, L = L, N = N, V = V, graph.out = FALSE)$conductance
+  conductance.to.use <- movecost(dtm = dtm, origin = origin[1,], barrier=barrier, irregular.dtm=irregular.dtm, funct = funct, move = move, field=field, topo.dist=topo.dist, sl.crit = sl.crit, W = W, L = L, N = N, V = V, graph.out = FALSE)$conductance
 
   if (netw.type=="allpairs") {
     #create an empty list to store the computed LCPs

@@ -127,6 +127,39 @@
 #' if the parameter \code{cogn.slp} is set to \code{TRUE}, positive slope values are preliminarily multiplied by 1.99, while negative slope values are multiplied by 2.31.
 #'
 #'
+#' \strong{Topographic (surface) distance}:\cr
+#' by default, \code{movecost()} calculates cost based on planar distance, which is the horizontal distance
+#' between cell centres as projected onto a flat plane. This approach ignores the additional distance
+#' incurred when traversing sloped terrain. When the parameter \code{topo.dist} is set to \code{TRUE},
+#' the function accounts for the actual surface distance travelled over the terrain.\cr
+#'
+#' The surface distance correction is calculated as: surface distance = planar distance * sqrt(1 + slope^2),
+#' where slope is expressed as rise/run (gradient). For example, on a 30% slope the surface distance
+#' increases by approximately 4.4%, while on a 50% slope it increases by approximately 11.8%.\cr
+#'
+#' \strong{Applicability to different cost functions}:\cr
+#' while the \code{topo.dist} parameter can be used with any cost function, its methodological
+#' appropriateness varies:\cr
+#' \itemize{
+#'   \item \strong{Recommended} for time-based hiking functions (\code{t}, \code{tofp}, \code{mp},
+#'   \code{icmonp}, \code{icmoffp}, \code{icfonp}, \code{icfoffp}, \code{gkrs}, \code{r}, \code{ks},
+#'   \code{ug}, \code{ma}, \code{alb}, \code{trp}): walking time logically depends on the actual
+#'   distance travelled over the terrain surface, making the correction clearly appropriate.
+#'   \item \strong{Use with caution} for metabolic energy expenditure functions (\code{p}, \code{pcf},
+#'   \code{vl}, \code{m}, \code{hrz}, \code{ls}, \code{a}, \code{h}): these equations were typically
+#'   derived from empirical studies that measured distance as planar (horizontal) distance. Applying
+#'   surface distance correction changes the model's original basis and may or may not improve accuracy.
+#'   Users should consider whether the original studies accounted for surface distance in their derivations.
+#'   \item \strong{Context-dependent} for abstract cost functions (\code{ree}, \code{b}, \code{e}, \code{wcs}):
+#'   these are theoretical constructs where appropriateness depends on whether the user conceptualises
+#'   cost as relating to actual surface traversal or to horizontal displacement.
+#' }
+#'
+#' In general, \code{topo.dist=TRUE} is most beneficial for analyses in mountainous or highly dissected
+#' terrain where slopes frequently exceed 20-30%. In gently undulating landscapes, the
+#' differences between planar and surface distance are negligible.\cr
+#'
+#'
 #' \strong{Terrain factor (N)}:\cr
 #' virtually all the implemented cost functions (with few exceptions) can take into account a 'terrain factor' (\code{N} parameter; 1 by default), which
 #' represents the easiness/difficulty of moving on different terrain types. According to the type of terrain, the energy spent when walking
@@ -521,6 +554,7 @@
 #' @param move number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).
 #' @param field value assigned to the cells coinciding with the barrier (0 by default).
 #' @param cogn.slp  TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see Details).
+#' @param topo.dist TRUE or FALSE (default) if the user wants the cost calculation to use topographic (surface) distance rather than planar distance. When TRUE, distances are corrected by the factor sqrt(1 + slope^2), accounting for the actual terrain surface. This is recommended for accurate walking-time estimates in rugged terrain (see Details).
 #' @param sl.crit critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see Details).
 #' @param W walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see Details).
 #' @param L carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see Details).
@@ -612,7 +646,7 @@
 #' @seealso \code{\link[elevatr]{get_elev_raster}}, \code{\link{movecorr}}, \code{\link{movebound}}, \code{\link{movealloc}},  \code{\link{movecomp}}, \code{\link{movenetw}}, \code{\link{moverank}}
 #'
 #'
-movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, barrier=NULL, plot.barrier=FALSE, irregular.dtm=FALSE, funct="t", time="h", outp="r", move=16, field=0, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, return.base=FALSE, rb.lty=2, breaks=NULL, cont.lab=TRUE, destin.lab=TRUE, cex.breaks=0.6, cex.lcp.lab=0.6, graph.out=TRUE, transp=0.5, oneplot=TRUE, export=FALSE){
+movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, barrier=NULL, plot.barrier=FALSE, irregular.dtm=FALSE, funct="t", time="h", outp="r", move=16, field=0, cogn.slp=FALSE, topo.dist=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, return.base=FALSE, rb.lty=2, breaks=NULL, cont.lab=TRUE, destin.lab=TRUE, cex.breaks=0.6, cex.lcp.lab=0.6, graph.out=TRUE, transp=0.5, oneplot=TRUE, export=FALSE){
 
   #deactivate the warning messages because a warning that can be safely ignored will be produced by the procedure
   #used to get slope as rise over run
@@ -640,6 +674,16 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, barrier=NUL
   # and negative slope values (ie. down-hill movement) multiplied by 2.31
   if (cogn.slp==TRUE) {
     slope@transitionMatrix@x <- ifelse(slope@transitionMatrix@x > 0, slope@transitionMatrix@x * 1.99, slope@transitionMatrix@x * 2.31)
+  }
+
+  #if 'topo.dist' is TRUE, compute the surface distance correction factor
+  #surface_distance = planar_distance * sqrt(1 + slope^2)
+  #this correction factor will be applied later to adjust conductance values
+  if (topo.dist==TRUE) {
+    #compute correction factor: sqrt(1 + slope^2)
+    #since slope is rise/run, this gives us the ratio of surface distance to planar distance
+    surf_corr <- slope
+    surf_corr@transitionMatrix@x <- sqrt(1 + slope@transitionMatrix@x^2)
   }
 
   #define different types of cost functions and set the appropriate text to be used for subsequent plotting
@@ -1028,6 +1072,15 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, barrier=NUL
     #correct the speed values taking into account the distance between cell centers
     Conductance <- gdistance::geoCorrection(speed)
 
+    #if 'topo.dist' is TRUE, adjust conductance to account for surface (topographic) distance
+    #for speed-based functions: conductance represents speed (distance/time)
+    #when using surface distance, the actual distance travelled is longer by factor sqrt(1+slope^2)
+    #therefore, effective speed (surface_distance/time) requires dividing by the correction factor
+    #since gdistance uses conductance (higher = easier movement), we divide by surf_corr
+    if (topo.dist==TRUE) {
+      Conductance@transitionMatrix@x <- Conductance@transitionMatrix@x / surf_corr@transitionMatrix@x
+    }
+
     if (irregular.dtm==TRUE) {
       dtm.copy <- dtm
 
@@ -1082,6 +1135,15 @@ movecost <- function (dtm=NULL, origin, destin=NULL, studyplot=NULL, barrier=NUL
 
     #correct the cost values taking into account the distance between cell centers
     Conductance <- gdistance::geoCorrection(cost)
+
+    #if 'topo.dist' is TRUE, adjust conductance to account for surface (topographic) distance
+    #for cost functions expressed as 1/cost: conductance is the reciprocal of cost
+    #when using surface distance, the distance component increases by factor sqrt(1+slope^2)
+    #since these functions use 1/cost and gdistance accumulates 1/conductance,
+    #we divide conductance by surf_corr (which increases the accumulated cost appropriately)
+    if (topo.dist==TRUE) {
+      Conductance@transitionMatrix@x <- Conductance@transitionMatrix@x / surf_corr@transitionMatrix@x
+    }
 
     if (irregular.dtm==TRUE) {
       dtm.copy <- dtm

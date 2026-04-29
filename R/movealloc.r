@@ -64,6 +64,7 @@
 #' @param time time-unit expressed by the isoline(s) if Tobler's and other time-related cost functions are used; h' for hour, 'm' for minutes.
 #' @param move number of directions in which cells are connected: 4 (rook's case), 8 (queen's case), 16 (knight and one-cell queen moves; default).
 #' @param cogn.slp  TRUE or FALSE (default) if the user wants or does not want the 'cognitive slope' to be used in place of the real slope (see \code{\link{movecost}}).
+#' @param topo.dist TRUE or FALSE (default) if the user wants the cost calculation to use topographic (surface) distance rather than planar distance (see \code{\link{movecost}}).
 #' @param sl.crit critical slope (in percent), typically in the range 8-16 (10 by default) (used by the wheeled-vehicle cost function; see \code{\link{movecost}}).
 #' @param W walker's body weight (in Kg; 70 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
 #' @param L carried load weight (in Kg; 0 by default; used by the Pandolf's and Van Leusen's cost function; see \code{\link{movecost}}).
@@ -124,7 +125,7 @@
 #' @seealso \code{\link{movecost}}
 #'
 #'
-movealloc <- function (dtm=NULL, origin, studyplot=NULL, funct="t", time="h", move=16, cogn.slp=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, isolines=FALSE, breaks=NULL, cont.lab=TRUE, cex.breaks=0.6, leg.alloc=FALSE, leg.pos="topright", cex.leg=0.75, transp=0.5, export=FALSE){
+movealloc <- function (dtm=NULL, origin, studyplot=NULL, funct="t", time="h", move=16, cogn.slp=FALSE, topo.dist=FALSE, sl.crit=10, W=70, L=0, N=1, V=1.2, z=9, isolines=FALSE, breaks=NULL, cont.lab=TRUE, cex.breaks=0.6, leg.alloc=FALSE, leg.pos="topright", cex.leg=0.75, transp=0.5, export=FALSE){
 
   #if no dtm is provided
   if (is.null(dtm)==TRUE) {
@@ -141,7 +142,7 @@ movealloc <- function (dtm=NULL, origin, studyplot=NULL, funct="t", time="h", mo
   rasters_to_stack <- list()
 
   for (i in 1:length(origin)) {
-    rasters_to_stack[[i]] <- movecost::movecost(dtm=dtm, origin=origin[i,], studyplot=studyplot, funct=funct, time=time, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)$accumulated.cost.raster
+    rasters_to_stack[[i]] <- movecost::movecost(dtm=dtm, origin=origin[i,], studyplot=studyplot, funct=funct, time=time, move=move, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)$accumulated.cost.raster
   }
 
   #stack the accumulated cost rasters created in the previous loop
@@ -393,7 +394,7 @@ movealloc <- function (dtm=NULL, origin, studyplot=NULL, funct="t", time="h", mo
   #if isolines is TRUE
   if(isolines==TRUE){
     #calculate the accumulated cost surface considering all the origin locations
-    acc_cost_all_orig <- movecost::movecost(dtm=dtm, origin=origin, studyplot=studyplot, funct=funct, time=time, move=move, cogn.slp=cogn.slp, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
+    acc_cost_all_orig <- movecost::movecost(dtm=dtm, origin=origin, studyplot=studyplot, funct=funct, time=time, move=move, cogn.slp=cogn.slp, topo.dist=topo.dist, sl.crit=sl.crit, W=W, L=L, N=N, V=V, z=z, return.base=FALSE, graph.out=FALSE)
 
     #if no break value is entered, set the breaks to one tenth of the range of the values of the final accumulated cost surface
     if(is.null(breaks)==TRUE){
