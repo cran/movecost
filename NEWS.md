@@ -1,10 +1,306 @@
-# movecost 2.2:
+# movecost 3.0.0
 
-* Added `topo.dist` parameter to `movecost()`: when set to `TRUE`, the function calculates accumulated cost using topographic (surface) distance rather than planar (horizontal) distance. This accounts for the additional distance incurred when traversing sloped terrain, providing more realistic walking-time estimates in mountainous areas. The correction is calculated as surface distance = planar distance times the square root of (1 + slope squared). For example, on a 30% slope, surface distance is approximately 4.4% greater than planar distance; on a 50% slope, approximately 11.8% greater.
+A ground-up redesign of the package's architecture, while retaining all the
+analytical capabilities (and the 26 cost functions) of the previous releases.
+The baseline for the comparisons below is the last version published on CRAN,
+movecost 2.2.
 
-* The `topo.dist` parameter works with all available cost functions, though it is particularly recommended for time-based hiking functions. Users should exercise caution when applying it to metabolic energy expenditure functions, as these were typically derived empirically using planar distance measurements.
+## New architecture: compute once, reuse everywhere
 
-* Added detailed documentation section explaining the topographic distance methodology, its mathematical basis, and guidance on appropriateness for different cost function types.
+* New `mc_surface()` builds the cost graph once; every analysis function
+  (`mc_accum()`, `mc_paths()`, `mc_corridor()`, `mc_boundary()`, `mc_alloc()`,
+  `mc_network()`, `mc_rank()`) reuses it. In the 2.x series each call to
+  `movecost()`, `movecorr()`, `movealloc()`, `movebound()`, `movenetw()`,
+  `moverank()` rebuilt the conductance matrix from scratch (an n-location
+  network implied O(n) redundant constructions); that redundancy is gone.
+* Multi-origin computations (allocation, boundaries, cost matrices) are
+  served by single batched Dijkstra queries (igraph).
 
-* Propagated the new `topo.dist` parameter to all wrapper functions that rely on `movecost()` as internal workhorse: `movealloc()`, `movebound()`, `movecomp()`, `movecorr()`, `movenetw()`, and `moverank()`. Users can now control whether topographic (surface) or planar distance is used directly from each wrapper. The default value (`topo.dist = FALSE`) preserves backward compatibility, so existing code continues to behave exactly as in version 2.1.
+## Modern spatial stack
 
+* The computational core now rests on terra + sf + igraph. The retired or
+  maintenance-mode dependencies of the 2.x series (raster, sp, gdistance,
+  chron, Matrix as a direct import, elevatr as a hard dependency) are gone;
+  elevatr is now an optional (Suggested) dependency used only by `mc_dtm()`.
+* Legacy sp/raster inputs are still accepted everywhere and coerced
+  internally, so existing data files keep working.
+* Sample datasets are now shipped as standard GIS files (GeoTIFF/GeoPackage,
+  read via `mc_volc()`, `mc_malta_dtm()`, `mc_volc_loc()`, `mc_destin_loc()`,
+  `mc_springs()`, `mc_etna_start()`, `mc_etna_end()`, `mc_etna_boundary()`),
+  removing the last data-level dependency on raster/sp.
+
+## Decoupled, ggplot2-based visualisation
+
+* Computation and visualisation are fully separated: every result object is
+  plotted on demand via `plot()` / `autoplot()` methods returning ggplot
+  objects, which can be stored, customised with standard ggplot2 syntax, and
+  re-drawn at will - without re-running any analysis (in 2.x, obtaining a new
+  visualisation required re-running the computation).
+* Styling is exposed through plot arguments: isoline colour and width
+  (`iso.col`, default white, `iso.lwd`), least-cost-path width (`lcp.lwd`),
+  and label sizes (`cex.breaks` for isoline labels, `cex.lcp.lab` for
+  destination labels, `cex.node.lab` / `cex.origin.lab` for network and
+  allocation labels).
+* Network nodes and allocation origins are labelled with their indices by
+  default (`node.lab`, `origin.lab`), matching `cost.matrix` and the
+  allocation zones respectively, reproducing the 2.x numbering.
+
+## Corrected cost-function errors (results change because 2.2 was wrong)
+
+These are fixes to mistakes present in the last CRAN release (movecost 2.2),
+verified against the source publications. Analyses using the affected
+functions will give different (correct) results.
+
+* Kondo-Seino (`ks`), Marin Arroyo (`ma`), and Pandolf-with-correction
+  (`pcf`): the slope-sign tests are now applied to the signed slope, as the
+  original publications intend. In 2.2 those tests were applied to the
+  absolute slope, so the downhill branches (the gentler `ks` decay, the
+  gentler `ma` divisor, the Yokota et al. downhill correction in `pcf`)
+  could never be selected. Results on downhill gradients therefore differ -
+  correctly - from 2.2.
+* Pandolf-family functions (`p`, `vl`): the terrain factor N is now applied
+  once, as the coefficient eta of Pandolf et al. (1977), multiplying the
+  velocity-dependent term; 2.2 additionally multiplied the whole expression
+  by N, counting terrain twice and inflating the basal-metabolism terms.
+  With the default N = 1 results are unchanged; for N != 1 they differ
+  (correctly) from 2.2.
+* Hare metabolic cost function (`funct = "h"`): the 2.2 code contained a
+  double-reciprocal that reduced algebraically to `1 / ((48 + 30 * v) * N)`
+  rather than the intended `1 / ((48 + 30 / v) * N)`, where `v` is the
+  cell-by-cell on-path Tobler walking speed. The corrected formula reproduces
+  the body-mass-anchored approximation of Ralston (1958) cited by Hare (2004),
+  agreeing with it to within ~5% across 2-6 km/h (the 2.2 code diverged by a
+  factor of three or more). The plotted cost-unit label is corrected from
+  "cal/km" to "kcal/km" to match.
+* Metabolic functions with dynamic speed (`funct = "vl"`, `"p"`, `"pcf"`,
+  `"a"` with `V = 0`): in 2.2 the value substituted for the velocity was the
+  reciprocal of Tobler's on-path speed rather than the speed itself,
+  mis-stating the metabolic rate (about half the canonical value on flat
+  ground, a multiple on steep terrain). Version 3.0 substitutes Tobler's speed
+  in m/s directly. Results obtained with `V = 0` therefore differ from 2.2;
+  analyses using a non-zero `V` (including the default 1.2) are unaffected.
+
+## Design changes and enhancements (method improved or generalised)
+
+These are deliberate refinements of how a result is produced. Where 2.x
+followed a specific published method, the 2.x behaviour is preserved as the
+default and the refinement is offered as an option.
+
+* Least-cost corridors (`mc_corridor()`): the classic definition of the 2.x
+  series, the sum of two accumulated cost surfaces spread outward from the two
+  locations after Mitchell (2012), is kept as the default
+  (`method = "reach"`), is symmetric, and reproduces 2.x. A new
+  `method = "through"` option adds a directional alternative,
+  `cost(A->x) + cost(x->B)` (the second term on the reversed graph), whose
+  minimum equals the A-to-B least-cost-path cost; it is intended for one-way
+  journey analysis under anisotropic cost functions. The two coincide for
+  isotropic functions. For the two-location case the least-cost paths A-to-B
+  and B-to-A are computed, returned, and overlaid on the plot, as in 2.x.
+* Cost-limit boundaries (`mc_boundary()`): the boundary is now obtained by
+  polygonising the reachable area directly (cells at or below the limit),
+  yielding closed polygons with exact area and perimeter; 2.x derived it from
+  contour lines of the accumulated surface. The result is a more rigorous,
+  measurable catchment polygon.
+* Ranked sub-optimal paths (`mc_rank()`): same iterative-penalisation idea as
+  2.x's `moverank()`, but operating directly on the graph edge weights, so any
+  number of ranks can be requested (2.x was capped at 6) and the avoidance
+  strength is exposed through a tunable `penalty` parameter.
+* Irregular DTMs: NoData cells are excluded from the cost graph by
+  construction, so accumulated costs and paths never cross them and the
+  `irregular.dtm` workaround (and parameter) of 2.x is no longer needed.
+* Least-cost networks (`mc_network()`): the path-density rasters are computed
+  exactly from the graph vertices of each path (no rasterisation
+  approximation), and the network nodes are numbered on the plot and in the
+  returned `nodes` object, matching the row/column indices of `cost.matrix`,
+  as in 2.x.
+* Sample data: the bundled datasets carry explicit EPSG codes (e.g. Etna
+  EPSG:23032, verified to fall on Mount Etna; volc EPSG:27200; Malta
+  EPSG:23033), so their CRS is encoded identically across the GeoTIFF and
+  GeoPackage files.
+
+## Other improvements
+
+* Exports now use GeoPackage instead of ESRI shapefile (no 10-character
+  field-name truncation); `mc_export()` handles every result class.
+* `mc_save()`/`mc_load()` provide reliable on-disk persistence of result
+  objects (SpatRaster components cannot survive a bare `saveRDS()`).
+* `mc_cost_functions()` returns the full annotated registry of the 26 cost
+  functions (codes, families, units, parameter usage), which is also the
+  single internal source of cost-function definitions (in 2.x the
+  definitions were duplicated across functions).
+* Walking-time formatting no longer depends on chron (internal HH:MM:SS
+  formatter).
+* Informative validation errors: geographic-CRS rasters, CRS mismatches,
+  locations outside the DTM or on NoData cells, unknown cost-function codes.
+* Comprehensive testthat suite with analytic and consistency checks, plus
+  independent validation materials in `inst/validation/`.
+
+## API correspondence with the 2.x series
+
+| movecost 2.x                  | movecost 3.0                                |
+|-------------------------------|---------------------------------------------|
+| `movecost()` (accumulated)    | `mc_surface()` + `mc_accum()`               |
+| `movecost()` (LCPs)           | `mc_surface()` + `mc_paths()`               |
+| `movecorr()`                  | `mc_corridor()`                             |
+| `movebound()`                 | `mc_boundary()`                             |
+| `movealloc()`                 | `mc_alloc()`                                |
+| `movenetw()`                  | `mc_network()`                              |
+| `moverank()`                  | `mc_rank()`                                 |
+| `movecomp()`                  | `mc_comp()`                                 |
+| `studyplot=` (download DTM)   | `mc_dtm()` (or `studyplot=` in `mc_surface()`) |
+| `export=TRUE`                 | `mc_export()`                               |
+
+# movecost 2.2
+
+* Added the `topo.dist` parameter to `movecost()`: when TRUE, accumulated cost
+  uses topographic (surface) distance rather than planar distance, accounting
+  for the extra distance over sloped terrain (surface = planar * sqrt(1 +
+  slope^2); about +4.4% on a 30% slope, +11.8% on a 50% slope). Particularly
+  recommended for time-based hiking functions; to be used with caution for
+  metabolic functions, which were derived against planar distance.
+* Added a documentation section explaining the methodology and its
+  appropriateness per cost-function type.
+* Propagated `topo.dist` to all wrapper functions (`movealloc()`,
+  `movebound()`, `movecomp()`, `movecorr()`, `movenetw()`, `moverank()`); the
+  default `FALSE` preserves backward compatibility.
+
+# movecost 2.1
+
+* Resolved lost-braces issues in `\itemize` sections across several Rd files.
+* Corrected the `create_barrier_cs` documentation (missing `fields` argument
+  in `\usage`).
+* Minor help-documentation amendments.
+
+# movecost 2.0
+
+* Integrated `create_barrier_cs` (from an earlier version of the
+  'leastcostpath' package) as an internal function; dependency on
+  'leastcostpath' dropped; dependency on 'Matrix' added.
+* Minor fixes and documentation amendments.
+
+# movecost 1.9
+
+* Added the `netw.type` parameter to `movenetw()`.
+* Documentation amendments for the `origin`/`destination` parameters.
+* Dropped the dependence on 'rgdal', 'maptools', 'rgeos', 'spatstat.geom'.
+
+# movecost 1.8
+
+* Added the `moverank()` function.
+* Added the facility (via `irregular.dtm`) to prevent LCPs crossing NoData
+  (sea) areas.
+* Added length/cost distribution charts to `movecomp()` (via `add.chart`); the
+  returned LCPs now store the `cost`.
+* Fixed the closest-location calculation in `movenetw()`.
+* Added the Tripcevich hiking function; added the `malta_dtm_40` and `springs`
+  datasets.
+* Replaced the hillshade with a slopeshade raster in all rendered plots.
+* Documentation updates.
+
+# movecost 1.7
+
+* Added the Hare metabolic and Eastman abstract cost functions (25 functions
+  total).
+* Added barrier handling to all functions except `movealloc()`.
+* `movecost()` returns the conductance transitional layer (used to optimise
+  `movenetw()`).
+* `movenetw()` also computes LCP networks between neighbouring locations and
+  returns a pairwise cost matrix; internal optimisation (~3x faster than 1.6);
+  `oneplot` dropped; export fix.
+* Documentation fixes; vignette link added throughout.
+
+# movecost 1.6
+
+* Fixed a projection issue in the in-built `volc` dataset.
+* Internal optimisations in `movenetw()`.
+* Documentation improvements.
+
+# movecost 1.5
+
+* `movenetw()`: fixed exported-GeoTiff naming; documentation tweaks.
+* Added the `volc` RasterLayer to the sample datasets.
+
+# movecost 1.4
+
+* Added `movecomp()` and `movenetw()`.
+* Added cost functions: Minetti et al., Marin Arroyo, Ardigo et al., Pandolf
+  et al. with correction factor (23 functions total).
+* Added perimeter/area output to `movebound()`.
+
+# movecost 1.3
+
+* Added `movealloc()`.
+* Added the Kondo-Seino modified Tobler function.
+* Pandolf and Van Leusen functions can derive walking speed from the Tobler
+  function by setting `V = 0`.
+* `movecorr()` plots point locations on top of the multi-origin corridor.
+
+# movecost 1.2
+
+* Added `movebound()`.
+* Overlaid a hillshade on the rendered surfaces (transparency via `transp`).
+* LCP destination labels show time in sexagesimal form; added the `cost_hms`
+  variable to the returned destination layer; that layer is now exportable.
+* Minor plot and documentation amendments.
+
+# movecost 1.1
+
+* Fixed the Bellavia cost function (introduced in 1.0).
+* Extended the terrain factor (N) to almost all cost functions.
+* Plot and documentation improvements.
+
+# movecost 1.0
+
+* Added the option to compute and plot LCPs back to the origin.
+* Added the Garmy et al., Rees, and Bellavia cost functions (18 total).
+* Documentation updates with references.
+
+# movecost 0.9
+
+* `movecorr()` can produce a corridor between two locations or among multiple
+  locations; added the 0-1 rescaling option.
+* Added the 'cognitive slope' option to `movecost()` and `movecorr()`.
+
+# movecost 0.8
+
+* Fixed a bug preventing the downloaded DTM being returned by `movecorr()`.
+* Added point-label customisation and optional export of DTM, LCPs, and
+  accumulated surfaces to `movecorr()`; the accumulated rasters are now
+  returned.
+* `movecost()` now returns (without plotting) the cost surface.
+* Minor optimisations and documentation amendments.
+
+# movecost 0.7
+
+* Added `movecorr()`; added the `graph.out` option to `movecost()`; renamed the
+  Marquez-Perez function code from `mt` to `mp`.
+
+# movecost 0.6
+
+* Added online elevation-data download (via 'elevatr') when no DTM is supplied;
+  added three sample datasets; documentation updated.
+
+# movecost 0.5
+
+* Added the Irmischer-Clarke female functions; renamed the parameters to
+  `icmonp`, `icmoffp`, `icfonp`, `icfoffp`; documentation layout improvements.
+
+# movecost 0.4
+
+* Added the `move` parameter (number of directions in which cells connect).
+
+# movecost 0.3
+
+* Added the Llobera-Sluckin metabolic function and the Alberti modified Tobler
+  function for animal foraging excursions.
+
+# movecost 0.2
+
+* Cost calculation now follows van Etten (2017), computing slope as the
+  altitudinal difference between cells divided by the distance between cell
+  centres (rise over run, direction-dependent), making the cost functions
+  truly anisotropic. Output colour ramp changed.
+
+# movecost 0.1
+
+* First release to CRAN.

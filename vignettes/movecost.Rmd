@@ -1,0 +1,412 @@
+---
+title: "movecost 3.0: a task-based guide"
+author: "Gianmarco Alberti"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{movecost 3.0: a task-based guide}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 6,
+  dpi = 96,
+  fig.align = "center"
+)
+# Build the figures only if the spatial stack is present, so the vignette
+# never fails on a minimal check machine.
+have_deps <- requireNamespace("terra", quietly = TRUE) &&
+  requireNamespace("sf", quietly = TRUE) &&
+  requireNamespace("igraph", quietly = TRUE) &&
+  requireNamespace("ggplot2", quietly = TRUE)
+knitr::opts_chunk$set(eval = have_deps)
+```
+
+## Introduction
+
+This vignette shows the use of the `movecost` package through a sequence of
+practical tasks, in the same question-and-answer spirit as the guide that
+accompanied the 2.x series. In-built datasets are used throughout, so that you
+can reproduce every example. For full details of each function, its
+parameters, returned values, and references, see the package help
+documentation (start at `?movecost`).
+
+If you are coming from the 2.x series, two changes shape everything below.
+
+**1. Compute the cost surface once, then reuse it.** In 2.x each function
+(`movecost()`, `movecorr()`, and so on) rebuilt the movement-cost surface from
+scratch every time it was called. In 3.0 you build that surface once with
+`mc_surface()`, and every analysis function takes it as its first argument and
+reuses it. Parameters that define the cost of movement (the cost function
+`funct`, the connectivity `move`, the terrain factor `N`, the body/load/speed
+parameters `W`, `L`, `V`, the critical slope `sl.crit`, the cognitive-slope and
+topographic-distance switches, and any `barrier`) belong to `mc_surface()`.
+Parameters that only affect accumulation, units, or display (the origin, the
+time unit, the isoline interval) belong to the analysis and plot functions. If
+you change a cost-defining parameter you rebuild the surface; if you only
+change the unit or the breaks you do not.
+
+**2. Visualise on demand.** Every analysis function returns an object that
+*stores* its result; nothing is drawn until you call `plot()` on it. The plot
+is a `ggplot` object, so you can restyle it, add layers, and redraw it without
+re-running the analysis (in 2.x, a new look meant a new computation).
+
+```{r start}
+library(movecost)
+
+dtm    <- mc_volc()        # sample DTM (a volcano), a terra SpatRaster
+origin <- mc_volc_loc()    # a start location, an sf point
+destin <- mc_destin_loc()  # nine destination locations, sf points
+```
+
+## Task 1. Given an origin, how do I calculate an accumulated cost surface?
+
+Build the surface once with `mc_surface()`, then accumulate cost outward from
+the origin with `mc_accum()`. Here the cost is walking time (Tobler's on-path
+hiking function, `funct = "t"`), the time unit is minutes, and the isochrone
+interval is 2 minutes.
+
+```{r task1}
+surf <- mc_surface(dtm, funct = "t", move = 16)
+acc  <- mc_accum(surf, origin = origin, time = "m", breaks = 2)
+plot(acc)
+```
+
+The isolines are white by default so that they read against the dark low-cost
+core; `plot(acc, type = "contour")` draws the isolines alone.
+
+## Task 2. Can I use a terrain factor for a given terrain type?
+
+Yes. The terrain factor `N` defines the cost of movement, so it is set on
+`mc_surface()`; everything else is unchanged. Here `N = 1.19` corresponds to
+loose beach sand.
+
+```{r task2}
+surf_N <- mc_surface(dtm, funct = "t", move = 16, N = 1.19)
+acc_N  <- mc_accum(surf_N, origin = origin, time = "m", breaks = 2)
+plot(acc_N)
+```
+
+## Task 3. Can cost be expressed as metabolic energy rather than time?
+
+Yes. Many energetic cost functions are implemented. This example uses the
+Pandolf et al. function with downhill correction (`funct = "pcf"`), a body
+weight `W` of 60 kg and a carried load `L` of 5 kg. The walking speed `V`
+defaults to 1.2 m/s and is treated as uniform across the area.
+
+```{r task3}
+surf_e <- mc_surface(dtm, funct = "pcf", move = 16, W = 60, L = 5)
+acc_e  <- mc_accum(surf_e, origin = origin)
+plot(acc_e)
+```
+
+## Task 4. Can the walking speed be worked out internally?
+
+Yes. Setting `V = 0` makes the function derive the walking speed cell by cell
+from the Tobler hiking function, so the speed varies with the terrain slope
+instead of being a single value.
+
+```{r task4}
+surf_v <- mc_surface(dtm, funct = "pcf", move = 16, W = 60, L = 5, V = 0)
+acc_v  <- mc_accum(surf_v, origin = origin)
+plot(acc_v)
+```
+
+## Task 5. Can the 'cognitive slope' be used?
+
+Yes. Setting `cogn.slp = TRUE` on `mc_surface()` multiplies positive slopes by
+1.99 and negative slopes by 2.31 before the cost function is applied, following
+Pingel (2013).
+
+```{r task5}
+surf_c <- mc_surface(dtm, funct = "t", move = 16, cogn.slp = TRUE)
+acc_c  <- mc_accum(surf_c, origin = origin, time = "m", breaks = 2)
+plot(acc_c)
+```
+
+## Task 6. Can least-cost paths to one or more destinations be calculated?
+
+Yes, with `mc_paths()`, which reuses the same surface from Task 1. Each path
+carries its accumulated `cost` and `length`; for time-based functions the
+destinations are labelled in sexagesimal format (hh:mm:ss).
+
+```{r task6}
+lcp <- mc_paths(surf, origin = origin, destin = destin, time = "m")
+plot(lcp)
+```
+
+Note the 3.0 idiom: the accumulated surface (Task 1) and the least-cost paths
+are two separate result objects from the *same* surface, each plotted when you
+want it. There is no `oneplot` parameter because you simply call `plot()` on
+whichever object you wish.
+
+## Task 7. Can the paths back to the origin be calculated?
+
+Yes. Because the cost is anisotropic, the return route can differ from the
+outward one. Set `return.base = TRUE`; the return paths are drawn dashed.
+
+```{r task7}
+lcp_b <- mc_paths(surf, origin = origin, destin = destin, time = "m",
+                  return.base = TRUE)
+plot(lcp_b)
+```
+
+## Task 8. Can a least-cost corridor be calculated?
+
+Yes, with `mc_corridor()`. By default (`method = "reach"`) the corridor is the
+classic one of the 2.x series and the GIS literature (Mitchell 2012): the sum
+of the accumulated cost spreading outward from each location, so the value of a
+cell is the total cost to reach it from both. The two least-cost paths (A to B
+and B to A) are overlaid. Here the wheeled-vehicle cost function is used; its
+critical slope is set on the surface via `sl.crit` (default 10 percent).
+
+```{r task8}
+surf_wcs <- mc_surface(dtm, funct = "wcs", move = 16, sl.crit = 10)
+corr <- mc_corridor(surf_wcs, a = origin, b = destin[2, ])
+plot(corr)
+```
+
+A new `method = "through"` option computes instead a directional A-to-B band,
+`cost(A->x) + cost(x->B)`, whose minimum equals the A-to-B least-cost-path
+cost; it is intended for one-way journey analysis. See `?mc_corridor` for when
+to prefer each.
+
+## Task 9. Can I compare paths from different cost functions?
+
+Yes, with `mc_comp()`. Because each cost function defines its own surface,
+`mc_comp()` takes the DTM (not a pre-built surface) and builds one surface per
+function internally. Here four time-based functions are compared. All nine
+destinations are used, so that the comparison chart below has a distribution to
+summarise.
+
+```{r task9}
+cmp <- mc_comp(dtm, origin = origin, destin = destin,
+               functs = c("t", "ma", "ug", "gkrs"), move = 16)
+plot(cmp)
+```
+
+Setting `type = "chart"` reproduces the `add.chart` output of the 2.x
+`movecomp()`: two boxplots showing, for each cost function, the distribution
+across the destinations of the path length and of the cost. As in the 2.x
+guide, one can see, for instance, whether a given function (here `gkrs`) tends
+to produce longer paths than the others.
+
+```{r task9b, fig.height = 4}
+plot(cmp, type = "chart")
+```
+
+## Task 10. What if I do not have an elevation raster?
+
+Use `mc_dtm()` to download elevation data for a study-area polygon (this needs
+the optional `elevatr` package). The resolution is set by the zoom level `z`
+(default 9). The code below is not executed here because it requires an
+internet connection.
+
+```{r task10, eval = FALSE}
+boundary <- mc_etna_boundary()                 # sample study-area polygon
+dtm_etna <- mc_dtm(boundary, z = 9)            # download elevation data
+cmp_etna <- mc_comp(dtm_etna,
+                    origin = mc_etna_start(),
+                    destin = mc_etna_end(),
+                    functs = c("t", "wcs"), move = 16)
+plot(cmp_etna)
+```
+
+## Task 11. Can I calculate a walking-cost boundary, e.g. a 45-minute catchment?
+
+Yes, with `mc_boundary()`. The `limit` is the cost value defining the boundary.
+In 3.0 the boundary is obtained by polygonising the reachable area directly, so
+the returned polygons are closed and carry their `area` and `perimeter` (no
+extra parameter is needed for this). The example uses the larger Malta DTM,
+which gives a more informative result than the small volcano, to draw
+30-minute walking boundaries (Tobler off-path function) around three springs.
+
+```{r task11}
+malta_b <- mc_malta_dtm()
+springs_b <- mc_springs()
+surf_b <- mc_surface(malta_b, funct = "tofp", move = 8)
+bnd <- mc_boundary(surf_b, origin = springs_b[c(5, 15, 30), ],
+                   limit = 30, time = "m")
+plot(bnd)
+bnd
+```
+
+## Task 12. Can I carry out a cost-allocation analysis?
+
+Yes, with `mc_alloc()`. Each cell is assigned to the origin it can be reached
+from at the smallest cost. Here three origins are used and the Ardigo et al.
+metabolic function.
+
+```{r task12}
+surf_a <- mc_surface(dtm, funct = "a", move = 16)
+al <- mc_alloc(surf_a, origin = destin[c(3, 7, 9), ])
+plot(al)
+```
+
+Each origin and its zone share the same index (the labels are drawn by
+default).
+
+## Task 13. Can I show isolines inside each allocation zone?
+
+Yes. The allocation result already stores the isolines of the minimum-cost
+surface; set `isolines = TRUE` in the plot call to overlay them.
+
+```{r task13}
+plot(al, isolines = TRUE)
+```
+
+## Task 14. Can I calculate a network of least-cost paths?
+
+Yes, with `mc_network()`. Two network types are available: `"allpairs"`
+connects every location to every other; `"neigh"` connects each location to
+its cost-wise nearest neighbour. The nodes are numbered to match the returned
+cost matrix.
+
+```{r task14a}
+surf_t <- mc_surface(dtm, funct = "t", move = 16)
+nw_all <- mc_network(surf_t, nodes = destin, type = "allpairs")
+plot(nw_all)
+```
+
+```{r task14b}
+nw_nei <- mc_network(surf_t, nodes = destin, type = "neigh")
+plot(nw_nei)
+```
+
+The full origin-to-origin cost matrix is returned; note that it is **not**
+symmetric, because the cost is anisotropic (A to B need not equal B to A):
+
+```{r task14c}
+round(nw_nei$cost.matrix, 2)
+```
+
+## Task 15. Can I calculate the density of a network of paths?
+
+Yes, for the all-pairs network. Pass `density = TRUE`, then plot the density
+output. The density is computed exactly from the cells each path traverses and
+expressed as a percentage of the busiest cell.
+
+```{r task15}
+nw_d <- mc_network(surf_t, nodes = destin, type = "allpairs", density = TRUE)
+plot(nw_d, type = "density")
+```
+
+## Task 16. My DTM has NoData (sea); how do I stop paths crossing it?
+
+In 3.0 you do nothing: NoData cells are excluded from the cost graph by
+construction, so accumulated costs and paths can never cross them. The
+`irregular.dtm` parameter of 2.x is no longer needed. Here the Malta DTM has
+sea cells set to NoData, and the path follows the coastline automatically.
+
+```{r task16}
+malta <- mc_malta_dtm()
+springs <- mc_springs()
+surf_malta <- mc_surface(malta, funct = "t", move = 8)
+lcp_coast  <- mc_paths(surf_malta, origin = springs[5, ], destin = springs[15, ])
+plot(lcp_coast)
+```
+
+## Task 17. Can I include a barrier (an area where movement is inhibited)?
+
+Yes. A barrier (lines or polygons) is supplied to `mc_surface()`, since it
+changes the cost graph. Edges touching the barrier are given conductance 0 by
+default (impassable); set `field` to a small value to penalise rather than
+forbid. Here a path computed first is reused as a barrier.
+
+```{r task17}
+# a path to reuse as a barrier
+surf8 <- mc_surface(dtm, funct = "t", move = 8)
+bar   <- mc_paths(surf8, origin = destin[1, ], destin = destin[4, ])$paths
+
+# without the barrier
+free <- mc_paths(surf8, origin = destin[3, ], destin = destin[6, ])
+plot(free)
+
+# with the barrier (built into a new surface)
+surf_bar <- mc_surface(dtm, funct = "t", move = 8, barrier = bar)
+blocked  <- mc_paths(surf_bar, origin = destin[3, ], destin = destin[6, ])
+plot(blocked, plot.barrier = TRUE)
+```
+
+The path in the second plot makes a detour to avoid the barrier (drawn in
+blue). With `move = 16`, knight-move steps could jump a thin barrier; use
+`move = 8` if that must not happen.
+
+## Task 18. Can I calculate sub-optimal (ranked) least-cost paths?
+
+Yes, with `mc_rank()`. It returns the optimal path (rank 1) and progressively
+sub-optimal alternatives, found by penalising the edges of earlier paths and
+re-running the search. Unlike 2.x (capped at six), any number `k` of ranks can
+be requested, and the avoidance strength is the `penalty` argument.
+
+```{r task18}
+rk <- mc_rank(surf8, origin = destin[3, ], destin = destin[6, ], k = 3)
+plot(rk)
+rk$paths                                   # rank, cost, length
+```
+
+## Task 19. Can the ranked paths be drawn over a least-cost corridor?
+
+Yes, directly: `plot(rk, type = "corridor")` draws the ranked paths over the
+least-cost corridor between the two locations, which `mc_rank()` has already
+computed and stored. This is the equivalent of 2.x's `use.corr`, with no manual
+steps.
+
+```{r task19}
+rk2 <- mc_rank(surf8, origin = destin[1, ], destin = destin[4, ], k = 3)
+plot(rk2, type = "corridor")
+```
+
+## Task 20. Can barriers be used with ranked paths?
+
+Yes: build the surface with the barrier, then run `mc_rank()` on it. The ranked
+paths all avoid the barrier.
+
+```{r task20}
+bar2 <- mc_paths(surf8, origin = destin[9, ], destin = destin[2, ])$paths
+surf_bar2 <- mc_surface(dtm, funct = "t", move = 8, barrier = bar2)
+rk3 <- mc_rank(surf_bar2, origin = destin[1, ], destin = destin[4, ], k = 3)
+plot(rk3)
+```
+
+## Task 21. Can I visualise the length and cost of each ranked path?
+
+Yes, directly: `plot(rk, type = "chart")` draws the bubble plot, length
+against rank with bubble size proportional to cost, the equivalent of 2.x's
+`add.chart`. No data assembly is needed.
+
+```{r task21, fig.height = 4}
+rk_h <- mc_rank(surf8, origin = destin[1, ], destin = destin[4, ],
+                k = 5, time = "m")
+plot(rk_h, type = "chart")
+```
+
+## Saving, exporting, and the cost-function catalogue
+
+```{r io, eval = FALSE}
+# the 26 cost functions, with families, units, and parameter usage
+mc_cost_functions()
+
+# persist a result across sessions (use mc_save, NOT saveRDS: SpatRasters
+# hold external pointers)
+mc_save(acc, "acc.rds")
+acc <- mc_load("acc.rds")
+
+# export to GIS formats (GeoTIFF + GeoPackage)
+mc_export(lcp, dir = "outputs")
+```
+
+## Reference
+
+Alberti, G. (2019). *Movecost: An R package for calculating accumulated
+slope-dependent anisotropic cost-surfaces and least-cost paths.* SoftwareX,
+10, 100331. <doi:10.1016/j.softx.2019.100331>
+
+Mitchell, A. (2012). *The ESRI Guide to GIS Analysis. Vol. 3.* Esri Press.

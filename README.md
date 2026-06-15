@@ -1,134 +1,102 @@
-# movecost
-vers 2.2
+# movecost 3.0
 
+Calculation of slope-dependent accumulated cost surfaces, least-cost paths,
+least-cost corridors, least-cost networks, ranked alternative routes, cost
+allocation, and cost boundaries related to human movement across the
+landscape, with 26 selectable cost functions. See Alberti (2019)
+<doi:10.1016/j.softx.2019.100331> for an earlier version of the package.
 
-## History
+Version 3.0 is a ground-up architectural redesign of the 2.x series. The
+analytical capabilities and the cost functions are retained; what changes is
+how the package computes, scales, and visualises. See `NEWS.md` for the full
+list of changes and the 2.x-to-3.0 function correspondence table.
 
+## Design in one paragraph
 
-`version 2.1`:
+Build the cost graph **once** with `mc_surface()`; reuse it with every
+analysis function; visualise **on demand** with `plot()`. Computation and
+visualisation are fully decoupled: every function returns an object that
+stores its results, and the `plot()`/`autoplot()` methods (ggplot2) can be
+invoked, customised, and re-invoked at any time without re-running anything.
 
-* Resolved issues with lost braces in `\itemize` sections across multiple Rd files, ensuring that documentation is now correctly formatted and clear. This fix applies to a series of files including `movealloc.Rd`, `movebound.Rd`, `movecomp.Rd`, `movecorr.Rd`, `movecost.Rd`, `movenetw.Rd`, and `moverank.Rd`.
-* Corrected the documentation for the internal `create_barrier_cs` function by including the missing `fields` argument in the `\usage` section.
-* Minor amendments and improvements content- and layout-wise to the functions' help documentation.
+## Quick start
 
-`version 2.0`:
-* integration of the function create_barrier_cs (out of an earlier version of 'leastcostpath' package) as an internal function;
-* dependency on 'leastcostpath' package dropped;
-* dependency on 'Matrix' package added;
-* minor fixes and amendments to the functions' help documentation.
+```r
+library(movecost)
 
-`version 1.9`:
-* the 'netw.type' parameter added to 'movenetw()' to allow the users to select which type of network will be calculated;
-* amendments to the help documentation of the 'origin' and 'destination' parameters in the 'movebound()', 'movecomp()', 'movenetw()', and 'moverank()' functions;
-* the dependence on the following packages has been dropped: rgdal, maptools, rgeos, spatstat.geom
+# sample data shipped with the package
+dtm    <- mc_volc()          # SpatRaster
+start  <- mc_volc_loc()      # sf points
+destin <- mc_destin_loc()    # sf points
 
-`version 1.8`:
-* 'moverank()' function added;
-* facility to prevent LCPs to cross NoData areas (i.e., areas corresponding to the sea) added (controlled by the 'irregular.dtm' parameter);
-* facility to plot the distribution of the length and cost of LCPs produced by different cost function added
-to  'movecomp()' (controlled by the 'add.chart' parameter);
-* the 'LCPs' and 'LCPs.back' data returned by the 'movecomp()' function now store the cost associated to each path (the variable is labelled 'cost');
-* fix to an error to the calculation of the closest location in the 'movenetw()' function; the error was affecting the rendered plot;
-* Tripcevich's hiking function added;
-* 'malta_dtm_40' and 'springs' datasets added;
-* in all the rendered plots, for visulisation purposes, the hillshade raster has been replaced by a slopeshade raster;
-* updates, amendements, and improvements to the help documentation.
+# 1. build the cost surface ONCE (Tobler's on-path hiking function)
+surf <- mc_surface(dtm, funct = "t", move = 16)
 
+# 2. reuse it across analyses - nothing is recomputed
+acc <- mc_accum(surf, origin = start, breaks = 0.05)   # isochrones
+lcp <- mc_paths(surf, origin = start, destin = destin) # least-cost paths
+nw  <- mc_network(surf, nodes = destin)                # LCP network + cost matrix
+al  <- mc_alloc(surf, origin = destin)                 # cost allocation
+rk  <- mc_rank(surf, start, destin[2, ], k = 4)        # ranked alternatives
+bd  <- mc_boundary(surf, destin[1:3, ], limit = 5, time = "m")
+co  <- mc_corridor(surf, a = destin[1, ], b = destin[4, ])
 
-`version 1.7`:
-* Hare's metabolic cost function and Eastman's abstract cost function added (the number of implemented cost functions is now 25);
-* facility to take into account barriers (i.e., areas where the movement is inhibited) added to all the functions ('movealloc()' excluded);
-* 'movecost()' now returns the conductance TransitionalLayer; this is instrumental to the internal optimisation of the 'movenetw()' function;
-* the 'movenetw()' now also calculates LCPs network between pairs of neighboring locations;
-* the 'movenetw()' function now returns a matrix reporting the cost incurred when moving between all the locations pair-wisely;
-* internal optimisation of the 'movenetw()' function, which is now about 3 times faster than in ver.1.6;
-* 'oneplot' parameter dropped from the 'movenetw()' function;
-* fix to an error to the export facility in the 'movenetw()' function;
-* fixes, improvements, and updates to the help documentation;
-* link to the package's vignette added to the help documentation of all the implemented functions.
+# 3. visualise on demand; plots are ggplot objects, customise at will
+plot(acc)
+p <- plot(lcp) + ggplot2::ggtitle("My custom title")
+p
+ggplot2::ggsave("lcp.pdf", p, width = 7, height = 7)
 
-`version 1.6`:
-* fix to a projection issue in the in-built 'volc' raster dataset;
-* internal optimizations in the 'movenetw()' function;
-* improvements layout- and content-wise to the functions' help documentation.
+# compare cost functions
+cmp <- mc_comp(dtm, start, destin[2, ], functs = c("t", "ks", "hrz"))
+plot(cmp); plot(cmp, type = "chart")
 
-`version 1.5`:
-* 'movenetw()': fix to an error in the way the exported GeoTiff files were given a name.
-* minor adjustements and amendements to the help documentation of 'movenetw()'.
-* 'volc' RasterLayer added to the body of sample datasets.
+# the 26 implemented cost functions, annotated
+mc_cost_functions()
 
-`version 1.4`:
-* The 'movecomp()' and 'movenetw() functions have been added.
-* Cost functions added: Minetti et al.'s, Marin Arroyo's, Ardigo et al.'s, Pandolf et al.'s with correction factor (the total number of implemented functions is now 23).
-* The option has been added to 'movebound()' to calculate the perimeter and area enclosed by each cost-limit boundary.
-* Help documentions updated accordingly and improved layout-wise.
+# persistence and GIS export
+mc_save(surf, "surf.rds"); surf <- mc_load("surf.rds")
+mc_export(lcp, dir = "outputs")
+```
 
+## Installation (from this source folder)
 
-`version 1.3`:
-* The 'movealloc()' function has been added.
-* Kondo-Seino's modified Tobler hiking function added.
-* The Pandolf et al. and Van Leusen's cost functions can now internally work out the walking speed on the basis of the Tobler function (on-path hiking); to achieve this, the user has to simply set the V parameter to 0.
-* Help documentation updated accordingly.
-* In the corridor raster produced by 'movecorr()', when multiple origins are used, the point locations are now plotted on top of the rendered plot.
+```r
+install.packages(c("terra", "sf", "igraph", "ggplot2", "devtools"))
+devtools::install()        # run from the package root
+# optional extras:
+install.packages("elevatr")   # online DTM download via mc_dtm()
+```
 
+To (re)generate the help files from the roxygen2 annotations and run the
+full quality pipeline:
 
-`version 1.2`:
-* 'movebound()' function added.
-* In the plots rendered by 'movecost()' and 'movecorr()', the accumulated cost surface, the DTM, and the least-cost corridor are overlaid by a hillshade raster to better convey the features of the terrain; the transparency of the hillshade can be adjusted using the 'transp' parameter.
-* In the plot showing the least-cost path(s) rendered by 'movecost()', destination locations' label(s) shows time in sexagesimal numbers (hours, minutes, seconds).
-* The destination location layer ('dest.loc.w.cost') returned by 'movecost()' is now included in the layers than can be exported using the 'export' parameter.
-* In the destination location layer ('dest.loc.w.cost') returned by 'movecost()', when the cost is expressed in terms of time, a new variable ('cost_hms') is added (besides 'cost') expressing time in sexagesimal numbers. The variable 'cost' still stores the cost at the destination location(s), but it is expressed in decimal numbers.
-* Minor adjustments to the subtitle of the plot rendered by 'movecorr()' to indicate the used terrain factor.
-* Minor adjustments to the annotations of the LCP plot rendered by 'movecost()'.
-* Minor edits and amendements to the help documentation of 'movecost()' function.
+```r
+devtools::document()   # builds man/*.Rd from the roxygen2 annotations
+devtools::test()       # runs the analytic + consistency test suite
+devtools::check()      # full R CMD check
+```
 
+## Why 3.0 is faster and more scalable
 
-`version 1.1`:
-* Fix to an error in the Bellavia's cost function, which has been introduced in ver 1.0.
-* The use of a terrain factor (N) has been extended to almost all the implemented cost functions; help documentation updated accordingly.
-* Minor adjustements to the returned plots to indicate the value of the used terrain factor.
-* Improvements to the content and layout of the 'movecost()'s help documentation.
+1. **Compute-once architecture**: the conductance graph is built a single
+   time per cost function; in 2.x it was rebuilt inside every call (an
+   n-location network implied O(n) redundant constructions).
+2. **Batched multi-source queries**: allocation, boundaries, and cost
+   matrices are served by single igraph Dijkstra calls over all origins.
+3. **Modern stack**: terra (C++-backed raster I/O and algebra) replaces
+   raster/sp; igraph replaces the gdistance accumulation machinery; chron is
+   replaced by an internal formatter. Legacy sp/raster *inputs* are still
+   accepted and converted automatically.
+4. **NoData-aware graph**: cells with NoData never enter the graph, so
+   irregular DTMs (coastlines) need no special handling - and the graph gets
+   smaller, not larger, when the study area is irregular.
 
+## Validation
 
-`version 1.0`:
-* The option to calculate and plot the LCPs back to the origin has been added to 'movecost()'.
-* The following cost functions have been implemented in 'movecost()' (and, consequently, in 'movecorr()'): Garmy, Kaddouri, Rozenblat, and Schneider's; Rees'; Bellavia's. The total number of the implemented cost functions is now eighteen.
-* Help documentation updated accordingly, with bibliographical references for the new cost fucntions added.
-* Minor amendements and improvements to some of the labels attached to the returned plots.
-
-
-`version 0.9`:
-* The 'movecorr()' function now can produce either a least-cost corridor between two locations, or corridors between multiple locations.
-* The option has been added to 'movecorr()' to rescale the least-cost values in the output raster to be constrained between 0 and 1.
-* The ficility to use the so-called 'cognitive slope' in place of the true slope has been added to 'movecost()' and 'movecorr()'.
-
-
-`version 0.8`:
-* A bug has been fixed that prevented the downloaded DTM to be returned in the list provided by the 'movecorr()' function.
-* The option to customize the labels attached to the point locations on the output map has been added to 'movecorr()'.
-* 'movecorr()' now optionally exports the DTM (if not provided by the user but acquired online), the two LCPs, and the accumulated cost surfaces around a and b.
-* The accumulated cost rasters (around point a and around point b) are now returned by 'movecorr()'.
-* The cost-surface is now returned (but not plotted) by 'movecost()'.
-* Minor internal optimizations.
-* Minor amendements and improvements to the help documentation.
-
-`version 0.7`:
-Function 'movecorr()' added. In the 'movecost()' function, the option has been added to have the function producing or not a graphical output (via the 'graph.out'parameter).The Marquez-Perez et al.'s modified Tobler's function has been renamed for consistency with the names given to the other functions: from 'mt' (which was standing for "modified Tobler"") to 'mp' (which stands for "Marquez-Perez"").
-
-`version 0.6`:
-The facility to download online elevation data (when an input DTM is not provided) has been added; it relies on the 'elevatr' package. Three new datasets (to be used to showcase the added functionality) have been added. Help documentation updated accordingly.
-
-`version 0.5`:
-Irmischer-Clarke's modified Tobler hiking functions for female added. This entailed modifying the name of the parameters as follows: `icmonp` for on-path male, `icmoffp` for off-path male, `icfonp` for on-path female, `icfoffp` for off-path female. Minor improvements to the layout of the help documentation.
-
-`version 0.4`:
-Parameter `move` added, which provides the option to set the number of directions in which cells are connected in the cost calculation.
-
-`version 0.3`:
-added cost functions: Llobera-Sluckin's metabolic energy expenditure; Alberti's Tobler hiking function modified for animal foraging excursions.
-
-`version 0.2`: 
-unlike the previous version, the cost calculation is not based on a slope raster (in degrees) derived from the input dtm; instead, the procedure described in van Etten, "R Package gdistance: Distances and Routes on Geographical Grids" in Journal of Statistical Software 76(13), 2017, pp. 14-15 is followed. The altitudinal difference between dtm cells is first calculated and then divided by cell centres distance, so obtaining slope values (expressed as rise over run) changing according to the direction of movement. This has the important implication that the implemented cost functions are now truly anisotropic. The color ramp of the output accumulated cost raster has been changed.
-
-`version 0.1`: 
-first release to CRAN.
+The computational core was validated against analytic results on synthetic
+terrains, against internal consistency laws, and against the 2.x
+(gdistance-based) procedure: see `inst/validation/` and the testthat suite.
+Two deliberate methodological corrections (corridor directionality;
+signed-slope handling in the `ks` and `ma` cost functions) are documented in
+`NEWS.md` and in `?mc_cost_functions`.
