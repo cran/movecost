@@ -4,7 +4,9 @@
 #' rasters as GeoTIFF, vector layers as GeoPackage (which, unlike the ESRI
 #' shapefiles produced by movecost <= 2.x, preserves full attribute names and
 #' supports mixed geometry without sidecar files). File names carry the cost
-#' function code as a suffix, as in movecost <= 2.x.
+#' function code as a suffix, as in movecost <= 2.x. For a cost surface built
+#' with a terrain raster (see \code{\link{mc_surface}}), the per-cell terrain
+#' factors actually used are also written (\code{terrain_N_<funct>.tif}).
 #'
 #' @param x a movecost result object (any of \code{movecost_surface},
 #'   \code{movecost_accum}, \code{movecost_paths}, \code{movecost_corridor},
@@ -45,6 +47,7 @@ mc_export <- function(x, dir = ".", prefix = NULL, overwrite = FALSE) {
   if (inherits(x, "movecost_surface")) {
     wr(x$cost.raster, prefix %||% "cost_surface")
     wr(x$dtm, "dtm")
+    if (!is.null(x$terrain)) wr(x$terrain, "terrain_N")
   } else if (inherits(x, "movecost_accum")) {
     wr(x$accum, prefix %||% "accum_cost_surface")
     if (!is.null(x$isolines)) wv(x$isolines, "isolines")

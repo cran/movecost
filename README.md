@@ -1,4 +1,4 @@
-# movecost 3.0
+# movecost 3.1.0
 
 Calculation of slope-dependent accumulated cost surfaces, least-cost paths,
 least-cost corridors, least-cost networks, ranked alternative routes, cost
@@ -6,10 +6,14 @@ allocation, and cost boundaries related to human movement across the
 landscape, with 26 selectable cost functions. See Alberti (2019)
 <doi:10.1016/j.softx.2019.100331> for an earlier version of the package.
 
-Version 3.0 is a ground-up architectural redesign of the 2.x series. The
+Version 3.0.0 is a ground-up architectural redesign of the 2.x series. The
 analytical capabilities and the cost functions are retained; what changes is
 how the package computes, scales, and visualises. See `NEWS.md` for the full
 list of changes and the 2.x-to-3.0 function correspondence table.
+
+Version 3.1.0 adds a long-requested feature: the terrain factor can now vary
+across the landscape, supplied as a raster of terrain factors or of terrain
+classes (with a lookup table), alongside the single-value terrain factor `N`.
 
 ## Design in one paragraph
 
@@ -47,6 +51,13 @@ p <- plot(lcp) + ggplot2::ggtitle("My custom title")
 p
 ggplot2::ggsave("lcp.pdf", p, width = 7, height = 7)
 
+# a terrain factor varying across the landscape (here a fictitious
+# two-class raster: lawn grass below 120 m, rock above), via a lookup table
+terr <- terra::classify(dtm, rbind(c(-Inf, 120, 1), c(120, Inf, 2)))
+tab  <- data.frame(class = 1:2, N = c(1.03, 2.50))  # see mc_terrain_factors()
+surf_t <- mc_surface(dtm, funct = "t", terrain = terr, terrain.table = tab)
+plot(surf_t, type = "terrain")
+
 # compare cost functions
 cmp <- mc_comp(dtm, start, destin[2, ], functs = c("t", "ks", "hrz"))
 plot(cmp); plot(cmp, type = "chart")
@@ -77,7 +88,7 @@ devtools::test()       # runs the analytic + consistency test suite
 devtools::check()      # full R CMD check
 ```
 
-## Why 3.0 is faster and more scalable
+## Why 3.0.0 is faster and more scalable
 
 1. **Compute-once architecture**: the conductance graph is built a single
    time per cost function; in 2.x it was rebuilt inside every call (an

@@ -2,9 +2,9 @@ Package: movecost
 Title: Calculation of Slope-Dependant Accumulated Cost Surface,
         Least-Cost Paths, Least-Cost Corridors, Least-Cost Networks
         Related to Human Movement Across the Landscape
-Version: 3.0.0
+Version: 3.1.0
 Authors@R: person("Gianmarco", "Alberti", email = "gianmarcoalberti@gmail.com", role = c("aut", "cre"))
-Description: Provides the facility to calculate non-isotropic accumulated cost surfaces, least-cost paths, least-cost corridors, least-cost networks, ranked alternative paths, cost allocation and cost boundaries, using a number of human-movement-related cost functions that can be selected by the user. The package is built around a compute-once design: a single cost surface object is created first and then reused by every analysis function, avoiding redundant computation. Visualisation is fully decoupled from computation and is provided through 'ggplot2' methods that can be invoked, customised, and re-invoked at any time without re-running any analysis. It just requires a Digital Terrain Model, a start location and (optionally) destination locations. See Alberti (2019) <doi:10.1016/j.softx.2019.100331>.
+Description: Provides the facility to calculate non-isotropic accumulated cost surfaces, least-cost paths, least-cost corridors, least-cost networks, ranked alternative paths, cost allocation and cost boundaries, using a number of human-movement-related cost functions that can be selected by the user. The terrain factor can be set as a single value or vary across the landscape via a raster of terrain factors or terrain classes. The package is built around a compute-once design: a single cost surface object is created first and then reused by every analysis function, avoiding redundant computation. Visualisation is fully decoupled from computation and is provided through 'ggplot2' methods that can be invoked, customised, and re-invoked at any time without re-running any analysis. It just requires a Digital Terrain Model, a start location and (optionally) destination locations. See Alberti (2019) <doi:10.1016/j.softx.2019.100331>.
 Depends: R (>= 4.1.0)
 Imports: terra (>= 1.7-0), sf (>= 1.0-9), igraph (>= 1.4.0), ggplot2
         (>= 3.4.0), utils, grDevices
@@ -15,8 +15,8 @@ VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0
 NeedsCompilation: no
-Packaged: 2026-06-15 17:38:40 UTC; gianmarcoalberti
+Packaged: 2026-10-29 11:06:32 UTC; gianmarcoalberti
 Author: Gianmarco Alberti [aut, cre]
 Maintainer: Gianmarco Alberti <gianmarcoalberti@gmail.com>
 Repository: CRAN
-Date/Publication: 2026-06-15 18:00:02 UTC
+Date/Publication: 2026-10-29 11:20:02 UTC

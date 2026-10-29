@@ -18,7 +18,9 @@ mc_surface(
   sl.crit = 10,
   W = 70,
   L = 0,
-  V = 1.2
+  V = 1.2,
+  terrain = NULL,
+  terrain.table = NULL
 )
 }
 \arguments{
@@ -54,7 +56,9 @@ of the real slope (see Details).}
 (surface) distance rather than planar distance (see Details).}
 
 \item{N}{terrain factor representing ease of movement (1 by default; see
-\code{\link{mc_cost_functions}} for reference values).}
+\code{\link{mc_cost_functions}} for reference values): a single positive
+number, applied to the whole study area. If \code{terrain} is supplied,
+\code{N} is used only for the cells with no terrain value (see Details).}
 
 \item{sl.crit}{critical slope in percent (default 10), used only by the
 wheeled-vehicle cost function.}
@@ -68,6 +72,19 @@ functions.}
 \item{V}{walking speed in m/s (default 1.2), used by the Pandolf, Van
 Leusen, and Ardigo functions; if 0, speed is derived cell-by-cell from the
 Tobler on-path function.}
+
+\item{terrain}{optional raster of terrain factors or terrain classes
+(SpatRaster, RasterLayer, or a file path readable by
+\code{terra::rast()}), making the terrain factor vary across the study
+area (see Details). NULL (default) applies the scalar \code{N}
+everywhere.}
+
+\item{terrain.table}{optional data frame translating the classes of a
+categorical \code{terrain} raster into terrain factors, with columns
+\code{class} (numeric codes, or the category labels of a terra factor
+raster) and \code{N} (terrain factor); a two-column data frame without
+these names is read as class, then N. Required for a terra factor raster;
+if NULL, the cell values of a numeric raster are taken as terrain factors.}
 }
 \value{
 An object of class \code{movecost_surface}: a list with components
@@ -79,7 +96,11 @@ An object of class \code{movecost_surface}: a list with components
     speed in km/h for speed-based functions, conductance otherwise) - the
     analogue of the \code{cost.surface} component of movecost <= 2.x;
   \item \code{funct}, \code{params}, \code{move}: metadata describing how
-    the graph was built (used by downstream functions and plot methods).
+    the graph was built (used by downstream functions and plot methods);
+  \item \code{terrain}: \code{SpatRaster} of the terrain factor actually
+    used for each cell (after alignment, class lookup, and filling with
+    \code{N}), or NULL if no terrain raster was supplied; draw it with
+    \code{plot(x, type = "terrain")}.
 }
 The object has \code{print()} and \code{plot()} methods; \code{plot()}
 returns a ggplot2 object (see \code{\link{plot.movecost_surface}}).\cr
@@ -138,6 +159,55 @@ that with \code{move = 16}, knight-move connections can "jump" a thin linear
 barrier, exactly as in movecost <= 2.x; use \code{move = 8} if that must not
 happen.\cr
 
+\strong{Terrain factor raster}: the terrain factor N (see
+\code{\link{mc_cost_functions}}) can vary across the study area. Supply a
+raster via \code{terrain} in either of two forms:
+\itemize{
+  \item a \emph{numeric} raster whose cells hold terrain factors directly
+    (e.g. 1.00 on roads, 1.79 on bogs);
+  \item a \emph{categorical} raster of terrain classes (integer codes, or a
+    terra factor raster with category labels), together with a lookup table
+    \code{terrain.table} pairing each class with its terrain factor.
+    \code{\link{mc_terrain_factors}} returns documented reference values
+    from which the table can be built.
+}
+The scalar \code{N} keeps its role and acts as the \emph{fallback} value:
+cells with no terrain value (NA in the raster, cells outside its extent, or
+classes missing from the table) take \code{N}, so a raster can map only the
+terrain types of interest (roads, bogs, ...) and leave the rest to a single
+general value (e.g. \code{N = 1.67}, off-path). A message reports how many
+cells were filled in this way; a warning lists classes missing from the
+table. Terrain factors must be positive; \code{Inf} makes a cell
+impassable.\cr
+Each edge between two adjacent cells takes the \emph{mean} of their terrain
+factors. Half of an edge lies in each cell, and for every implemented
+function the edge cost is linear in N (affine for the Pandolf and Van Leusen
+functions, where N multiplies only the terrain-dependent term of the
+metabolic equation); the mean therefore reproduces exactly the cost of
+crossing half of the edge on each terrain. Note that N is applied
+\emph{inside} the cost function, as with the scalar N, and not as a
+multiplier of the final cost: for the Pandolf-type functions the two are
+different. With \code{move = 16}, knight-move edges pass close to two
+further cells whose terrain is not considered (the same simplification
+made for elevation).\cr
+If the raster's coordinate system or grid differs from the DTM's, it is
+aligned to the DTM with nearest-neighbour resampling
+(\code{terra::project(method = "near")}), which never invents values and is
+therefore safe for class codes; a warning is issued, as the data are
+changed. For full control, align the raster beforehand.\cr
+A few cost functions do not take a terrain factor (see the \code{uses_N}
+column of \code{\link{mc_cost_functions}()}) and ignore both \code{N} and
+\code{terrain}, with a warning: the off-path functions (\code{"tofp"},
+\code{"icmoffp"}, \code{"icfoffp"}), which already embed off-path walking,
+and Alberti's function (\code{"alb"}), which models the walking pace of a
+flock rather than of a human walker. To model terrain with a raster, use the
+on-path version of an off-path function (\code{"t"}, \code{"icmonp"},
+\code{"icfonp"}), so that the terrain effect is not counted twice.\cr
+A caution: published terrain factors were obtained in different studies,
+under specific conditions and for specific cost models (see
+\code{\link{mc_terrain_factors}}); a terrain raster makes their use easy,
+but does not make them more accurate.\cr
+
 \strong{Irregular DTMs}: cells with NoData (for instance, sea around a
 coastline) are simply excluded from the graph, so accumulated costs and
 least-cost paths can never traverse them. The \code{irregular.dtm} workaround
@@ -164,6 +234,18 @@ lcp <- mc_paths(surf, origin = start, destin = destin)
 plot(acc)
 plot(lcp)
 
+# a terrain factor varying across the area: a (fictitious) categorical
+# raster with class 1 below 120 m and class 2 (rock) above, translated
+# into terrain factors via a lookup table
+terr <- terra::classify(dtm, rbind(c(-Inf, 120, 1), c(120, Inf, 2)))
+tf <- mc_terrain_factors("time")
+tab <- data.frame(class = 1:2,
+                  N = tf$N[match(c("Lawn grass", "Rock"), tf$terrain)])
+surf_t <- mc_surface(dtm, funct = "t", move = 8,
+                     terrain = terr, terrain.table = tab)
+surf_t
+plot(surf_t, type = "terrain")
+
 }
 \references{
 Alberti (2019) <doi:10.1016/j.softx.2019.100331>.
@@ -172,6 +254,7 @@ Alberti (2019) <doi:10.1016/j.softx.2019.100331>.
 \code{\link{mc_cost_functions}}, \code{\link{mc_accum}},
   \code{\link{mc_paths}}, \code{\link{mc_corridor}}, \code{\link{mc_boundary}},
   \code{\link{mc_alloc}}, \code{\link{mc_network}}, \code{\link{mc_rank}},
-  \code{\link{mc_dtm}}, \code{\link{mc_save}};
+  \code{\link{mc_dtm}}, \code{\link{mc_terrain_factors}},
+  \code{\link{mc_save}};
   visualisation: \code{\link{plot.movecost_surface}}
 }

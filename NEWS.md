@@ -1,3 +1,101 @@
+# movecost 3.1.0
+
+## New feature: a terrain factor that varies across the landscape
+
+* `mc_surface()` gains two arguments, `terrain` and `terrain.table`, so that
+  the terrain factor N no longer has to be a single value for the whole study
+  area. `terrain` takes a raster (SpatRaster, RasterLayer, or file path) in
+  either of two forms: a numeric raster whose cells hold terrain factors
+  directly, or a categorical raster of terrain classes (integer codes, or a
+  terra factor raster with category labels) translated into terrain factors
+  by the lookup table `terrain.table` (columns `class` and `N`).
+* The scalar `N` keeps its meaning and default, and now acts as the fallback
+  value: cells with no terrain value (NA cells, cells outside the raster's
+  extent, classes missing from the table) take `N`. A raster can therefore map
+  only the terrain types of interest and leave the rest to a single general
+  value. A message reports how many cells were filled; a warning lists any
+  class missing from the table. `Inf` makes a cell impassable.
+* Each edge takes the mean of the terrain factors of the two cells it joins.
+  Since every implemented cost function yields an edge cost that is linear in
+  N (affine for the Pandolf-type functions), the mean reproduces exactly the
+  cost of crossing half of the edge on each terrain. N is applied inside the
+  cost function, exactly as the scalar N is, rather than as a multiplier of
+  the final cost: for the Pandolf (`p`), Pandolf with correction (`pcf`), and
+  Van Leusen (`vl`) functions, where N multiplies only the terrain-dependent
+  term of the metabolic equation, the two would differ.
+* A terrain raster whose coordinate system or grid differs from the DTM's is
+  aligned to the DTM with nearest-neighbour resampling (safe for class codes,
+  and preserving the exact terrain factors of a numeric raster), with a
+  warning.
+* The returned surface stores the per-cell terrain factors actually used
+  (component `terrain`); `print()` reports their range, the cost-function label
+  carried by every downstream result reads e.g. "terrain factor
+  N=raster (1.03 to 2.5)", `plot(surface, type = "terrain")` maps them, and
+  `mc_export()` writes them to `terrain_N_<funct>.tif`. `mc_save()` /
+  `mc_load()` preserve them.
+* New `mc_terrain_factors()` returns, as a data frame, the reference list of
+  terrain factors already documented in `mc_cost_functions()` (from Herzog
+  2020, for time-based functions and for functions measuring other costs),
+  as a starting point for building `terrain.table`.
+* `mc_comp()` accepts `terrain` and `terrain.table` through `...`; the raster
+  is aligned to the DTM once and shared by all the compared functions.
+* All the analysis functions (`mc_accum()`, `mc_paths()`, `mc_corridor()`,
+  `mc_boundary()`, `mc_alloc()`, `mc_network()`, `mc_rank()`) work unchanged on
+  surfaces built with a terrain raster.
+
+## Minor changes
+
+* `mc_surface()` now validates `N`, which must be a single positive number
+  (previously any value was accepted silently).
+* The cost functions that do not take a terrain factor now warn when one is
+  supplied (`N` other than 1, or `terrain`), which they ignore; previously `N`
+  was ignored silently. The warning gives the reason: the off-path functions
+  (`tofp`, `icmoffp`, `icfoffp`) already embed off-path walking, and the
+  warning points to their on-path versions (`t`, `icmonp`, `icfonp`), which do
+  take N; Alberti's function (`alb`) models the walking pace of a flock, to
+  which a terrain factor does not apply.
+* `print()` of a cost surface reports the terrain factor in use.
+
+## Documentation
+
+* `mc_surface()` help: new Details section on the terrain raster, and a worked
+  example. `mc_cost_functions()`, `mc_comp()`, `mc_export()`,
+  `plot.movecost_surface()` and the package help page updated accordingly.
+* Vignette: new Task 3 ("Can the terrain factor vary across the study area?");
+  the following tasks are renumbered. Task 10 now also shows `mc_comp()` with
+  a terrain raster, the export section mentions the terrain raster written
+  by `mc_export()`, and Task 2 explains what happens when a terrain factor is
+  passed to a function that does not take one. The vignette title now reads
+  "movecost 3.x: a task-based guide".
+* `mc_cost_functions()` help: the exceptions to the terrain factor are now
+  described accurately. Alberti's function (`alb`) was said to "natively
+  embed" a terrain factor; its 0.25 coefficient is in fact the ratio between
+  flock and human walking speed, and the function does not take N because it
+  models a flock's pace. Each of the four functions concerned now states that
+  it does not take N, and the off-path ones name their on-path version.
+* `inst/CITATION`: the package version in the citation is now read from
+  DESCRIPTION, so it can no longer fall out of date.
+* Corrected the package-name capitalisation in the citation information
+  (`inst/CITATION`) and in the vignette reference: the title of the 2019
+  SoftwareX paper is "movecost" (the name carries no capital letters), not
+  "MovEcost" or "Movecost".
+* README: the release is now named with its full version string where the
+  version itself is referenced.
+* `mc_cost_functions()` help: completed and corrected the literature references
+  for several cost functions. The Eastman function (`"e"`) now cites the
+  original source, Eastman (1999: 61, the IDRISI32 guide), with Barge and
+  Chataigner (2004) and Vaissie (2021) added as the secondary sources from
+  which the equation was drawn; previously only Vaissie (2021) was given. The
+  Bellavia function (`"b"`) now cites the primary Bellavia (2002) reference
+  alongside Herzog (2020). The `gkrs` function now cites the primary Garmy,
+  Kaddouri, Rozenblat and Schneider (2005) reference alongside Herzog (2020).
+  The Tripcevich (`"trp"`) and Van Leusen (`"vl"`) references were completed
+  with their previously missing publication venues. The Alberti function
+  (`"alb"`) reference was corrected and completed to the full Alberti, Grima
+  and Vella (2020) book-chapter citation (Temple Landscapes volume), replacing
+  the incomplete and mis-dated "Alberti (2019)". No cost-function formula,
+  result, or argument is affected.
+
 # movecost 3.0.0
 
 A ground-up redesign of the package's architecture, while retaining all the

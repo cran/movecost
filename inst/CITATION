@@ -2,7 +2,7 @@ citHeader("To cite the movecost package in publications, use:")
 
 bibentry(
   bibtype  = "Article",
-  title    = "MovEcost: An R package for calculating accumulated slope-dependent anisotropic cost-surfaces and least-cost paths",
+  title    = "movecost: An R package for calculating accumulated slope-dependent anisotropic cost-surfaces and least-cost paths",
   author   = person("Gianmarco", "Alberti"),
   journal  = "SoftwareX",
   year     = "2019",
@@ -11,7 +11,7 @@ bibentry(
   doi      = "10.1016/j.softx.2019.100331",
   textVersion = paste(
     "Alberti, G. (2019).",
-    "MovEcost: An R package for calculating accumulated slope-dependent",
+    "movecost: An R package for calculating accumulated slope-dependent",
     "anisotropic cost-surfaces and least-cost paths.",
     "SoftwareX, 10, 100331. doi:10.1016/j.softx.2019.100331."
   )
@@ -22,11 +22,12 @@ bibentry(
   title    = "movecost: Calculation of Slope-Dependant Accumulated Cost Surface, Least-Cost Paths, Least-Cost Corridors, Least-Cost Networks Related to Human Movement Across the Landscape",
   author   = person("Gianmarco", "Alberti"),
   year     = "2026",
-  note     = "R package version 3.0.0",
+  note     = paste("R package version", meta$Version),
   textVersion = paste(
     "Alberti, G. (2026).",
     "movecost: Calculation of Slope-Dependant Accumulated Cost Surface,",
     "Least-Cost Paths, Least-Cost Corridors, Least-Cost Networks Related to",
-    "Human Movement Across the Landscape. R package version 3.0.0."
+    paste0("Human Movement Across the Landscape. R package version ",
+           meta$Version, ".")
   )
 )

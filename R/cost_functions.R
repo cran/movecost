@@ -21,7 +21,10 @@
 #'
 #' \strong{Tobler's hiking function (off-path)} (\code{"tofp"}):\cr
 #' \eqn{(6 * exp(-3.5 * abs(x + 0.05))) * 0.6}\cr
-#' as per Tobler's indication, the off-path walking speed is reduced by 0.6.\cr
+#' as per Tobler's indication, the off-path walking speed is reduced by 0.6.
+#' This function does not take the terrain factor N, since it already embeds
+#' off-path walking; to apply a terrain factor, use the on-path version
+#' (\code{"t"}).\cr
 #'
 #' \strong{Marquez-Perez et al.'s modified Tobler hiking function} (\code{"mp"}):\cr
 #' \eqn{(4.8 * exp(-5.3 * abs((x * 0.7) + 0.03))) * (1/N)}\cr
@@ -42,13 +45,19 @@
 #' \eqn{(0.11 + 0.67 * exp(-(abs(x)*100 + 2)^2 / (2 * 30^2))) * 3.6}\cr
 #' the Gaussian denominator is \eqn{2*30^2} (=1800), the 2*sigma^2 form of
 #' equation 4 of Irmischer & Clarke (2018), shared by the on-path (equation 2)
-#' and female (equation 5) variants; unchanged from movecost <= 2.x.\cr
+#' and female (equation 5) variants; unchanged from movecost <= 2.x.
+#' This function does not take the terrain factor N, since it already embeds
+#' off-path walking; to apply a terrain factor, use the on-path version
+#' (\code{"icmonp"}).\cr
 #'
 #' \strong{Irmischer-Clarke's hiking function (female, on-path)} (\code{"icfonp"}):\cr
 #' \eqn{((0.95 * (0.11 + exp(-(abs(x) * 100 + 5)^2/(2 * 30^2)))) * 3.6) * (1/N)}\cr
 #'
 #' \strong{Irmischer-Clarke's hiking function (female, off-path)} (\code{"icfoffp"}):\cr
 #' \eqn{(0.95 * (0.11 + 0.67 * exp(-(abs(x) * 100 + 2)^2/(2 * 30^2)))) * 3.6}\cr
+#' This function does not take the terrain factor N, since it already embeds
+#' off-path walking; to apply a terrain factor, use the on-path version
+#' (\code{"icfonp"}).\cr
 #'
 #' \strong{Uriarte Gonzalez's walking-time cost function} (\code{"ug"}):\cr
 #' \eqn{1 / ((0.0277 * (abs(x)*100) + 0.6115) * N)}\cr
@@ -76,17 +85,30 @@
 #' \strong{Alberti's Tobler hiking function modified for pastoral foraging
 #' excursions} (\code{"alb"}):\cr
 #' \eqn{(6 * exp(-3.5 * abs(x + 0.05))) * 0.25}\cr
-#' Alberti G. (2019), Locating potential pastoral foraging routes in Malta
-#' through the use of a Geographic Information System. The Tobler function is
-#' rescaled by 0.25, i.e. the ratio between the average flock speed (1.5 km/h)
-#' and the maximum human walking speed (about 6.0 km/h) on favourable slopes.\cr
+#' Alberti G., Grima R., Vella N.C. (2020), Locating potential pastoral foraging
+#' routes in Malta through the use of a Geographic Information System, in French
+#' C., Hunt C.O., Grima R., McLaughlin R., Stoddart S., Malone C. (eds), Temple
+#' Landscapes: Fragility, Change and Resilience of Holocene Environments in the
+#' Maltese Islands, McDonald Institute for Archaeological Research, Cambridge,
+#' 267-283. The Tobler function is rescaled by 0.25, i.e. the ratio between the
+#' average flock speed (1.5 km/h) and the maximum human walking speed (about
+#' 6.0 km/h) on favourable slopes. This function does not take the terrain
+#' factor N, since it models the walking pace of a flock rather than of a human
+#' walker.\cr
 #'
 #' \strong{Garmy, Kaddouri, Rozenblat, and Schneider's hiking function}
 #' (\code{"gkrs"}):\cr
 #' \eqn{(4 * exp(-0.008 * ((atan(abs(x))*180/pi)^2))) * (1/N)}\cr
-#' slope in degrees; see Herzog I. (2020), Spatial Analysis Based on Cost
-#' Functions, in Gillings M., Haciguzeller P., Lock G. (eds), "Archaeological
-#' Spatial Analysis. A Methodological Guide", Routledge: New York, 333-358.\cr
+#' slope in degrees; Garmy P., Kaddouri L., Rozenblat C., Schneider L. (2005),
+#' Logiques spatiales et "Systemes de villes" en Lodevois de l'Antiquite a la
+#' periode Moderne, in Berger J.-F., Bertoncello F., Braemer F., Davtian G.,
+#' Gazenbeek M. (eds), Temps et espaces de l'homme en societe, analyses et
+#' modeles spatiaux en archeologie (XXVe rencontres internationales
+#' d'archeologie et d'histoire d'Antibes, 20-23 octobre 2004), Editions APDCA,
+#' Antibes, 335-346; as reported in Herzog I. (2020), Spatial Analysis Based on
+#' Cost Functions, in Gillings M., Haciguzeller P., Lock G. (eds),
+#' "Archaeological Spatial Analysis. A Methodological Guide", Routledge: New
+#' York, 333-358.\cr
 #'
 #' \strong{Rees' hiking function} (\code{"r"}):\cr
 #' \eqn{((1 / (0.75 + 0.09 * abs(x) + 14.6 * (abs(x))^2)) * 3.6) * (1/N)}\cr
@@ -110,7 +132,9 @@
 #' \strong{Tripcevich's hiking function} (\code{"trp"}):\cr
 #' \eqn{((4.028*46^2)/(((atan(abs(x))*180/pi)+4.127)^2+46^2))*(1/N)}\cr
 #' Tripcevich N. (2008), Estimating Llama caravan travel speeds:
-#' ethno-archaeological fieldwork with a Peruvian salt caravan.\cr
+#' ethno-archaeological fieldwork with a Peruvian salt caravan, paper presented
+#' at the inauguration of the Center for Spatial Studies, University of
+#' California, Santa Barbara.\cr
 #'
 #' \strong{Function for wheeled vehicles}:\cr
 #'
@@ -131,13 +155,24 @@
 #'
 #' \strong{Bellavia's cost function} (\code{"b"}):\cr
 #' \eqn{1 / (((atan(abs(x))*180/pi)+1) * N)}\cr
-#' see Herzog I. (2020), cited above.\cr
+#' slope in degrees; Bellavia G. (2002), Extracting 'natural pathways' from a
+#' digital elevation model. Applications to landscape archaeological studies,
+#' in Burenhult G., Arvidson J. (eds), Archaeological Informatics: Pushing the
+#' Envelope. CAA 2001, BAR International Series 1016, Archaeopress, Oxford,
+#' 5-12; as reported in Herzog I. (2020), cited above.\cr
 #'
 #' \strong{Eastman's cost function} (\code{"e"}):\cr
 #' \eqn{1 / ((0.031*(atan(abs(x))*180/pi)^2 - 0.025*(atan(abs(x))*180/pi) + 1) * N)}\cr
-#' Vaissie E. (2021), Mobility of Paleolithic Populations: Biomechanical
-#' Considerations and Spatiotemporal Modelling, PaleoAnthropology 2021(1),
-#' 120-144 (with reference to Eastman 1999).\cr
+#' slope in degrees. The underlying cost equation (0.031 * p^2 - 0.025 * p + 1,
+#' with p the slope in degrees) was originally proposed by Eastman J.R. (1999),
+#' IDRISI32: Guide to GIS and Image Processing, Clark Labs, Clark University,
+#' Worcester (MA), p. 61. It was subsequently adopted, among others, by Barge O.,
+#' Chataigner C. (2004), Un SIG pour l'analyse des approvisionnements: l'exemple
+#' de l'obsidienne en Armenie, ArcheoSciences, revue d'Archeometrie 28, 25-33,
+#' and reproduced by Vaissie E. (2021), Mobility of Paleolithic Populations:
+#' Biomechanical Considerations and Spatiotemporal Modelling, PaleoAnthropology
+#' 2021(1), 120-144 (see p. 124, with explicit reference to Eastman 1999: 61),
+#' the accessible source from which the equation was drawn into movecost.\cr
 #'
 #' \strong{Functions expressing cost as metabolic energy expenditure}:\cr
 #'
@@ -185,8 +220,10 @@
 #' (terrain factor applied once, as in the Pandolf et al. equation it
 #' modifies; movecost <= 2.x applied it twice, see the note under the Pandolf
 #' entry above.)
-#' Van Leusen P.M. (2002), Pattern to process; with the amendments reported by
-#' Herzog I. (2013), Least-cost Paths - Some Methodological Issues,
+#' Van Leusen P.M. (2002), Pattern to process: methodological investigations
+#' into the formation and interpretation of spatial patterns in archaeological
+#' landscapes, PhD thesis, University of Groningen; with the amendments reported
+#' by Herzog I. (2013), Least-cost Paths - Some Methodological Issues,
 #' Internet Archaeology 36.\cr
 #'
 #' \strong{Llobera-Sluckin's metabolic cost function (kJ/m)} (\code{"ls"}):\cr
@@ -208,10 +245,19 @@
 #' Archaeological Science 31.\cr
 #'
 #' \strong{Terrain factor (N)}:\cr
-#' virtually all the implemented cost functions (with few exceptions, namely the
-#' off-path functions and Alberti's, which natively embed one) can take into
-#' account a terrain factor (parameter \code{N}; 1 by default) representing the
-#' easiness/difficulty of moving on different terrain types.\cr
+#' virtually all the implemented cost functions can take into account a
+#' terrain factor (parameter \code{N}; 1 by default) representing the
+#' easiness/difficulty of moving on different terrain types. There are a few
+#' exceptions: the off-path functions (\code{"tofp"}, \code{"icmoffp"},
+#' \code{"icfoffp"}), which already embed off-path walking (their on-path
+#' versions, \code{"t"}, \code{"icmonp"}, \code{"icfonp"}, do take N), and
+#' Alberti's function (\code{"alb"}), which models the walking pace of a flock
+#' rather than of a human walker. These functions ignore N, with a warning if
+#' a value other than 1 (or a terrain raster) is supplied.\cr
+#' The terrain factor can be a single value for the whole study area, or vary
+#' across it, via a raster of terrain factors or of terrain classes (see the
+#' \code{terrain} and \code{terrain.table} arguments of
+#' \code{\link{mc_surface}}).\cr
 #'
 #' The following reference list of terrain factors is based on the data
 #' collected in Herzog, I. (2020), Spatial Analysis Based on Cost Functions, in
@@ -219,7 +265,9 @@
 #' Analysis. A Methodological Guide", Routledge: New York, 340 (with previous
 #' references). It is divided into two sections: section (a) reports the terrain
 #' factors to be used for cost functions measuring time; section (b) for
-#' functions measuring cost other than time.\cr
+#' functions measuring cost other than time. The same values are returned as a
+#' data frame by \code{\link{mc_terrain_factors}}, ready for building the
+#' lookup table of a terrain-class raster.\cr
 #'
 #' (a) for time-based cost functions:
 #' \itemize{
@@ -606,4 +654,37 @@ mc_cost_functions <- function() {
          "\nSee mc_cost_functions() for details.", call. = FALSE)
   }
   reg[[funct]]
+}
+
+#' Internal: why a cost function does not take a terrain factor
+#'
+#' Builds the warning issued when a terrain factor (\code{N} other than 1, or
+#' a terrain raster) is supplied to a function that does not take one. The
+#' off-path functions already embed off-path walking, so the message points to
+#' their on-path version, which does take N; Alberti's function models the
+#' walking pace of a flock, to which a human terrain factor does not apply.
+#'
+#' @param funct cost-function code.
+#' @param what what is ignored (e.g. "'terrain' is ignored").
+#' @param kind "raster" or "N": wording of the pointer to the on-path version.
+#' @return a character string.
+#' @keywords internal
+#' @noRd
+.no_N_message <- function(funct, what, kind = c("raster", "N")) {
+  kind <- match.arg(kind)
+  onpath <- c(tofp = "t", icmoffp = "icmonp", icfoffp = "icfonp")
+  if (funct %in% names(onpath)) {
+    paste0("The cost function '", funct, "' already embeds off-path walking ",
+           "and does not take a terrain factor: ", what, ". ",
+           if (kind == "raster") "To model terrain with a raster, " else
+             "To apply a terrain factor, ",
+           "use the on-path version ('", onpath[[funct]], "').")
+  } else if (funct == "alb") {
+    paste0("The cost function 'alb' models the walking pace of a flock on ",
+           "pastoral foraging excursions and does not take a terrain factor: ",
+           what, ".")
+  } else {
+    paste0("The cost function '", funct, "' does not take a terrain factor: ",
+           what, ".")
+  }
 }

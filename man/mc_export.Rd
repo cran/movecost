@@ -26,7 +26,9 @@ Writes the spatial components of any movecost result object to disk:
 rasters as GeoTIFF, vector layers as GeoPackage (which, unlike the ESRI
 shapefiles produced by movecost <= 2.x, preserves full attribute names and
 supports mixed geometry without sidecar files). File names carry the cost
-function code as a suffix, as in movecost <= 2.x.
+function code as a suffix, as in movecost <= 2.x. For a cost surface built
+with a terrain raster (see \code{\link{mc_surface}}), the per-cell terrain
+factors actually used are also written (\code{terrain_N_<funct>.tif}).
 }
 \examples{
 \dontrun{

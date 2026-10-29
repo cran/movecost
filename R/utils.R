@@ -38,14 +38,15 @@ NULL
 #' Accepts 'SpatRaster', legacy 'RasterLayer', or a file path.
 #'
 #' @param x raster data in any supported class.
+#' @param arg_name name of the argument (used in error messages).
 #' @return a 'SpatRaster'.
 #' @keywords internal
 #' @noRd
-.as_spatraster <- function(x) {
+.as_spatraster <- function(x, arg_name = "dtm") {
   if (inherits(x, "SpatRaster")) return(x)
   if (inherits(x, "RasterLayer")) return(terra::rast(x))
   if (is.character(x) && length(x) == 1L) return(terra::rast(x))
-  stop("'dtm' must be a SpatRaster, RasterLayer, or a file path; got: ",
+  stop("'", arg_name, "' must be a SpatRaster, RasterLayer, or a file path; got: ",
        paste(class(x), collapse = "/"), call. = FALSE)
 }
 
@@ -158,6 +159,13 @@ NULL
   v <- terra::vect(geom_sf)
   ex <- terra::extract(r, v, cells = TRUE, touches = TRUE)
   unique(ex$cell[!is.na(ex$cell)])
+}
+
+#' Compact number formatting for labels (Inf kept as "Inf")
+#' @keywords internal
+#' @noRd
+.fmt_num <- function(x) {
+  ifelse(is.finite(x), format(signif(x, 4), trim = TRUE), as.character(x))
 }
 
 #' Null-coalescing helper

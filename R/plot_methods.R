@@ -107,15 +107,41 @@ utils::globalVariables(c("x", "y", "value", "shade", "level", "rank",
 #'
 #' Returns a ggplot object showing the per-cell cost raster (walking speed in
 #' km/h for speed-based functions, conductance otherwise) with a translucent
-#' slope-shade overlay.
+#' slope-shade overlay. If the surface was built with a terrain raster (see
+#' the \code{terrain} argument of \code{\link{mc_surface}}),
+#' \code{type = "terrain"} shows the terrain factor (N) of each cell instead,
+#' as actually used to build the surface (that is, after alignment to the DTM
+#' grid, class lookup, and filling of cells with no terrain value).
 #'
 #' @param x a \code{movecost_surface} object.
 #' @param transp transparency of the slope-shade overlay (0.5 by default).
+#' @param type \code{"cost"} (default) for the per-cell cost raster, or
+#'   \code{"terrain"} for the terrain factor of each cell (only for surfaces
+#'   built with a terrain raster).
 #' @param ... unused.
 #' @seealso \code{\link{mc_surface}}
 #' @return A ggplot object (draw it by printing; customise it with \code{+}).
 #' @export
-plot.movecost_surface <- function(x, transp = 0.5, ...) {
+plot.movecost_surface <- function(x, transp = 0.5,
+                                  type = c("cost", "terrain"), ...) {
+  type <- match.arg(type)
+  if (type == "terrain") {
+    if (is.null(x$terrain)) {
+      stop("This surface was built without a terrain raster; ",
+           "use type = \"cost\".", call. = FALSE)
+    }
+    tdf <- .r_df(x$terrain, "value")
+    tdf$value[is.infinite(tdf$value)] <- NA   # impassable cells drawn as NA
+    p <- ggplot2::ggplot() +
+      ggplot2::geom_raster(data = tdf,
+                           ggplot2::aes(x = x, y = y, fill = value)) +
+      ggplot2::scale_fill_viridis_c(name = "terrain\nfactor (N)",
+                                    option = "D", direction = -1,
+                                    na.value = "grey20")
+    p <- p + .gg_shade(x$dtm, transp)
+    return(.gg_finish(p, x$dtm, "Terrain factor across the study area",
+                      x$funct.label))
+  }
   cf <- .cf_get(x$funct)
   legend <- if (cf$group == "speed") "speed (km/h)" else "conductance"
   p <- ggplot2::ggplot() +

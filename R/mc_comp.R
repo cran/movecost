@@ -26,7 +26,11 @@
 #'   "m" (minutes).
 #' @param ... further parameters passed to \code{\link{mc_surface}}
 #'   (\code{N}, \code{W}, \code{L}, \code{V}, \code{sl.crit}, \code{barrier},
-#'   \code{field}, \code{cogn.slp}, \code{topo.dist}).
+#'   \code{field}, \code{cogn.slp}, \code{topo.dist}, \code{terrain},
+#'   \code{terrain.table}). A terrain raster is aligned to the DTM once and
+#'   then shared by all the compared functions; functions that do not take a
+#'   terrain factor (the off-path functions and Alberti's) ignore it, with a
+#'   warning.
 #'
 #' @return An object of class \code{movecost_comp}, a list with components
 #' \itemize{
@@ -71,8 +75,12 @@ mc_comp <- function(dtm, origin, destin, functs, move = 16,
   paths_all <- list()
   backs_all <- list()
   dtm <- .as_spatraster(dtm)
+  dots <- list(...)
+  # align a terrain raster to the DTM once, not once per cost function
+  if (!is.null(dots$terrain)) dots$terrain <- .align_terrain(dtm, dots$terrain)
   for (f in functs) {
-    surf <- mc_surface(dtm = dtm, funct = f, move = move, ...)
+    surf <- do.call(mc_surface,
+                    c(list(dtm = dtm, funct = f, move = move), dots))
     lcp <- mc_paths(surf, origin = origin, destin = destin,
                     return.base = return.base, time = time)
     cf <- .cf_get(f)

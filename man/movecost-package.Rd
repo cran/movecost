@@ -31,7 +31,7 @@ cannot be reordered); the grouping below is provided as a map.\cr
 
 \strong{Core (build the cost surface once)}:\cr
 \code{\link{mc_surface}}, \code{\link{mc_cost_functions}},
-\code{\link{mc_dtm}}.\cr
+\code{\link{mc_terrain_factors}}, \code{\link{mc_dtm}}.\cr
 
 \strong{Analyses (reuse the surface)}:\cr
 \code{\link{mc_accum}} (accumulated cost surface and isochrones),

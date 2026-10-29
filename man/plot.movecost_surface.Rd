@@ -4,12 +4,16 @@
 \alias{plot.movecost_surface}
 \title{Plot a movecost cost surface}
 \usage{
-\method{plot}{movecost_surface}(x, transp = 0.5, ...)
+\method{plot}{movecost_surface}(x, transp = 0.5, type = c("cost", "terrain"), ...)
 }
 \arguments{
 \item{x}{a \code{movecost_surface} object.}
 
 \item{transp}{transparency of the slope-shade overlay (0.5 by default).}
+
+\item{type}{\code{"cost"} (default) for the per-cell cost raster, or
+\code{"terrain"} for the terrain factor of each cell (only for surfaces
+built with a terrain raster).}
 
 \item{...}{unused.}
 }
@@ -19,7 +23,11 @@ A ggplot object (draw it by printing; customise it with \code{+}).
 \description{
 Returns a ggplot object showing the per-cell cost raster (walking speed in
 km/h for speed-based functions, conductance otherwise) with a translucent
-slope-shade overlay.
+slope-shade overlay. If the surface was built with a terrain raster (see
+the \code{terrain} argument of \code{\link{mc_surface}}),
+\code{type = "terrain"} shows the terrain factor (N) of each cell instead,
+as actually used to build the surface (that is, after alignment to the DTM
+grid, class lookup, and filling of cells with no terrain value).
 }
 \seealso{
 \code{\link{mc_surface}}

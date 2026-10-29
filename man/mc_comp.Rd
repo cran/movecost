@@ -38,7 +38,11 @@ the origin for each cost function.}
 
 \item{...}{further parameters passed to \code{\link{mc_surface}}
 (\code{N}, \code{W}, \code{L}, \code{V}, \code{sl.crit}, \code{barrier},
-\code{field}, \code{cogn.slp}, \code{topo.dist}).}
+\code{field}, \code{cogn.slp}, \code{topo.dist}, \code{terrain},
+\code{terrain.table}). A terrain raster is aligned to the DTM once and
+then shared by all the compared functions; functions that do not take a
+terrain factor (the off-path functions and Alberti's) ignore it, with a
+warning.}
 }
 \value{
 An object of class \code{movecost_comp}, a list with components
