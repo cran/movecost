@@ -47,9 +47,12 @@ to one tenth of the range of the accumulated values.\cr
 
 For cost functions expressing cost as walking time, the accumulated values
 are returned in the unit selected via \code{time} ("h" hours, default, or
-"m" minutes); for the Pandolf, Pandolf-corrected, and Van Leusen functions,
-values are expressed in Megawatts; other functions keep their native unit
-(see \code{\link{mc_cost_functions}}).
+"m" minutes); for the energy functions, values are expressed as accumulated
+energy (kJ for the Pandolf, Pandolf-corrected, Van Leusen, and
+Llobera-Sluckin functions; J/kg for the Minetti, Herzog, and Ardigo
+functions; kcal for Hare's function); abstract-cost functions keep their
+native unit (see the \code{cost_unit} column of
+\code{\link{mc_cost_functions}}).
 }
 \examples{
 dtm <- mc_volc()

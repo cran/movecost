@@ -27,6 +27,20 @@
 #               applied in 2.x;
 #       - p, vl with N != 1 (Pandolf, Van Leusen): 2.x applied the terrain
 #               factor N twice; with N = 1 they MATCH, with N != 1 they differ.
+#   * from movecost 3.1.1, further DIFFERENCES by design (see NEWS.md, 3.1.1):
+#       - icmonp, icmoffp, icfonp, icfoffp, r, trp, m, hrz, ls, a: the slope is
+#               signed, as in the sources (2.x-3.1.0 used its absolute value);
+#       - a: coefficient 45.72 (2.x-3.1.0: 45.71);
+#       - pcf: signed grade and terrain factor on the whole correction;
+#       - vl: abs(G + 10) instead of abs(G) + 10;
+#       - p, pcf, vl: energy (rate / speed) is accumulated instead of
+#               rate x distance, and reported in kJ;
+#       - h: accumulated value divided by 1000 (kcal).
+#     The functions still expected to MATCH are ug, wcs, ree, b, e (and ks,
+#     ma, as described above). The speed functions (t, tofp, mp, alb, gkrs)
+#     differ by the constant factor 0.278 * 3.6 = 1.0008, because from 3.1.1
+#     km/h are converted to m/s exactly (1/3.6), while this script replicates
+#     the 2.x constant 0.278.
 # ---------------------------------------------------------------------------
 
 stopifnot(requireNamespace("gdistance", quietly = TRUE),

@@ -25,5 +25,5 @@
 }
 
 # Tobler on-path walking speed in m/s, with the same km/h -> m/s constant
-# (0.278) used by the package (and by movecost <= 2.x)
-.tobler_ms <- function(slope) (6 * exp(-3.5 * abs(slope + 0.05))) * 0.278
+# (exact 1/3.6) used by the package since 3.1.1 (movecost <= 3.1.0: 0.278)
+.tobler_ms <- function(slope) (6 * exp(-3.5 * abs(slope + 0.05))) / 3.6

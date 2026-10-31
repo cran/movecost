@@ -14,7 +14,9 @@ A data frame with one row per cost function and columns:
   \item \code{type}: \code{"walking time"}, \code{"energy"}, \code{"abstract"},
     or \code{"wheeled vehicle"};
   \item \code{cost_unit}: unit of the accumulated cost
-    (before any user-selected time conversion);
+    (before any user-selected time conversion); for the energy functions this
+    is the accumulated energy (kJ, J/kg, or kcal), not the per-metre unit
+    given in the description of each function;
   \item \code{uses_N}, \code{uses_WLV}, \code{uses_slcrit}: whether the
     function responds to the terrain factor, to the W/L/V parameters, and to
     the critical-slope parameter respectively.
@@ -56,27 +58,35 @@ Geografisk Tidsskrift-Danish Journal of Geography, 117:1, 53-62,
 \doi{10.1080/00167223.2017.1316212}.\cr
 
 \strong{Irmischer-Clarke's hiking function (male, on-path)} (\code{"icmonp"}):\cr
-\eqn{((0.11 + exp(-(abs(x)*100 + 5)^2 / (2 * 30^2))) * 3.6) * (1/N)}\cr
+\eqn{((0.11 + exp(-(x*100 + 5)^2 / (2 * 30^2))) * 3.6) * (1/N)}\cr
 Irmischer I.J., Clarke K.C. (2018), Measuring and modeling the speed of human
 navigation, Cartography and Geographic Information Science, 45(2), 177-186,
 \doi{10.1080/15230406.2017.1292150}. The original functions express speed in
 m/s; they are multiplied by 3.6 to obtain km/h for consistency with the other
-Tobler-related cost functions; slope is in percent.\cr
+Tobler-related cost functions. Slope is the signed percent slope
+(100 * elevation change / distance, negative downhill), as in equations 2-5 of
+the source, so that the on-path speed peaks at -5\% and the off-path speed at
+-2\% (see also Herzog 2020, Table 18.2). \strong{Note}: movecost <= 3.1.0
+applied the absolute value to the slope, which removed this asymmetry; fixed in
+3.1.1, so results for downhill movement differ from earlier versions.\cr
 
 \strong{Irmischer-Clarke's hiking function (male, off-path)} (\code{"icmoffp"}):\cr
-\eqn{(0.11 + 0.67 * exp(-(abs(x)*100 + 2)^2 / (2 * 30^2))) * 3.6}\cr
+\eqn{(0.11 + 0.67 * exp(-(x*100 + 2)^2 / (2 * 30^2))) * 3.6}\cr
 the Gaussian denominator is \eqn{2*30^2} (=1800), the 2*sigma^2 form of
 equation 4 of Irmischer & Clarke (2018), shared by the on-path (equation 2)
-and female (equation 5) variants; unchanged from movecost <= 2.x.
+and female (equation 5) variants; signed percent slope, as for the on-path
+version (fixed in 3.1.1).
 This function does not take the terrain factor N, since it already embeds
 off-path walking; to apply a terrain factor, use the on-path version
 (\code{"icmonp"}).\cr
 
 \strong{Irmischer-Clarke's hiking function (female, on-path)} (\code{"icfonp"}):\cr
-\eqn{((0.95 * (0.11 + exp(-(abs(x) * 100 + 5)^2/(2 * 30^2)))) * 3.6) * (1/N)}\cr
+\eqn{((0.95 * (0.11 + exp(-(x * 100 + 5)^2/(2 * 30^2)))) * 3.6) * (1/N)}\cr
+signed percent slope (fixed in 3.1.1; see the male on-path version).\cr
 
 \strong{Irmischer-Clarke's hiking function (female, off-path)} (\code{"icfoffp"}):\cr
-\eqn{(0.95 * (0.11 + 0.67 * exp(-(abs(x) * 100 + 2)^2/(2 * 30^2)))) * 3.6}\cr
+\eqn{(0.95 * (0.11 + 0.67 * exp(-(x * 100 + 2)^2/(2 * 30^2)))) * 3.6}\cr
+signed percent slope (fixed in 3.1.1; see the male on-path version).
 This function does not take the terrain factor N, since it already embeds
 off-path walking; to apply a terrain factor, use the on-path version
 (\code{"icfonp"}).\cr
@@ -91,7 +101,11 @@ The function originally expresses walking time in seconds; its reciprocal is
 used internally so that the accumulated value corresponds to time. Unlike in
 the original formulation, the pixel resolution is not embedded in the formula
 because the graph machinery accounts for the actual distance between cell
-centres.\cr
+centres. The slope (P, in percent) is taken as a magnitude, as in the source,
+where the function is a regression on data of Gilman and Thornes (1985)
+relating the number of contour lines crossed to the distance covered in 12
+minutes, irrespective of the direction of travel, and is applied to a slope
+layer; the function is therefore symmetric.\cr
 
 \strong{Marin Arroyo's walking-time cost function} (\code{"ma"}):\cr
 \eqn{ifelse(x < 0, 1 / ((0.6 * ((abs(x)*100)/23+1))*N), 1 / ((0.6 * ((abs(x)*100)/11+1))*N))}\cr
@@ -133,9 +147,13 @@ Cost Functions, in Gillings M., Haciguzeller P., Lock G. (eds),
 York, 333-358.\cr
 
 \strong{Rees' hiking function} (\code{"r"}):\cr
-\eqn{((1 / (0.75 + 0.09 * abs(x) + 14.6 * (abs(x))^2)) * 3.6) * (1/N)}\cr
+\eqn{((1 / (0.75 + 0.09 * x + 14.6 * x^2)) * 3.6) * (1/N)}\cr
 Rees W.G. (2004), Least-cost paths in mountainous terrain,
-Computers & Geosciences, 30(3), 203-209. Speed transposed from m/s to km/h.\cr
+Computers & Geosciences, 30(3), 203-209 (equation 1, with slope defined as
+height gained over horizontal distance, i.e. signed). Speed transposed from
+m/s to km/h. \strong{Note}: movecost <= 3.1.0 applied the absolute value to
+the slope, so the linear term also slowed descents; fixed in 3.1.1 (the effect
+is small, as the linear coefficient is small).\cr
 
 \strong{Kondo-Seino's modified Tobler hiking function} (\code{"ks"}):\cr
 \eqn{ifelse(x >= -0.07, (5.1 * exp(-2.25 * abs(x + 0.07))) * (1/N), (5.1 * exp(-1.5 * abs(x + 0.07))) * (1/N))}\cr
@@ -152,11 +170,17 @@ coefficient (1.5). Results on such gradients therefore differ (correctly)
 from movecost <= 2.x.\cr
 
 \strong{Tripcevich's hiking function} (\code{"trp"}):\cr
-\eqn{((4.028*46^2)/(((atan(abs(x))*180/pi)+4.127)^2+46^2))*(1/N)}\cr
-Tripcevich N. (2008), Estimating Llama caravan travel speeds:
-ethno-archaeological fieldwork with a Peruvian salt caravan, paper presented
-at the inauguration of the Center for Spatial Studies, University of
-California, Santa Barbara.\cr
+\eqn{((4.028*46^2)/(((atan(x)*180/pi)+4.127)^2+46^2))*(1/N)}\cr
+Tripcevich N. (2008), Estimating Llama Caravan Travel Speeds:
+Ethno-archaeological Fieldwork with a Peruvian Salt Caravan, poster,
+Archaeological Research Facility, University of California, Berkeley,
+\url{https://escholarship.org/uc/item/79q8q6sn}. An asymmetrical Cauchy
+function, h * w^2 / ((slope - x0)^2 + w^2), fitted to the mean speed (km/h) of
+each signed slope-integer group, with slope in degrees (ATAN of elevation
+change over step length), h = 4.028, x0 = -4.127, w = 46.0; peak speed is
+therefore reached on a -4.1 degree descent. \strong{Note}: movecost <= 3.1.0
+applied the absolute value to the slope, which voided the asymmetry; fixed in
+3.1.1.\cr
 
 \strong{Function for wheeled vehicles}:\cr
 
@@ -173,7 +197,9 @@ to Archaeological Spaces (pp. 179-211), Routledge.\cr
 \strong{Relative energetic expenditure} (\code{"ree"}):\cr
 \eqn{1 / ((tan((atan(abs(x))*180/pi)*pi/180) / tan(1*pi/180)) * N)}\cr
 Conolly J., Lake M. (2006), Geographic Information Systems in Archaeology,
-Cambridge University Press, p. 220.\cr
+Cambridge University Press, p. 220. The cost is the tangent of the slope
+relative to that of a 1-degree slope, so movement on level ground costs
+nothing (and the terrain factor has no effect there).\cr
 
 \strong{Bellavia's cost function} (\code{"b"}):\cr
 \eqn{1 / (((atan(abs(x))*180/pi)+1) * N)}\cr
@@ -185,7 +211,9 @@ Envelope. CAA 2001, BAR International Series 1016, Archaeopress, Oxford,
 
 \strong{Eastman's cost function} (\code{"e"}):\cr
 \eqn{1 / ((0.031*(atan(abs(x))*180/pi)^2 - 0.025*(atan(abs(x))*180/pi) + 1) * N)}\cr
-slope in degrees. The underlying cost equation (0.031 * p^2 - 0.025 * p + 1,
+slope in degrees, taken as a magnitude (the source applies the equation to the
+values of a slope raster, which carries no direction of travel). The
+underlying cost equation (0.031 * p^2 - 0.025 * p + 1,
 with p the slope in degrees) was originally proposed by Eastman J.R. (1999),
 IDRISI32: Guide to GIS and Image Processing, Clark Labs, Clark University,
 Worcester (MA), p. 61. It was subsequently adopted, among others, by Barge O.,
@@ -198,73 +226,127 @@ the accessible source from which the equation was drawn into movecost.\cr
 
 \strong{Functions expressing cost as metabolic energy expenditure}:\cr
 
-\strong{Pandolf et al.'s cost function (in Watts)} (\code{"p"}):\cr
-\eqn{1 / (1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * (V^2) + 0.35 * V * (abs(x)*100)))}\cr
+\strong{Pandolf et al.'s cost function (accumulated energy in kJ)} (\code{"p"}):\cr
+\eqn{V / (1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * (V^2) + 0.35 * V * (abs(x)*100)))}\cr
 where W is the walker's body weight (kg), L the carried load (kg), V the
 velocity in m/s, N the terrain coefficient (the \eqn{\eta} of the original
 publication, multiplying the velocity-dependent term once). If V is set to
 0, it is worked out internally from the Tobler on-path function and varies
-with the slope. \strong{Note}: movecost <= 2.x additionally multiplied the
-whole expression by N, applying the terrain factor twice; fixed in version
-3.0 (see NEWS.md). With the default N = 1 the results coincide.
+with the slope. The bracketed expression M is a metabolic rate (W); dividing
+it by V gives the energy spent per metre (J/m), so that the accumulated value
+is energy (J, reported in kJ). As V is a speed along the ground, distances
+are planimetric unless \code{topo.dist = TRUE} in \code{\link{mc_surface}},
+which understates energy slightly on steep terrain (about 4\% at 30\%). \strong{Departure from the source}: the
+equation of Pandolf et al. (1977) was developed for level and uphill walking
+(Yokota et al. 2004, cited below) and, with a negative grade, turns negative
+on steep descents. movecost uses the absolute grade, i.e. the symmetric form
+reported by Herzog I. (2020, Table 18.2, cited below), which treats a descent
+as costly as an ascent of the same gradient; for a downhill-specific model use
+\code{"pcf"}. \strong{Notes}: movecost <= 2.x additionally multiplied the
+whole expression by N, applying the terrain factor twice (fixed in 3.0);
+movecost <= 3.1.0 accumulated M * distance (W*m, labelled "Megawatts") rather
+than energy, so that with V = 0 the least-cost path did not minimise energy
+(fixed in 3.1.1).
 Pandolf K.B., Givoni B., Goldman R.F. (1977), Predicting energy expenditure
 with loads while standing or walking very slowly, Journal of Applied
 Physiology, 43(4), 577-581, \doi{10.1152/jappl.1977.43.4.577}.\cr
 
-\strong{Pandolf et al.'s cost function with downhill correction (in Watts)}
-(\code{"pcf"}):\cr
-\eqn{ifelse(x >= 0, 1 / (M), 1 / (M - CF))} where M is the Pandolf
-et al. metabolic rate above and \eqn{CF = N * (G*(W+L)*V/3.5) - ((W+L)*(G+6)^2/W) + (25-V^2)}
-with G the slope magnitude in percent; Yokota M., Berglund L.G., Santee
-W.R., Buller M.J., Hoyt R.W. (2004), U.S. Army Research Institute of
-Environmental Medicine Technical Report T04-09.
-\strong{Note}: in movecost <= 2.x the test selecting the downhill branch was
+\strong{Pandolf et al.'s cost function with downhill correction (accumulated
+energy in kJ)} (\code{"pcf"}):\cr
+\eqn{ifelse(x >= 0, V / M, V / (M - CF))} where M is the Pandolf
+et al. metabolic rate above, computed with the signed grade G (percent), and
+\eqn{CF = N * ((G*(W+L)*V)/3.5 - ((W+L)*(G+6)^2)/W + (25-V^2))}, applied when
+G < 0, with the terrain factor multiplying the whole bracket; Yokota M.,
+Berglund L.G., Santee W.R., Buller M.J., Hoyt R.W. (2004), Predicting
+individual physiological responses during marksmanship field training using an
+updated SCENARIO-J model, U.S. Army Research Institute of Environmental
+Medicine Technical Report T04-09, p. 4. Looney D.P. et al. (2019),
+Estimating energy expenditure during level, uphill, and downhill walking,
+Medicine & Science in Sports & Exercise 51(9), 1954-1960 (Table 2), print
+the correction with a signed grade too, but with a last term of + 25 * V^2
+instead of (25 - V^2); movecost follows Yokota et al. (2004), the source of
+the correction as implemented in the SCENARIO-J model. As for \code{"p"}, the
+metabolic rate is divided by V so that the accumulated value is energy (kJ).
+Looney et al. (2019) report that the correction holds down to about -12\%
+and overcorrects on steeper descents. Since CF is not zero at G = 0 (about
+-12 W with W = 70, L = 0, V = 1.2), the cost changes by a small step between
+level and slightly downhill movement; this comes from the source equation.
+\strong{Notes}: in movecost <= 2.x the test selecting the downhill branch was
 applied to the absolute slope, so the downhill correction could never be
-selected; version 3.0 evaluates the signed slope, applying the Yokota et
-al. correction to downhill movement as intended. Results for downhill
-movement therefore differ (correctly) from movecost <= 2.x.\cr
+selected (fixed in 3.0). Versions 3.0.0-3.1.0 then computed both M and CF with
+the absolute grade and applied the terrain factor to the first CF term only,
+so that descents cost more than ascents of the same gradient (e.g., with
+W = 70, L = 0, V = 1.2: 543 W instead of 195 W at -10\%); fixed in 3.1.1.\cr
 
-\strong{Minetti et al.'s metabolic cost function (J/(kg*m))} (\code{"m"}):\cr
-\eqn{1 / (((280.5 * abs(x)^5) - (58.7 * abs(x)^4) - (76.8 * abs(x)^3) + (51.9 * abs(x)^2) + (19.6 * abs(x)) + 2.5) * N)}\cr
+\strong{Minetti et al.'s metabolic cost function (J/(kg*m); accumulated in
+J/kg)} (\code{"m"}):\cr
+\eqn{1 / (((280.5 * i^5) - (58.7 * i^4) - (76.8 * i^3) + (51.9 * i^2) + (19.6 * i) + 2.5) * N)},
+with \eqn{i = max(x, -0.45)}\cr
 Minetti A.E., Moia C., Roi G.S., Susta D., Ferretti G. (2002), Energy cost of
 walking and running at extreme uphill and downhill slopes, Journal of Applied
-Physiology 93, 1039-1046. Valid for slopes in the range -0.5/0.5; outside
-this range its output becomes counterintuitive (see Herzog 2013), in which
-case the Herzog polynomial approximation (\code{"hrz"}) is preferable.\cr
+Physiology 93, 1039-1046. The polynomial is defined on the signed gradient,
+measured between -0.45 and +0.45; the measured minimum cost is on a descent of
+-0.10 (0.81 J/(kg*m)), and the polynomial's minimum on a descent of about
+-0.15. \strong{Departure from the source}: below -0.45 the polynomial first
+decreases and then turns negative (about -0.56; see also Herzog 2016), which
+is physically meaningless; movecost therefore evaluates it at -0.45 for steeper
+descents, and \code{\link{mc_surface}} reports how many edges are affected. For
+terrain this steep the Herzog polynomial approximation (\code{"hrz"}) is
+preferable. \strong{Note}: movecost <= 3.1.0 applied the absolute value to the
+gradient, which made descents as costly as ascents (e.g., 4.90 instead of 1.13
+J/(kg*m) at -0.10); fixed in 3.1.1.\cr
 
-\strong{Herzog's metabolic cost function (J/(kg*m))} (\code{"hrz"}):\cr
-\eqn{1 / (((1337.8 * abs(x)^6) + (278.19 * abs(x)^5) - (517.39 * abs(x)^4) - (78.199 * abs(x)^3) + (93.419 * abs(x)^2) + (19.825 * abs(x)) + 1.64) * N)}\cr
-Herzog I. (2016), cited above; 6th-degree polynomial approximation of
-Minetti et al.'s function.\cr
+\strong{Herzog's metabolic cost function (J/(kg*m); accumulated in J/kg)} (\code{"hrz"}):\cr
+\eqn{1 / (((1337.8 * x^6) + (278.19 * x^5) - (517.39 * x^4) - (78.199 * x^3) + (93.419 * x^2) + (19.825 * x) + 1.64) * N)}\cr
+Herzog I. (2016), cited above, p. 5 ("s is mathematical slope"); also Herzog
+I. (2020, Table 18.2), cited above. 6th-degree polynomial approximation of
+Minetti et al.'s data on the signed slope, positive for all slopes, with its
+minimum on a descent of about -0.11. \strong{Note}: movecost <= 3.1.0 applied
+the absolute value to the slope; fixed in 3.1.1.\cr
 
-\strong{Van Leusen's metabolic cost function (in Watts)} (\code{"vl"}):\cr
-\eqn{1 / (1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * (V^2) + 0.35 * V * ((abs(x)*100) + 10)))}\cr
-(terrain factor applied once, as in the Pandolf et al. equation it
-modifies; movecost <= 2.x applied it twice, see the note under the Pandolf
-entry above.)
+\strong{Van Leusen's metabolic cost function (accumulated energy in kJ)} (\code{"vl"}):\cr
+\eqn{V / (1.5 * W + 2.0 * (W + L) * (L / W)^2 + N * (W + L) * (1.5 * (V^2) + 0.35 * V * abs(x*100 + 10)))}\cr
 Van Leusen P.M. (2002), Pattern to process: methodological investigations
 into the formation and interpretation of spatial patterns in archaeological
-landscapes, PhD thesis, University of Groningen; with the amendments reported
-by Herzog I. (2013), Least-cost Paths - Some Methodological Issues,
-Internet Archaeology 36.\cr
+landscapes, PhD thesis, University of Groningen, chapter 6. Van Leusen
+replaces the grade G of the Pandolf et al. equation by the absolute value of
+the signed grade shifted to the axis of cost symmetry, which he places at
+"-10\% (or -6 degrees)" of slope. \strong{Departure from the source}: the
+printed formula reads abs(G + 6), which mixes degrees with a grade in percent;
+movecost follows the stated axis and uses abs(G + 10), with G in percent, which
+also agrees with the minimum of the energy cost of walking near -10\% (Minetti
+et al. 2002). As for \code{"p"}, the metabolic rate is divided by V so that the
+accumulated value is energy (kJ); the terrain factor is applied once.
+\strong{Notes}: movecost <= 2.x applied the terrain factor twice (fixed in
+3.0); movecost <= 3.1.0 used abs(G) + 10, which equals abs(G + 10) uphill but
+not downhill (e.g., 844 W instead of 256 W at -10\% with W = 70, L = 0,
+V = 1.2), and accumulated W*m rather than energy; fixed in 3.1.1.\cr
 
-\strong{Llobera-Sluckin's metabolic cost function (kJ/m)} (\code{"ls"}):\cr
-\eqn{1 / ((2.635 + (17.37 * abs(x)) + (42.37 * abs(x)^2) - (21.43 * abs(x)^3) + (14.93 * abs(x)^4)) * N)}\cr
+\strong{Llobera-Sluckin's metabolic cost function (kJ/m; accumulated in kJ)} (\code{"ls"}):\cr
+\eqn{1 / ((2.635 + (17.37 * x) + (42.37 * x^2) - (21.43 * x^3) + (14.93 * x^4)) * N)}\cr
 Llobera M., Sluckin T.J. (2007), Zigzagging: Theoretical insights on climbing
-strategies, Journal of Theoretical Biology 249, 206-217.\cr
+strategies, Journal of Theoretical Biology 249, 206-217 (equation 16, a
+quartic fit to Margaria's data on the signed slope; the authors stress that
+the metabolic curve is asymmetric). \strong{Note}: movecost <= 3.1.0 applied
+the absolute value to the slope; fixed in 3.1.1.\cr
 
-\strong{Ardigo et al.'s metabolic cost function (J/(kg*m))} (\code{"a"}):\cr
-\eqn{1 / ((1.866 * exp(4.911*abs(x)) * V^2 - 3.773 * exp(3.416*abs(x)) * V + (45.71*abs(x)^2 + 18.90*abs(x)) + 4.456) * N)}\cr
+\strong{Ardigo et al.'s metabolic cost function (J/(kg*m); accumulated in J/kg)} (\code{"a"}):\cr
+\eqn{1 / ((1.866 * exp(4.911*x) * V^2 - 3.773 * exp(3.416*x) * V + (45.72*x^2 + 18.90*x) + 4.456) * N)}\cr
 Ardigo L.P., Saibene F., Minetti A.E. (2003), The optimal locomotion on
-gradients: walking, running or cycling?, Eur J Appl Physiol 90, 365-371.
+gradients: walking, running or cycling?, Eur J Appl Physiol 90, 365-371
+(equation 1, with the gradient i signed, uphill and downhill).
 If V is set to 0, it is worked out internally from the Tobler on-path
-function.\cr
+function. \strong{Note}: movecost <= 3.1.0 applied the absolute value to the
+gradient and used 45.71 instead of the published 45.72; fixed in 3.1.1.\cr
 
-\strong{Hare's metabolic cost function (cal/km)} (\code{"h"}):\cr
+\strong{Hare's metabolic cost function (kcal/km; accumulated in kcal)} (\code{"h"}):\cr
 \eqn{1 / ((48 + 30 / (6 * exp(-3.5 * abs(x + 0.05)))) * N)}\cr
 Hare T.S. (2004), Using Measures of Cost Distance in the Estimation of Polity
 Boundaries in the Post Classic Yautepec valley, Mexico, Journal of
-Archaeological Science 31.\cr
+Archaeological Science 31. The function gives kcal per km; the accumulated
+value is divided by 1000 so that it is expressed in kcal. \strong{Note}:
+movecost <= 3.1.0 reported the accumulated sum without this division, under
+the label "cal/km"; fixed in 3.1.1.\cr
 
 \strong{Terrain factor (N)}:\cr
 virtually all the implemented cost functions can take into account a

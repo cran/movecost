@@ -169,7 +169,10 @@ calibrated constants.
 Yes. Many energetic cost functions are implemented. This example uses the
 Pandolf et al. function with downhill correction (`funct = "pcf"`), a body
 weight `W` of 60 kg and a carried load `L` of 5 kg. The walking speed `V`
-defaults to 1.2 m/s and is treated as uniform across the area.
+defaults to 1.2 m/s and is treated as uniform across the area. The function
+gives a metabolic rate, which movecost divides by the walking speed, so the
+accumulated value is the energy spent, in kJ (see `mc_cost_functions()` for the
+unit of each function).
 
 ```{r task4}
 surf_e <- mc_surface(dtm, funct = "pcf", move = 16, W = 60, L = 5)

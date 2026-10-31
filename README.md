@@ -1,4 +1,4 @@
-# movecost 3.1.0
+# movecost 3.1.1
 
 Calculation of slope-dependent accumulated cost surfaces, least-cost paths,
 least-cost corridors, least-cost networks, ranked alternative routes, cost
@@ -14,6 +14,12 @@ list of changes and the 2.x-to-3.0 function correspondence table.
 Version 3.1.0 adds a long-requested feature: the terrain factor can now vary
 across the landscape, supplied as a raster of terrain factors or of terrain
 classes (with a lookup table), alongside the single-value terrain factor `N`.
+
+Version 3.1.1 is a corrections release: twelve cost functions are brought into
+line with their published equations (mainly the sign of the slope, which makes
+descents cheaper than ascents where the sources say so), and the energy
+functions now accumulate energy in stated units. Results change for those
+functions; see `NEWS.md`.
 
 ## Design in one paragraph
 

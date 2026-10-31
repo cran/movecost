@@ -328,9 +328,25 @@ mc_surface <- function(dtm = NULL, funct = "t", move = 16,
   fun <- cf$make(params_cf)
   fvals <- fun(slope)
 
-  # conductance: speed functions are km/h -> m/s (0.278, as in movecost 2.x),
+  # functions evaluated only down to a slope floor (Minetti's polynomial,
+  # held at the lower end of its experimental range): report how many edges
+  # were affected, so that the user can judge the extrapolation
+  if (!is.null(cf$slope_floor)) {
+    n_floor <- sum(slope < cf$slope_floor, na.rm = TRUE)
+    if (n_floor > 0) {
+      message("Note: ", format(n_floor, big.mark = ","), " of ",
+              format(length(slope), big.mark = ","), " graph edges are steeper ",
+              "downhill than ", cf$slope_floor, " (the lower end of the range ",
+              "over which the '", funct, "' function was measured); their cost ",
+              "is evaluated at ", cf$slope_floor, ". Consider 'hrz' for terrain ",
+              "this steep.")
+    }
+  }
+
+  # conductance: speed functions are km/h -> m/s (exact factor 1/3.6; movecost
+  # <= 3.1.0 used the rounded 0.278, which shortened times by 0.08%),
   # then divided by distance; reciprocal functions divided by distance
-  conductance <- if (cf$group == "speed") (fvals * 0.278) / dist else fvals / dist
+  conductance <- if (cf$group == "speed") (fvals / 3.6) / dist else fvals / dist
 
   # topographic (surface) distance correction
   if (isTRUE(topo.dist)) {
@@ -420,7 +436,8 @@ print.movecost_surface <- function(x, ...) {
 #'
 #' Single igraph::distances() call; unit conversion applied afterwards.
 #' Returns a matrix [n_origins x n_cells] in the cost function's native unit
-#' (seconds for time-output functions, Watts/J/cal/abstract otherwise).
+#' (seconds for time-output functions; J, J/kg, kJ, kcal x 1000 or abstract
+#' units otherwise, before division by the registry 'divisor').
 #'
 #' @keywords internal
 #' @noRd
@@ -437,7 +454,7 @@ print.movecost_surface <- function(x, ...) {
 .convert_units <- function(vals, funct, time = "h") {
   cf <- .cf_get(funct)
   if (cf$time_output) vals <- .time_convert(vals, time)
-  if (cf$megawatt) vals <- vals / 1e6
+  if (!is.null(cf$divisor) && cf$divisor != 1) vals <- vals / cf$divisor
   vals
 }
 

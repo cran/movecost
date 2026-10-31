@@ -7,7 +7,12 @@
   maximum relative difference with a MATCH / DIFFERS verdict. Unchanged
   functions agree to floating-point precision (~1e-15); the deliberately
   corrected functions (`ks`, `ma`, `pcf`, and `p`/`vl` when N != 1) show a
-  known, explainable difference. Needs only gdistance + raster + sp installed.
+  known, explainable difference. From version 3.1.1 the functions corrected
+  against their published equations (signed slope for the Irmischer-Clarke,
+  Rees, Tripcevich, Minetti, Herzog, Llobera-Sluckin, and Ardigo functions;
+  `pcf`, `vl`; energy units of `p`, `pcf`, `vl`, `h`) also differ, by design;
+  `tests/testthat/test-sources.R` checks each of them against the source
+  equation. Needs only gdistance + raster + sp installed.
   Run with:
   `source(system.file("validation", "compare_v23.R", package = "movecost"))`
 

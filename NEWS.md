@@ -1,3 +1,95 @@
+# movecost 3.1.1
+
+A corrections release. Twelve cost functions are brought into line with their
+published equations; no feature is added or removed, and the interface is
+unchanged. Results change for the functions listed below (correctly), so
+analyses run with these functions in earlier versions should be re-run. Each
+point is documented, with its source, in the help page of
+`mc_cost_functions()`, which also states and justifies the few places where
+movecost deliberately departs from a source.
+
+## Corrected cost-function errors (results change)
+
+The 3.0.0 review had checked the branch tests and coefficients of each cost
+function against its source, but not the sign of the slope inside each
+formula. Several functions applied the absolute value to a slope that the
+source defines as signed (negative downhill), which made descents as costly as
+ascents of the same gradient. Every function below has now been checked
+against its primary source.
+
+* Irmischer-Clarke functions (`icmonp`, `icfonp`, `icmoffp`, `icfoffp`): the
+  percent slope is signed, as in equations 2-5 of Irmischer and Clarke (2018),
+  so that speed peaks on a -5% (on-path) or -2% (off-path) descent.
+* Rees (`r`): signed slope (Rees 2004, eq. 1). Small effect.
+* Tripcevich (`trp`): signed slope in degrees, so that speed peaks on a
+  -4.1 degree descent, as in the asymmetrical Cauchy function fitted by
+  Tripcevich (2008); the reference is completed with the poster's details and
+  URL.
+* Minetti et al. (`m`): signed gradient (Minetti et al. 2002); at -10% the
+  cost is now 1.13 instead of 4.90 J/(kg*m). Below -0.45, the lower end of the
+  measured range, where the polynomial decreases and then turns negative, the
+  gradient is held at -0.45, and `mc_surface()` reports how many edges are
+  affected (documented departure from the source).
+* Herzog (`hrz`): signed slope (Herzog 2016, 2020).
+* Llobera-Sluckin (`ls`): signed slope (Llobera and Sluckin 2007, eq. 16).
+* Ardigo et al. (`a`): signed gradient, and coefficient 45.72 instead of 45.71
+  (Ardigo et al. 2003, eq. 1).
+* Pandolf et al. with downhill correction (`pcf`): the grade is signed in both
+  the Pandolf rate and the Yokota et al. correction, and the terrain factor
+  multiplies the whole correction (Yokota et al. 2004, p. 4). Versions 3.0.0-3.1.0 used the absolute grade, so that a
+  descent cost more than an ascent of the same gradient (e.g., 543 W instead
+  of 195 W at -10%, with W = 70, L = 0, V = 1.2).
+* Van Leusen (`vl`): the grade term is abs(G + 10), with G signed, placing the
+  axis of cost symmetry at -10% as stated by Van Leusen (2002); 3.1.0 used
+  abs(G) + 10, which equals it uphill but not downhill. The printed formula of
+  the source reads abs(G + 6); the reasons for following the stated axis are
+  given in the help page (documented departure from the source).
+
+## Corrected units of the energy functions (results change)
+
+* Pandolf (`p`), Pandolf with correction (`pcf`), Van Leusen (`vl`): these
+  equations give a metabolic rate (W). Earlier versions accumulated
+  rate x distance (W*m, labelled "Megawatts"); the cost per metre is now
+  rate / speed (J/m), so that the accumulated value is energy, reported in kJ.
+  With `V = 0` (speed derived from Tobler's function cell by cell) the
+  least-cost paths of earlier versions did not minimise energy; they now do.
+* Hare (`h`): the function gives kcal per km; the accumulated value is now
+  divided by 1000 and reported in kcal (earlier versions reported the raw sum
+  under the label "cal/km").
+* The `cost_unit` column of `mc_cost_functions()`, the printed surfaces, and
+  the plot legends now give the unit of the accumulated value (kJ, J/kg, kcal)
+  rather than the per-metre unit (J/(kg*m), kJ/m).
+
+## Exact speed conversion (results change slightly)
+
+* Walking speeds are converted from km/h to m/s with the exact factor 1/3.6;
+  earlier versions (including 2.x) used the rounded 0.278, which overstated
+  speeds, and so understated walking times, by 0.08%.
+
+## Documented, unchanged choices
+
+* Pandolf et al. (`p`) keeps the absolute grade, the symmetric form reported by
+  Herzog (2020, Table 18.2): the original equation covers level and uphill
+  walking only (Yokota et al. 2004) and, with a negative grade, turns negative
+  on steep descents. The help page says so and points to `pcf` for descents.
+* Uriarte Gonzalez (`ug`), Garmy et al. (`gkrs`), Bellavia (`b`), Eastman
+  (`e`), the wheeled-vehicle function (`wcs`), and the relative energetic
+  expenditure (`ree`) are symmetric in their sources; the help page now states
+  this where it was not stated, and that `ree` costs nothing on level ground.
+* `pcf`: the help page notes the small step in cost between level and slightly
+  downhill movement that comes from the source equation, and that Looney et al.
+  (2019) print the last term of the correction differently from Yokota et al.
+  (2004), whom movecost follows.
+
+## Tests and validation
+
+* New `tests/testthat/test-sources.R`: each corrected function is checked
+  against its published equation, written out independently of the package
+  code; anisotropic functions must distinguish ascent from descent and
+  symmetric ones must not; energy functions must accumulate in the declared
+  unit; every function must stay positive over slopes from -1 to 1.
+* `inst/validation/` notes and the Python core replica updated accordingly.
+
 # movecost 3.1.0
 
 ## New feature: a terrain factor that varies across the landscape
